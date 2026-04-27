@@ -8,7 +8,6 @@ public class PlayerMovement : MonoBehaviour
     [Header("Speeds")]
     public float walkSpeed = 6f;
     public float sprintSpeed = 20f;
-    public float acceleration = 10f; // How fast we reach target speed
 
     [Header("Sprint Timing")]
     public float sprintBuildUpTime = 8f;
@@ -22,6 +21,7 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 velocity;
     private float currentSpeed;
     private float sprintTimer = 0f;
+    private bool needsRepress = false; // New flag to force a stop
 
     private enum SprintState { Ready, Building, Full, Decaying, Cooldown }
     private SprintState sprintState = SprintState.Ready;
@@ -38,6 +38,12 @@ public class PlayerMovement : MonoBehaviour
         bool shiftHeld = Keyboard.current.shiftKey.isPressed;
         bool isMoving = HasMovementInput();
 
+        // If the player stops touching the keyboard, they've "repressed"
+        if (!isMoving)
+        {
+            needsRepress = false;
+        }
+
         switch (sprintState)
         {
             case SprintState.Ready:
@@ -52,7 +58,13 @@ public class PlayerMovement : MonoBehaviour
 
             case SprintState.Full:
                 sprintTimer += Time.deltaTime;
-                if (sprintTimer >= sprintFullTime || !shiftHeld || !isMoving) { sprintState = SprintState.Decaying; sprintTimer = 0; }
+                // Transition to Decaying
+                if (sprintTimer >= sprintFullTime || !shiftHeld || !isMoving) 
+                { 
+                    sprintState = SprintState.Decaying; 
+                    sprintTimer = 0; 
+                    TriggerHardStop(); // Force the player to stop
+                }
                 break;
 
             case SprintState.Decaying:
@@ -67,6 +79,12 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    void TriggerHardStop()
+    {
+        currentSpeed = 0f;
+        needsRepress = true;
+    }
+
     void HandleMovement()
     {
         // 1. Get Input
@@ -78,31 +96,34 @@ public class PlayerMovement : MonoBehaviour
 
         bool isMoving = move.magnitude > 0.1f;
 
-        // 2. Determine if we are ACTUALLY sprinting right now
-        // We only use sprint speed if we are in the Building or Full state.
-        bool isEffectivelySprinting = (sprintState == SprintState.Building || sprintState == SprintState.Full);
-        
-        float targetSpeed = (isEffectivelySprinting && Keyboard.current.shiftKey.isPressed) 
-            ? maxSprintingSpeed 
-            : maxWalkingSpeed;
+        // 2. Logic to ignore input if a repress is required
+        float targetSpeed = walkSpeed;
 
-        // 3. Smoothly transition the speed
-        // This replaces the complex sine/timer math that was causing the glitch.
-        // Use a higher lerp value (like 5f) for responsive walking, 
-        // or lower for "heavy" movement.
-        float lerpSpeed = isEffectivelySprinting ? 2f : 5f; 
-        
-        if (isMoving)
+        if (needsRepress)
         {
-            currentSpeed = Mathf.Lerp(currentSpeed, targetSpeed, Time.deltaTime * lerpSpeed);
+            targetSpeed = 0f; // Force speed to 0 until keys are released
         }
         else
         {
-            currentSpeed = Mathf.Lerp(currentSpeed, 0, Time.deltaTime * 10f);
+            if (sprintState == SprintState.Building || sprintState == SprintState.Full)
+            {
+                targetSpeed = sprintSpeed;
+            }
+            else if (sprintState == SprintState.Decaying)
+            {
+                targetSpeed = Mathf.Lerp(sprintSpeed, walkSpeed, sprintTimer / sprintDecayTime);
+            }
         }
+
+        // 3. Apply movement
+        float finalTarget = isMoving ? targetSpeed : 0f;
+        
+        // Using MoveTowards for snappy response
+        currentSpeed = Mathf.MoveTowards(currentSpeed, finalTarget, 20f * Time.deltaTime);
 
         controller.Move(move * currentSpeed * Time.deltaTime);
     }
+
     void HandleGravity()
     {
         if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;
