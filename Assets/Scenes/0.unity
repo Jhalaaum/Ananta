@@ -588,9 +588,9 @@ MonoBehaviour:
   controller: {fileID: 493262991}
   walkSpeed: 6
   sprintSpeed: 18
-  sprintBuildUpTime: 4
-  sprintFullTime: 10
-  sprintDecayTime: 6
+  sprintBuildUpTime: 8
+  sprintFullTime: 6
+  sprintDecayTime: 10
   sprintCooldownTime: 5
   gravity: -9.81
 --- !u!1 &832575517
