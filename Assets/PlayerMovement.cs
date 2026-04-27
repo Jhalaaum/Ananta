@@ -78,10 +78,11 @@ public class PlayerMovement : MonoBehaviour
                 break;
         }
     }
+// ... inside the class ...
 
     void TriggerHardStop()
     {
-        currentSpeed = 0f;
+        // Removed currentSpeed = 0; so it can actually decay
         needsRepress = true;
     }
 
@@ -96,34 +97,38 @@ public class PlayerMovement : MonoBehaviour
 
         bool isMoving = move.magnitude > 0.1f;
 
-        // 2. Logic to ignore input if a repress is required
+        // 2. Logic to handle Decay vs Repress
         float targetSpeed = walkSpeed;
 
-        if (needsRepress)
+        if (sprintState == SprintState.Decaying)
         {
-            targetSpeed = 0f; // Force speed to 0 until keys are released
+            // Calculate the decaying speed (dropping from sprint to walk)
+            targetSpeed = Mathf.Lerp(sprintSpeed, walkSpeed, sprintTimer / sprintDecayTime);
+            
+            // If they let go of movement DURING decay, they now MUST repress to walk again
+            if (!isMoving) needsRepress = true;
         }
-        else
+        else if (sprintState == SprintState.Building || sprintState == SprintState.Full)
         {
-            if (sprintState == SprintState.Building || sprintState == SprintState.Full)
-            {
-                targetSpeed = sprintSpeed;
-            }
-            else if (sprintState == SprintState.Decaying)
-            {
-                targetSpeed = Mathf.Lerp(sprintSpeed, walkSpeed, sprintTimer / sprintDecayTime);
-            }
+            targetSpeed = sprintSpeed;
+        }
+        
+        // 3. Apply the "Hard Stop" or Lock
+        // If needsRepress is true, speed is 0. 
+        // Note: We only check this if NOT in the decaying state to allow the decay to finish
+        if (needsRepress && sprintState != SprintState.Decaying)
+        {
+            targetSpeed = 0f;
         }
 
-        // 3. Apply movement
+        // 4. Apply movement
         float finalTarget = isMoving ? targetSpeed : 0f;
         
-        // Using MoveTowards for snappy response
+        // Acceleration/Deceleration feel
         currentSpeed = Mathf.MoveTowards(currentSpeed, finalTarget, 20f * Time.deltaTime);
 
         controller.Move(move * currentSpeed * Time.deltaTime);
     }
-
     void HandleGravity()
     {
         if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;
