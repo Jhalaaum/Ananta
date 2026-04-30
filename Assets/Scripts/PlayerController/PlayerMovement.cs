@@ -127,15 +127,37 @@ public class PlayerMovement : MonoBehaviour
             else CrouchDown();
         }
 
-        // Update Controller Physical Height
+        // --- THE FIX ---
+        // We calculate the target height once per frame for the Lerp
         float targetHeight = isCrouching ? crouchHeight : standingHeight;
+        
+        // Smoothly change the controller height
         controller.height = Mathf.Lerp(controller.height, targetHeight, Time.deltaTime * crouchTransitionSpeed);
+        
+        // Keep the center consistent so the "feet" stay at the pivot (y=0)
         controller.center = new Vector3(0, controller.height / 2f, 0);
         
-        // Set the target camera height based on the ratio of the current controller height
+        // Update the target for the camera based on the physical height we just calculated
         targetCameraY = controller.height * eyeLevelRatio;
     }
 
+    void StandUp()
+    {
+        // Calculate the starting point of the ray: the current top of the head
+        // We add a tiny offset (0.1f) so the ray starts just outside the controller
+        Vector3 rayStart = transform.position + Vector3.up * controller.height;
+        float distanceToCheck = standingHeight - controller.height;
+
+        // If there is NO obstacle above us, we can stand up
+        if (!Physics.Raycast(rayStart, Vector3.up, distanceToCheck, ~playerLayer))
+        {
+            isCrouching = false;
+        }
+        else 
+        {
+            Debug.Log("Ceiling detected! Cannot stand up.");
+        }
+    }    
     void ApplyCameraSmoothing()
     {
         Vector3 newPos = playerCamera.localPosition;
@@ -144,16 +166,6 @@ public class PlayerMovement : MonoBehaviour
     }
 
     void CrouchDown() => isCrouching = true;
-
-    void StandUp()
-    {
-        // Raycast logic to prevent standing into ceilings
-        if (!Physics.Raycast(transform.position, Vector3.up, standingHeight, ~playerLayer))
-        {
-            isCrouching = false;
-        }
-    }
-
     void HandleGravity()
     {
         if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;

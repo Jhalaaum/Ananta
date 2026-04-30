@@ -593,7 +593,7 @@ MonoBehaviour:
   sprintDecayTime: 10
   sprintCooldownTime: 5
   crouchHeight: 2
-  standingHeight: 3
+  standingHeight: 2.8
   playerCamera: {fileID: 330585546}
   crouchTransitionSpeed: 10
   eyeLevelRatio: 0.9
