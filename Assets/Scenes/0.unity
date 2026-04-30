@@ -585,22 +585,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   controller: {fileID: 493262991}
-  walkSpeed: 6
-  sprintSpeed: 18
-  crouchSpeed: 2
+  walkSpeed: 8
+  sprintSpeed: 22
+  crouchSpeed: 3
+  crawlSpeed: 2
   sprintBuildUpTime: 8
   sprintFullTime: 6
   sprintDecayTime: 10
   sprintCooldownTime: 5
-  crouchHeight: 2
   standingHeight: 2.8
-  playerCamera: {fileID: 330585546}
-  crouchTransitionSpeed: 10
-  eyeLevelRatio: 0.9
+  crouchHeight: 2
+  crawlHeight: 1
+  transitionSpeed: 10
   gravity: -9.81
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
+  playerCamera: {fileID: 330585546}
+  eyeLevelRatio: 0.9
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0

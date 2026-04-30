@@ -9,33 +9,38 @@ public class PlayerMovement : MonoBehaviour
     public float walkSpeed = 6f;
     public float sprintSpeed = 20f;
     public float crouchSpeed = 3f;
+    public float crawlSpeed = 1.5f;
 
     [Header("Sprint Timing")]
-    public float sprintBuildUpTime = 4f; // Reduced for better gameplay feel
+    public float sprintBuildUpTime = 4f;
     public float sprintFullTime = 5f;
     public float sprintDecayTime = 3f;
     public float sprintCooldownTime = 5f;
 
-    [Header("Crouch Settings")]
-    public float crouchHeight = 1f;
-    public float standingHeight = 2f;
-    public Transform playerCamera;
-    public float crouchTransitionSpeed = 10f;
-    [Range(0, 1)] public float eyeLevelRatio = 0.9f; 
+    [Header("Stance Heights")]
+    public float standingHeight = 2.8f;
+    public float crouchHeight = 2f;
+    public float crawlHeight = 1f;
+    public float transitionSpeed = 10f;
 
     [Header("General")]
-    public float gravity = -19.81f; // Slightly stronger gravity feels "snappier"
+    public float gravity = -19.81f;
     public LayerMask playerLayer;
+    public Transform playerCamera;
+    [Range(0, 1)] public float eyeLevelRatio = 0.9f;
 
     private Vector3 velocity;
     private float currentSpeed;
     private float sprintTimer = 0f;
     private bool needsRepress = false;
-    private bool isCrouching;
-    private float targetCameraY;
+
+    private enum Stance { Standing, Crouching, Crawling }
+    private Stance currentStance = Stance.Standing;
 
     private enum SprintState { Ready, Building, Full, Decaying, Cooldown }
     private SprintState sprintState = SprintState.Ready;
+
+    private float targetCameraY;
 
     void Start()
     {
@@ -44,13 +49,55 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        HandleCrouch();
+        HandleStanceInput();
         HandleSprintState();
+        UpdateDimensions();
         HandleMovement();
         HandleGravity();
-        
-        // Smoothly lerp the camera position every frame
         ApplyCameraSmoothing();
+    }
+
+    void HandleStanceInput()
+    {
+        if (Keyboard.current.cKey.wasPressedThisFrame)
+        {
+            if (currentStance == Stance.Crouching) TryStandUp();
+            else currentStance = Stance.Crouching;
+        }
+
+        if (Keyboard.current.ctrlKey.wasPressedThisFrame)
+        {
+            if (currentStance == Stance.Crawling) TryStandUp();
+            else currentStance = Stance.Crawling;
+        }
+    }
+
+    void UpdateDimensions()
+    {
+        float targetH = standingHeight;
+        if (currentStance == Stance.Crouching) targetH = crouchHeight;
+        if (currentStance == Stance.Crawling) targetH = crawlHeight;
+
+        controller.height = Mathf.Lerp(controller.height, targetH, Time.deltaTime * transitionSpeed);
+
+        controller.center = new Vector3(0, controller.height / 2f, 0);
+
+        targetCameraY = controller.height * eyeLevelRatio;
+    }
+
+    void TryStandUp()
+    {
+        Vector3 rayStart = transform.position + Vector3.up * controller.height;
+        float distanceToCheck = standingHeight - controller.height;
+
+        if (!Physics.Raycast(rayStart, Vector3.up, distanceToCheck, ~playerLayer))
+        {
+            currentStance = Stance.Standing;
+        }
+        else
+        {
+            Debug.Log("Ceiling detected! Stay low.");
+        }
     }
 
     void HandleSprintState()
@@ -58,14 +105,14 @@ public class PlayerMovement : MonoBehaviour
         bool shiftHeld = Keyboard.current.shiftKey.isPressed;
         bool isMoving = HasMovementInput();
 
-        // Fix: Reset needsRepress if we stop moving OR if we are back to Ready
         if (!isMoving || sprintState == SprintState.Ready) needsRepress = false;
 
         switch (sprintState)
         {
             case SprintState.Ready:
-                if (shiftHeld && isMoving) { 
-                    isCrouching = false; // Auto-stand when sprinting
+                if (shiftHeld && isMoving) 
+                { 
+                    currentStance = Stance.Standing;
                     sprintState = SprintState.Building; 
                     sprintTimer = 0; 
                 }
@@ -103,69 +150,37 @@ public class PlayerMovement : MonoBehaviour
         Vector3 move = transform.right * x + transform.forward * z;
         if (move.magnitude > 1) move.Normalize();
 
-        float targetSpeed = isCrouching ? crouchSpeed : walkSpeed;
+        float targetSpeed = walkSpeed;
+        if (currentStance == Stance.Crouching) targetSpeed = crouchSpeed;
+        if (currentStance == Stance.Crawling) targetSpeed = crawlSpeed;
 
-        if (sprintState == SprintState.Decaying)
-            targetSpeed = Mathf.Lerp(sprintSpeed, walkSpeed, sprintTimer / sprintDecayTime);
-        else if (sprintState == SprintState.Building || sprintState == SprintState.Full)
+        if (sprintState == SprintState.Building || sprintState == SprintState.Full)
+        {
             targetSpeed = sprintSpeed;
-        
-        // If exhausted, force speed to walk speed (or 0 if you want a penalty)
-        if (needsRepress) targetSpeed = walkSpeed * 0.5f; 
+        }
+        else if (sprintState == SprintState.Decaying)
+        {
+            targetSpeed = Mathf.Lerp(sprintSpeed, walkSpeed, sprintTimer / sprintDecayTime);
+        }
+        else if (needsRepress) 
+        {
+            targetSpeed = walkSpeed * 0.5f; 
+        }
 
         float finalTarget = move.magnitude > 0.1f ? targetSpeed : 0f;
-        currentSpeed = Mathf.MoveTowards(currentSpeed, finalTarget, 30f * Time.deltaTime);
+        
+        float accelerationValue = (sprintState == SprintState.Decaying) ? 5f : 30f; 
+        currentSpeed = Mathf.MoveTowards(currentSpeed, finalTarget, accelerationValue * Time.deltaTime);
 
         controller.Move(move * currentSpeed * Time.deltaTime);
     }
-
-    void HandleCrouch()
-    {
-        if (Keyboard.current.cKey.wasPressedThisFrame)
-        {
-            if (isCrouching) StandUp();
-            else CrouchDown();
-        }
-
-        // --- THE FIX ---
-        // We calculate the target height once per frame for the Lerp
-        float targetHeight = isCrouching ? crouchHeight : standingHeight;
-        
-        // Smoothly change the controller height
-        controller.height = Mathf.Lerp(controller.height, targetHeight, Time.deltaTime * crouchTransitionSpeed);
-        
-        // Keep the center consistent so the "feet" stay at the pivot (y=0)
-        controller.center = new Vector3(0, controller.height / 2f, 0);
-        
-        // Update the target for the camera based on the physical height we just calculated
-        targetCameraY = controller.height * eyeLevelRatio;
-    }
-
-    void StandUp()
-    {
-        // Calculate the starting point of the ray: the current top of the head
-        // We add a tiny offset (0.1f) so the ray starts just outside the controller
-        Vector3 rayStart = transform.position + Vector3.up * controller.height;
-        float distanceToCheck = standingHeight - controller.height;
-
-        // If there is NO obstacle above us, we can stand up
-        if (!Physics.Raycast(rayStart, Vector3.up, distanceToCheck, ~playerLayer))
-        {
-            isCrouching = false;
-        }
-        else 
-        {
-            Debug.Log("Ceiling detected! Cannot stand up.");
-        }
-    }    
     void ApplyCameraSmoothing()
     {
         Vector3 newPos = playerCamera.localPosition;
-        newPos.y = Mathf.Lerp(newPos.y, targetCameraY, Time.deltaTime * crouchTransitionSpeed);
+        newPos.y = Mathf.Lerp(newPos.y, targetCameraY, Time.deltaTime * transitionSpeed);
         playerCamera.localPosition = newPos;
     }
 
-    void CrouchDown() => isCrouching = true;
     void HandleGravity()
     {
         if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;
