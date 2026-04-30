@@ -8,29 +8,49 @@ public class PlayerMovement : MonoBehaviour
     [Header("Speeds")]
     public float walkSpeed = 6f;
     public float sprintSpeed = 20f;
+    public float crouchSpeed = 3f;
 
     [Header("Sprint Timing")]
-    public float sprintBuildUpTime = 8f;
-    public float sprintFullTime = 8f;
-    public float sprintDecayTime = 10f;
-    public float sprintCooldownTime = 10f;
+    public float sprintBuildUpTime = 4f; // Reduced for better gameplay feel
+    public float sprintFullTime = 5f;
+    public float sprintDecayTime = 3f;
+    public float sprintCooldownTime = 5f;
+
+    [Header("Crouch Settings")]
+    public float crouchHeight = 1f;
+    public float standingHeight = 2f;
+    public Transform playerCamera;
+    public float crouchTransitionSpeed = 10f;
+    [Range(0, 1)] public float eyeLevelRatio = 0.9f; 
 
     [Header("General")]
-    public float gravity = -9.81f;
+    public float gravity = -19.81f; // Slightly stronger gravity feels "snappier"
+    public LayerMask playerLayer;
 
     private Vector3 velocity;
     private float currentSpeed;
     private float sprintTimer = 0f;
-    private bool needsRepress = false; // New flag to force a stop
+    private bool needsRepress = false;
+    private bool isCrouching;
+    private float targetCameraY;
 
     private enum SprintState { Ready, Building, Full, Decaying, Cooldown }
     private SprintState sprintState = SprintState.Ready;
 
+    void Start()
+    {
+        targetCameraY = standingHeight * eyeLevelRatio;
+    }
+
     void Update()
     {
+        HandleCrouch();
         HandleSprintState();
         HandleMovement();
         HandleGravity();
+        
+        // Smoothly lerp the camera position every frame
+        ApplyCameraSmoothing();
     }
 
     void HandleSprintState()
@@ -38,97 +58,102 @@ public class PlayerMovement : MonoBehaviour
         bool shiftHeld = Keyboard.current.shiftKey.isPressed;
         bool isMoving = HasMovementInput();
 
-        // If the player stops touching the keyboard, they've "repressed"
-        if (!isMoving)
-        {
-            needsRepress = false;
-        }
+        // Fix: Reset needsRepress if we stop moving OR if we are back to Ready
+        if (!isMoving || sprintState == SprintState.Ready) needsRepress = false;
 
         switch (sprintState)
         {
             case SprintState.Ready:
-                if (shiftHeld && isMoving) { sprintState = SprintState.Building; sprintTimer = 0; }
+                if (shiftHeld && isMoving) { 
+                    isCrouching = false; // Auto-stand when sprinting
+                    sprintState = SprintState.Building; 
+                    sprintTimer = 0; 
+                }
                 break;
-
             case SprintState.Building:
                 sprintTimer += Time.deltaTime;
                 if (sprintTimer >= sprintBuildUpTime) { sprintState = SprintState.Full; sprintTimer = 0; }
                 if (!shiftHeld || !isMoving) sprintState = SprintState.Ready;
                 break;
-
             case SprintState.Full:
                 sprintTimer += Time.deltaTime;
-                // Transition to Decaying
                 if (sprintTimer >= sprintFullTime || !shiftHeld || !isMoving) 
                 { 
                     sprintState = SprintState.Decaying; 
                     sprintTimer = 0; 
-                    TriggerHardStop(); // Force the player to stop
+                    needsRepress = true;
                 }
                 break;
-
             case SprintState.Decaying:
                 sprintTimer += Time.deltaTime;
                 if (sprintTimer >= sprintDecayTime) { sprintState = SprintState.Cooldown; sprintTimer = 0; }
                 break;
-
             case SprintState.Cooldown:
                 sprintTimer += Time.deltaTime;
                 if (sprintTimer >= sprintCooldownTime) { sprintState = SprintState.Ready; sprintTimer = 0; }
                 break;
         }
     }
-// ... inside the class ...
-
-    void TriggerHardStop()
-    {
-        // Removed currentSpeed = 0; so it can actually decay
-        needsRepress = true;
-    }
 
     void HandleMovement()
     {
-        // 1. Get Input
         float x = (Keyboard.current.dKey.isPressed ? 1 : 0) - (Keyboard.current.aKey.isPressed ? 1 : 0);
         float z = (Keyboard.current.wKey.isPressed ? 1 : 0) - (Keyboard.current.sKey.isPressed ? 1 : 0);
 
         Vector3 move = transform.right * x + transform.forward * z;
         if (move.magnitude > 1) move.Normalize();
 
-        bool isMoving = move.magnitude > 0.1f;
-
-        // 2. Logic to handle Decay vs Repress
-        float targetSpeed = walkSpeed;
+        float targetSpeed = isCrouching ? crouchSpeed : walkSpeed;
 
         if (sprintState == SprintState.Decaying)
-        {
-            // Calculate the decaying speed (dropping from sprint to walk)
             targetSpeed = Mathf.Lerp(sprintSpeed, walkSpeed, sprintTimer / sprintDecayTime);
-            
-            // If they let go of movement DURING decay, they now MUST repress to walk again
-            if (!isMoving) needsRepress = true;
-        }
         else if (sprintState == SprintState.Building || sprintState == SprintState.Full)
-        {
             targetSpeed = sprintSpeed;
-        }
         
-        // 3. Apply the "Hard Stop" or Lock
-        // If needsRepress is true, speed is 0. 
-        // Note: We only check this if NOT in the decaying state to allow the decay to finish
-        if (needsRepress && sprintState != SprintState.Decaying)
-        {
-            targetSpeed = 0f;
-        }
+        // If exhausted, force speed to walk speed (or 0 if you want a penalty)
+        if (needsRepress) targetSpeed = walkSpeed * 0.5f; 
 
-        // 4. Apply movement
-        float finalTarget = isMoving ? targetSpeed : 0f;
-        
-        // Acceleration/Deceleration feel
-        currentSpeed = Mathf.MoveTowards(currentSpeed, finalTarget, 20f * Time.deltaTime);
+        float finalTarget = move.magnitude > 0.1f ? targetSpeed : 0f;
+        currentSpeed = Mathf.MoveTowards(currentSpeed, finalTarget, 30f * Time.deltaTime);
 
         controller.Move(move * currentSpeed * Time.deltaTime);
     }
+
+    void HandleCrouch()
+    {
+        if (Keyboard.current.cKey.wasPressedThisFrame)
+        {
+            if (isCrouching) StandUp();
+            else CrouchDown();
+        }
+
+        // Update Controller Physical Height
+        float targetHeight = isCrouching ? crouchHeight : standingHeight;
+        controller.height = Mathf.Lerp(controller.height, targetHeight, Time.deltaTime * crouchTransitionSpeed);
+        controller.center = new Vector3(0, controller.height / 2f, 0);
+        
+        // Set the target camera height based on the ratio of the current controller height
+        targetCameraY = controller.height * eyeLevelRatio;
+    }
+
+    void ApplyCameraSmoothing()
+    {
+        Vector3 newPos = playerCamera.localPosition;
+        newPos.y = Mathf.Lerp(newPos.y, targetCameraY, Time.deltaTime * crouchTransitionSpeed);
+        playerCamera.localPosition = newPos;
+    }
+
+    void CrouchDown() => isCrouching = true;
+
+    void StandUp()
+    {
+        // Raycast logic to prevent standing into ceilings
+        if (!Physics.Raycast(transform.position, Vector3.up, standingHeight, ~playerLayer))
+        {
+            isCrouching = false;
+        }
+    }
+
     void HandleGravity()
     {
         if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;
