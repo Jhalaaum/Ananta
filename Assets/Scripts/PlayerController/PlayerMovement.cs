@@ -6,15 +6,15 @@ public class PlayerMovement : MonoBehaviour
     public CharacterController controller;
 
     [Header("Speeds")]
-    public float walkSpeed = 6f;
-    public float sprintSpeed = 20f;
+    public float walkSpeed = 8f;
+    public float sprintSpeed = 22f;
     public float crouchSpeed = 3f;
-    public float crawlSpeed = 1.5f;
+    public float crawlSpeed = 2f;
 
     [Header("Sprint Timing")]
-    public float sprintBuildUpTime = 4f;
-    public float sprintFullTime = 5f;
-    public float sprintDecayTime = 3f;
+    public float sprintBuildUpTime = 8f;
+    public float sprintFullTime = 6f;
+    public float sprintDecayTime = 10f;
     public float sprintCooldownTime = 5f;
 
     [Header("Stance Heights")]
@@ -24,7 +24,7 @@ public class PlayerMovement : MonoBehaviour
     public float transitionSpeed = 10f;
 
     [Header("General")]
-    public float gravity = -19.81f;
+    public float gravity = -9.81f;
     public LayerMask playerLayer;
     public Transform playerCamera;
     [Range(0, 1)] public float eyeLevelRatio = 0.9f;

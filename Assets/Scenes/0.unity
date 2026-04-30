@@ -383,8 +383,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MouseLook
   mouseSensitivity: 0.5
   leanAngle: 20
-  leanDistance: 0.5
+  leanDistance: 0.7
   leanSpeed: 10
+  leanCheckRadius: 0.2
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 0
   playerBody: {fileID: 493262992}
 --- !u!1 &410087039
 GameObject:
