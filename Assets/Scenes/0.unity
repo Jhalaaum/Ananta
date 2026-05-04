@@ -589,24 +589,48 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   controller: {fileID: 493262991}
-  walkSpeed: 8
-  sprintSpeed: 22
+  playerCamera: {fileID: 330585546}
+  cameraComponent: {fileID: 0}
+  walkSpeed: 6
+  sprintSpeed: 18
   crouchSpeed: 3
   crawlSpeed: 2
-  sprintBuildUpTime: 8
-  sprintFullTime: 6
-  sprintDecayTime: 10
-  sprintCooldownTime: 10
+  groundedAcceleration: 34
+  groundedDeceleration: 42
+  airAcceleration: 8
+  airDeceleration: 4
+  airControlMultiplier: 0.45
+  directionChangeBoost: 1
+  jumpHeight: 1
+  gravity: -9.81
+  groundedStickForce: -4
+  coyoteTime: 0.12
+  jumpBufferTime: 0.12
+  fallMultiplier: 1.25
+  heldJumpRepeatDelay: 0.05
   standingHeight: 2.8
   crouchHeight: 2
   crawlHeight: 1
-  transitionSpeed: 10
-  gravity: -9.81
-  playerLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  playerCamera: {fileID: 330585546}
+  stanceTransitionSpeed: 12
   eyeLevelRatio: 0.9
+  sprintBuildTime: 2
+  maxSprintDuration: 6
+  sprintRecoveryTime: 6
+  exhaustedSpeedMultiplier: 0.65
+  enableHeadBob: 1
+  walkBobAmount: 0.035
+  sprintBobAmount: 0.065
+  crouchBobAmount: 0.02
+  bobFrequency: 10
+  enableFovKick: 1
+  normalFov: 70
+  sprintFov: 78
+  fovSmoothSpeed: 8
+  obstructionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  standCheckRadiusPadding: 0.05
+  standCheckFloorOffset: 0.08
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0

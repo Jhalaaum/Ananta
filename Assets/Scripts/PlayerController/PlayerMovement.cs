@@ -10,9 +10,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Camera cameraComponent;
 
     [Header("Movement Speeds")]
-    [SerializeField] private float walkSpeed = 8f;
+    [SerializeField] private float walkSpeed = 6f;
     [SerializeField] private float sprintSpeed = 18f;
-    [SerializeField] private float crouchSpeed = 3.5f;
+    [SerializeField] private float crouchSpeed = 3f;
     [SerializeField] private float crawlSpeed = 2f;
 
     [Header("Acceleration")]
@@ -46,10 +46,19 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float eyeLevelRatio = 0.9f;
 
     [Header("Sprint System")]
-    [SerializeField] private float sprintBuildTime = 0.45f;
+    [SerializeField] private float sprintBuildTime = 4f;
     [SerializeField] private float maxSprintDuration = 6f;
-    [SerializeField] private float sprintRecoveryTime = 4f;
+    [SerializeField] private float sprintRecoveryTime = 6f;
     [SerializeField] private float exhaustedSpeedMultiplier = 0.65f;
+
+    [Tooltip("How long it takes sprint speed to smoothly slow down before stamina recovery starts.")]
+    [SerializeField] private float sprintSlowdownTime = 4.0f;
+
+    [Tooltip("After sprint speed has slowed down, wait this long before stamina starts recovering.")]
+    [SerializeField] private float sprintRecoveryDelayAfterSlowdown = 0.6f;
+
+    [Tooltip("Sprint blend must fall below this before stamina recovery can begin.")]
+    [SerializeField] private float sprintRecoveryStartThreshold = 0.05f;
 
     [Header("Camera Polish")]
     [SerializeField] private bool enableHeadBob = true;
@@ -62,6 +71,14 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float normalFov = 70f;
     [SerializeField] private float sprintFov = 78f;
     [SerializeField] private float fovSmoothSpeed = 8f;
+
+    [Header("Lean Position")]
+    [SerializeField] private float leanDistance = 0.7f;
+    [SerializeField] private float leanSpeed = 10f;
+    [SerializeField] private float leanCheckRadius = 0.2f;
+
+    [Tooltip("Layers that block leaning. Usually Environment/Ground/World, but NOT Player.")]
+    [SerializeField] private LayerMask leanObstacleMask;
 
     [Header("Collision Checks")]
     [Tooltip("Layers that block the player from standing up. Usually this should include Ground/World/Environment, but NOT Player.")]
@@ -98,10 +115,15 @@ public class PlayerMovement : MonoBehaviour
     private float sprintEnergy = 1f;
     private float sprintBlend;
     private bool isExhausted;
+    private float sprintRecoveryDelayTimer;
 
     private float bobTimer;
 
+    private float currentLeanOffset;
+    private float targetLeanOffset;
+
     private readonly Collider[] standCheckResults = new Collider[12];
+    private readonly RaycastHit[] leanHits = new RaycastHit[8];
 
     private bool IsGrounded => controller != null && controller.isGrounded;
 
@@ -130,12 +152,14 @@ public class PlayerMovement : MonoBehaviour
         if (cameraComponent != null)
             cameraComponent.fieldOfView = normalFov;
 
-        // Default obstruction mask.
-        // Important: put the Player object on a Player layer.
-        // Then make sure obstructionMask does NOT include Player.
         if (obstructionMask.value == 0)
         {
             obstructionMask = ~LayerMask.GetMask("Player");
+        }
+
+        if (leanObstacleMask.value == 0)
+        {
+            leanObstacleMask = obstructionMask;
         }
     }
 
@@ -151,6 +175,7 @@ public class PlayerMovement : MonoBehaviour
 
         MovePlayer();
 
+        HandleLeanPosition();
         UpdateCamera();
     }
 
@@ -268,23 +293,58 @@ public class PlayerMovement : MonoBehaviour
 
         if (wantsSprint && canSprint)
         {
-            sprintBlend = Mathf.MoveTowards(sprintBlend, 1f, Time.deltaTime / sprintBuildTime);
+            sprintBlend = Mathf.MoveTowards(
+                sprintBlend,
+                1f,
+                Time.deltaTime / sprintBuildTime
+            );
+
             sprintEnergy -= Time.deltaTime / maxSprintDuration;
+
+            // Keep recovery blocked while actively sprinting.
+            sprintRecoveryDelayTimer = sprintRecoveryDelayAfterSlowdown;
 
             if (sprintEnergy <= 0f)
             {
                 sprintEnergy = 0f;
                 isExhausted = true;
-                sprintBlend = 0f;
+
+                // Important:
+                // Do NOT instantly set sprintBlend to 0 here.
+                // The else block will smoothly slow sprintBlend down first.
             }
         }
         else
         {
-            sprintBlend = Mathf.MoveTowards(sprintBlend, 0f, Time.deltaTime * 3f);
+            sprintBlend = Mathf.MoveTowards(
+                sprintBlend,
+                0f,
+                Time.deltaTime / sprintSlowdownTime
+            );
 
-            if (!wantsSprint || !hasMovementInput || !IsGrounded)
+            bool hasSlowedDown = sprintBlend <= sprintRecoveryStartThreshold;
+
+            if (!hasSlowedDown)
             {
-                sprintEnergy += Time.deltaTime / sprintRecoveryTime;
+                // While the player is still slowing down from sprint,
+                // stamina should not recover yet.
+                sprintRecoveryDelayTimer = sprintRecoveryDelayAfterSlowdown;
+            }
+            else
+            {
+                if (sprintRecoveryDelayTimer > 0f)
+                {
+                    sprintRecoveryDelayTimer -= Time.deltaTime;
+                }
+                else
+                {
+                    bool canRecover = !wantsSprint || !hasMovementInput || !IsGrounded || isExhausted;
+
+                    if (canRecover)
+                    {
+                        sprintEnergy += Time.deltaTime / sprintRecoveryTime;
+                    }
+                }
             }
 
             if (sprintEnergy >= 1f)
@@ -419,6 +479,71 @@ public class PlayerMovement : MonoBehaviour
         verticalVelocity.y += gravityToApply * Time.deltaTime;
     }
 
+    private void HandleLeanPosition()
+    {
+        if (Keyboard.current == null || playerCamera == null)
+        {
+            targetLeanOffset = 0f;
+            currentLeanOffset = Mathf.Lerp(currentLeanOffset, 0f, Time.deltaTime * leanSpeed);
+            return;
+        }
+
+        float leanInput = 0f;
+
+        if (Keyboard.current.qKey.isPressed)
+            leanInput = -1f;
+        else if (Keyboard.current.eKey.isPressed)
+            leanInput = 1f;
+
+        float allowedDistance = leanDistance;
+
+        if (leanInput != 0f)
+        {
+            allowedDistance = GetAllowedLeanDistance(leanInput);
+        }
+
+        targetLeanOffset = leanInput * allowedDistance;
+
+        currentLeanOffset = Mathf.Lerp(
+            currentLeanOffset,
+            targetLeanOffset,
+            Time.deltaTime * leanSpeed
+        );
+    }
+
+    private float GetAllowedLeanDistance(float leanInput)
+    {
+        Vector3 origin = playerCamera.position;
+        Vector3 direction = transform.right * leanInput;
+
+        int hitCount = Physics.SphereCastNonAlloc(
+            origin,
+            leanCheckRadius,
+            direction,
+            leanHits,
+            leanDistance,
+            leanObstacleMask,
+            QueryTriggerInteraction.Ignore
+        );
+
+        float closestDistance = leanDistance;
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = leanHits[i];
+
+            if (hit.collider == null)
+                continue;
+
+            if (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform))
+                continue;
+
+            closestDistance = Mathf.Min(closestDistance, hit.distance);
+        }
+
+        return Mathf.Max(0f, closestDistance - 0.05f);
+    }
+
     private bool TryStandUp()
     {
         if (HasRoomForHeight(standingHeight))
@@ -458,7 +583,6 @@ public class PlayerMovement : MonoBehaviour
             if (hit == null)
                 continue;
 
-            // Ignore anything that belongs to this player object or its children.
             if (hit.transform == transform || hit.transform.IsChildOf(transform))
                 continue;
 
@@ -473,11 +597,11 @@ public class PlayerMovement : MonoBehaviour
         if (playerCamera == null)
             return;
 
-        UpdateCameraHeightAndBob();
+        UpdateCameraHeightBobAndLean();
         UpdateCameraFov();
     }
 
-    private void UpdateCameraHeightAndBob()
+    private void UpdateCameraHeightBobAndLean()
     {
         Vector3 localPos = playerCamera.localPosition;
 
@@ -504,7 +628,7 @@ public class PlayerMovement : MonoBehaviour
             bobTimer = Mathf.Lerp(bobTimer, 0f, Time.deltaTime * 6f);
         }
 
-        localPos.x = baseCameraLocalX;
+        localPos.x = baseCameraLocalX + currentLeanOffset;
         localPos.z = baseCameraLocalZ;
 
         localPos.y = Mathf.Lerp(
