@@ -21,8 +21,6 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float airAcceleration = 8f;
     [SerializeField] private float airDeceleration = 4f;
     [SerializeField] private float airControlMultiplier = 0.45f;
-
-    [Tooltip("How quickly the player cancels old movement when pressing the opposite direction.")]
     [SerializeField] private float directionChangeBoost = 2.4f;
 
     [Header("Jump & Gravity")]
@@ -32,8 +30,6 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float coyoteTime = 0.12f;
     [SerializeField] private float jumpBufferTime = 0.12f;
     [SerializeField] private float fallMultiplier = 1.25f;
-
-    [Tooltip("Small delay between auto-jumps while Space is held. Lower value = faster repeated jumping.")]
     [SerializeField] private float heldJumpRepeatDelay = 0.05f;
 
     [Header("Stance Heights")]
@@ -50,14 +46,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float maxSprintDuration = 6f;
     [SerializeField] private float sprintRecoveryTime = 6f;
     [SerializeField] private float exhaustedSpeedMultiplier = 0.65f;
-
-    [Tooltip("How long it takes sprint speed to smoothly slow down before stamina recovery starts.")]
     [SerializeField] private float sprintSlowdownTime = 4.0f;
-
-    [Tooltip("After sprint speed has slowed down, wait this long before stamina starts recovering.")]
     [SerializeField] private float sprintRecoveryDelayAfterSlowdown = 0.6f;
-
-    [Tooltip("Sprint blend must fall below this before stamina recovery can begin.")]
     [SerializeField] private float sprintRecoveryStartThreshold = 0.05f;
 
     [Header("Camera Polish")]
@@ -76,17 +66,11 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float leanDistance = 0.7f;
     [SerializeField] private float leanSpeed = 10f;
     [SerializeField] private float leanCheckRadius = 0.2f;
-
-    [Tooltip("Layers that block leaning. Usually Environment/Ground/World, but NOT Player.")]
     [SerializeField] private LayerMask leanObstacleMask;
 
     [Header("Collision Checks")]
-    [Tooltip("Layers that block the player from standing up. Usually this should include Ground/World/Environment, but NOT Player.")]
     [SerializeField] private LayerMask obstructionMask;
-
     [SerializeField] private float standCheckRadiusPadding = 0.05f;
-
-    [Tooltip("Prevents the stand-up check from detecting the floor as an obstruction.")]
     [SerializeField] private float standCheckFloorOffset = 0.08f;
 
     private enum Stance
@@ -153,14 +137,10 @@ public class PlayerMovement : MonoBehaviour
             cameraComponent.fieldOfView = normalFov;
 
         if (obstructionMask.value == 0)
-        {
             obstructionMask = ~LayerMask.GetMask("Player");
-        }
 
         if (leanObstacleMask.value == 0)
-        {
             leanObstacleMask = obstructionMask;
-        }
     }
 
     private void Update()
@@ -195,8 +175,7 @@ public class PlayerMovement : MonoBehaviour
         if (Keyboard.current.sKey.isPressed) z -= 1f;
         if (Keyboard.current.wKey.isPressed) z += 1f;
 
-        rawInput = new Vector2(x, z);
-        rawInput = Vector2.ClampMagnitude(rawInput, 1f);
+        rawInput = Vector2.ClampMagnitude(new Vector2(x, z), 1f);
     }
 
     private void UpdateGroundedTimers()
@@ -226,7 +205,7 @@ public class PlayerMovement : MonoBehaviour
             }
             else if (currentStance == Stance.Crawling)
             {
-                currentStance = Stance.Crouching;
+                TrySetStance(Stance.Crouching);
             }
             else
             {
@@ -293,41 +272,24 @@ public class PlayerMovement : MonoBehaviour
 
         if (wantsSprint && canSprint)
         {
-            sprintBlend = Mathf.MoveTowards(
-                sprintBlend,
-                1f,
-                Time.deltaTime / sprintBuildTime
-            );
-
+            sprintBlend = Mathf.MoveTowards(sprintBlend, 1f, Time.deltaTime / sprintBuildTime);
             sprintEnergy -= Time.deltaTime / maxSprintDuration;
-
-            // Keep recovery blocked while actively sprinting.
             sprintRecoveryDelayTimer = sprintRecoveryDelayAfterSlowdown;
 
             if (sprintEnergy <= 0f)
             {
                 sprintEnergy = 0f;
                 isExhausted = true;
-
-                // Important:
-                // Do NOT instantly set sprintBlend to 0 here.
-                // The else block will smoothly slow sprintBlend down first.
             }
         }
         else
         {
-            sprintBlend = Mathf.MoveTowards(
-                sprintBlend,
-                0f,
-                Time.deltaTime / sprintSlowdownTime
-            );
+            sprintBlend = Mathf.MoveTowards(sprintBlend, 0f, Time.deltaTime / sprintSlowdownTime);
 
             bool hasSlowedDown = sprintBlend <= sprintRecoveryStartThreshold;
 
             if (!hasSlowedDown)
             {
-                // While the player is still slowing down from sprint,
-                // stamina should not recover yet.
                 sprintRecoveryDelayTimer = sprintRecoveryDelayAfterSlowdown;
             }
             else
@@ -341,9 +303,7 @@ public class PlayerMovement : MonoBehaviour
                     bool canRecover = !wantsSprint || !hasMovementInput || !IsGrounded || isExhausted;
 
                     if (canRecover)
-                    {
                         sprintEnergy += Time.deltaTime / sprintRecoveryTime;
-                    }
                 }
             }
 
@@ -354,28 +314,13 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        if (sprintBlend > 0.05f)
+        if (wantsSprint && sprintBlend > 0.05f)
             TryStandUp();
     }
 
     private void UpdateStanceDimensions()
     {
-        switch (currentStance)
-        {
-            case Stance.Standing:
-                targetHeight = standingHeight;
-                break;
-
-            case Stance.Crouching:
-                targetHeight = crouchHeight;
-                break;
-
-            case Stance.Crawling:
-                targetHeight = crawlHeight;
-                break;
-        }
-
-        float previousHeight = controller.height;
+        targetHeight = GetHeightForStance(currentStance);
 
         controller.height = Mathf.Lerp(
             controller.height,
@@ -383,14 +328,7 @@ public class PlayerMovement : MonoBehaviour
             Time.deltaTime * stanceTransitionSpeed
         );
 
-        float heightDifference = controller.height - previousHeight;
-
         controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
-
-        if (IsGrounded && Mathf.Abs(heightDifference) > 0.001f)
-        {
-            transform.position += Vector3.up * heightDifference * 0.5f;
-        }
 
         targetCameraY = controller.height * eyeLevelRatio;
     }
@@ -403,29 +341,51 @@ public class PlayerMovement : MonoBehaviour
         float targetSpeed = GetTargetSpeed();
         Vector3 targetHorizontalVelocity = inputDirection * targetSpeed;
 
-        float acceleration;
+        bool hasInput = rawInput.sqrMagnitude > 0.01f;
 
         if (IsGrounded)
         {
-            bool hasInput = rawInput.sqrMagnitude > 0.01f;
-            acceleration = hasInput ? groundedAcceleration : groundedDeceleration;
+            if (!hasInput)
+            {
+                horizontalVelocity = Vector3.MoveTowards(
+                    horizontalVelocity,
+                    Vector3.zero,
+                    groundedDeceleration * Time.deltaTime
+                );
+
+                if (horizontalVelocity.sqrMagnitude < 0.0025f)
+                    horizontalVelocity = Vector3.zero;
+            }
+            else
+            {
+                if (IsChangingDirection(targetHorizontalVelocity))
+                {
+                    horizontalVelocity = Vector3.MoveTowards(
+                        horizontalVelocity,
+                        Vector3.zero,
+                        groundedDeceleration * directionChangeBoost * Time.deltaTime
+                    );
+                }
+
+                horizontalVelocity = Vector3.MoveTowards(
+                    horizontalVelocity,
+                    targetHorizontalVelocity,
+                    groundedAcceleration * directionChangeBoost * Time.deltaTime
+                );
+            }
         }
         else
         {
-            bool hasInput = rawInput.sqrMagnitude > 0.01f;
-            acceleration = hasInput ? airAcceleration * airControlMultiplier : airDeceleration;
-        }
+            float acceleration = hasInput
+                ? airAcceleration * airControlMultiplier
+                : airDeceleration;
 
-        if (IsChangingDirection(targetHorizontalVelocity))
-        {
-            acceleration *= directionChangeBoost;
+            horizontalVelocity = Vector3.MoveTowards(
+                horizontalVelocity,
+                targetHorizontalVelocity,
+                acceleration * Time.deltaTime
+            );
         }
-
-        horizontalVelocity = Vector3.MoveTowards(
-            horizontalVelocity,
-            targetHorizontalVelocity,
-            acceleration * Time.deltaTime
-        );
 
         ApplyGravity();
 
@@ -446,7 +406,7 @@ public class PlayerMovement : MonoBehaviour
 
         float dot = Vector3.Dot(currentFlat.normalized, targetFlat.normalized);
 
-        return dot < -0.2f;
+        return dot < 0.35f;
     }
 
     private float GetTargetSpeed()
@@ -454,11 +414,12 @@ public class PlayerMovement : MonoBehaviour
         float baseSpeed = walkSpeed;
 
         if (currentStance == Stance.Crouching)
-            baseSpeed = crouchSpeed;
-        else if (currentStance == Stance.Crawling)
-            baseSpeed = crawlSpeed;
+            return crouchSpeed;
 
-        if (isExhausted && currentStance == Stance.Standing)
+        if (currentStance == Stance.Crawling)
+            return crawlSpeed;
+
+        if (isExhausted)
             baseSpeed *= exhaustedSpeedMultiplier;
 
         return Mathf.Lerp(baseSpeed, sprintSpeed, sprintBlend);
@@ -467,9 +428,7 @@ public class PlayerMovement : MonoBehaviour
     private void ApplyGravity()
     {
         if (IsGrounded && verticalVelocity.y < 0f)
-        {
             verticalVelocity.y = groundedStickForce;
-        }
 
         float gravityToApply = gravity;
 
@@ -495,12 +454,7 @@ public class PlayerMovement : MonoBehaviour
         else if (Keyboard.current.eKey.isPressed)
             leanInput = 1f;
 
-        float allowedDistance = leanDistance;
-
-        if (leanInput != 0f)
-        {
-            allowedDistance = GetAllowedLeanDistance(leanInput);
-        }
+        float allowedDistance = leanInput != 0f ? GetAllowedLeanDistance(leanInput) : leanDistance;
 
         targetLeanOffset = leanInput * allowedDistance;
 
@@ -546,13 +500,36 @@ public class PlayerMovement : MonoBehaviour
 
     private bool TryStandUp()
     {
-        if (HasRoomForHeight(standingHeight))
-        {
-            currentStance = Stance.Standing;
-            return true;
-        }
+        return TrySetStance(Stance.Standing);
+    }
 
-        return false;
+    private bool TrySetStance(Stance targetStance)
+    {
+        float desiredHeight = GetHeightForStance(targetStance);
+
+        if (desiredHeight > controller.height && !HasRoomForHeight(desiredHeight))
+            return false;
+
+        currentStance = targetStance;
+        return true;
+    }
+
+    private float GetHeightForStance(Stance stance)
+    {
+        switch (stance)
+        {
+            case Stance.Standing:
+                return standingHeight;
+
+            case Stance.Crouching:
+                return crouchHeight;
+
+            case Stance.Crawling:
+                return crawlHeight;
+
+            default:
+                return standingHeight;
+        }
     }
 
     private bool HasRoomForHeight(float desiredHeight)
