@@ -905,8 +905,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e572635a81584d9a8f3eb12158c59d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  controller: {fileID: 0}
-  playerCamera: {fileID: 0}
+  controller: {fileID: 493262991}
+  playerCamera: {fileID: 330585546}
   cameraComponent: {fileID: 0}
   walkSpeed: 6
   sprintSpeed: 16
