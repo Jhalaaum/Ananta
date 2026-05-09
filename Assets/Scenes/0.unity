@@ -926,9 +926,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1008727928}
-    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1008727934}
     - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       insertIndex: -1
@@ -1516,20 +1513,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
   m_PrefabInstance: {fileID: 423367971}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1008727928
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1008727927}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f0dc3e0251bb49b180058d457790474, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PatrolMovement
-  patrolRouteParent: {fileID: 730049504}
-  reachDistance: 0.5
 --- !u!4 &1008727933 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
@@ -1549,9 +1532,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GuardVision
   viewDistance: 10
   viewAngle: 90
+  eyeHeight: 1.6
   obstacleMask:
     serializedVersion: 2
     m_Bits: 0
+  drawDebug: 1
+  canSeeColor: {r: 1, g: 0, b: 0, a: 1}
+  normalVisionColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!114 &1008727940
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1563,16 +1550,61 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f59c6a11c8167467c9d7bb7c4f6ce66e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GuardStateMachine
+  m_EditorClassIdentifier: Assembly-CSharp::AdvancedGuardAIController
   currentState: 0
-  patrolSpeed: 5
-  investigateSpeed: 6
-  chaseSpeed: 16
-  lostPlayerTime: 5
-  searchTime: 5
-  catchDistance: 1.3
-  destinationReachDistance: 0.8
-  minAudibilityToInvestigate: 0.15
+  patrolRouteParent: {fileID: 730049504}
+  patrolPointReachDistance: 0.7
+  waitAtPatrolPointTime: 2
+  lookAroundTurnAngle: 55
+  lookAroundTurnSpeed: 90
+  patrolSpeed: 6
+  investigateSpeed: 8
+  chaseSpeed: 15
+  returnSpeed: 6
+  suspicion: 0
+  suspiciousThreshold: 35
+  chaseThreshold: 100
+  suspicionIncreasePerSecond: 35
+  suspicionDecreasePerSecond: 18
+  suspiciousLookTime: 1.3
+  farVisionMultiplier: 0.8
+  closeVisionMultiplier: 1.6
+  closeDistance: 4
+  silentVisionMultiplier: 0.75
+  walkingVisionMultiplier: 1
+  sprintingVisionMultiplier: 3
+  crouchingVisionMultiplier: 0.45
+  crawlingVisionMultiplier: 0.25
+  airborneVisionMultiplier: 1.3
+  minAudibilityToInvestigate: 0.12
+  soundSuspicionBoost: 25
+  catchDistance: 3
+  lostPlayerAfterSeconds: 2.5
+  searchRadius: 6
+  searchPointCount: 3
+  searchPointReachDistance: 0.8
+  waitAtSearchPointTime: 1.2
+  maxAttemptsToFindSearchPoint: 10
+  firstSearchLookTime: 1.5
+  forwardGuessDistance: 4
+  sideSearchDistance: 3
+  wideningSearchStep: 2.5
+  guardRenderer: {fileID: 0}
+  alertIcon: {fileID: 0}
+  patrolColor: {r: 1, g: 1, b: 1, a: 1}
+  suspiciousColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  investigateColor: {r: 1, g: 0.65, b: 0, a: 1}
+  chaseColor: {r: 1, g: 0, b: 0, a: 1}
+  searchColor: {r: 1, g: 0.35, b: 0, a: 1}
+  returnColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  printStateChanges: 1
+  centerVisionBonus: 1.35
+  edgeVisionPenalty: 0.55
+  suspicionMemoryTime: 1.2
+  suspicionGraceDecayMultiplier: 0.35
+  alertStateVisionMultiplier: 1.25
+  suspicionStateVisionMultiplier: 1.1
+  minimumVisionIncrease: 4
 --- !u!1001 &1046044782
 PrefabInstance:
   m_ObjectHideFlags: 0

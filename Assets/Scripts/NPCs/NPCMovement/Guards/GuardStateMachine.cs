@@ -76,7 +76,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private Vector3 previousKnownPlayerPosition;
     private Vector3 estimatedPlayerMoveDirection;
-    private bool hasEstimatedMoveDirection
+    private bool hasEstimatedMoveDirection;
 
     [Header("Visual Debug")]
     public Renderer guardRenderer;
@@ -615,14 +615,15 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         SetVisualState(searchColor, true);
 
-        PickNextSearchPoint();
+        PickNextSmartSearchPoint();
     }
-
     private void UpdateSearchArea()
     {
         if (isWaitingAtSearchPoint)
         {
             searchWaitTimer -= Time.deltaTime;
+
+            LookAroundDuringSearch();
 
             if (searchWaitTimer <= 0f)
             {
@@ -635,7 +636,7 @@ public class AdvancedGuardAIController : MonoBehaviour
                 }
                 else
                 {
-                    PickNextSearchPoint();
+                    PickNextSmartSearchPoint();
                 }
             }
 
@@ -648,40 +649,55 @@ public class AdvancedGuardAIController : MonoBehaviour
         {
             agent.isStopped = true;
             isWaitingAtSearchPoint = true;
-            searchWaitTimer = waitAtSearchPointTime;
+
+            searchWaitTimer = searchPointsVisited == 0
+                ? firstSearchLookTime
+                : waitAtSearchPointTime;
         }
     }
-
-    private void PickNextSearchPoint()
+    private void PickNextSmartSearchPoint()
     {
         agent.isStopped = false;
 
-        for (int i = 0; i < maxAttemptsToFindSearchPoint; i++)
+        Vector3 searchTarget;
+
+        switch (searchPointsVisited)
         {
-            Vector2 randomCircle = Random.insideUnitCircle * searchRadius;
+            case 0:
+                searchTarget = lastKnownPlayerPosition;
+                break;
 
-            Vector3 randomPosition = new Vector3(
-                lastKnownPlayerPosition.x + randomCircle.x,
-                lastKnownPlayerPosition.y,
-                lastKnownPlayerPosition.z + randomCircle.y
-            );
+            case 1:
+                if (hasEstimatedMoveDirection)
+                {
+                    searchTarget = lastKnownPlayerPosition + estimatedPlayerMoveDirection * forwardGuessDistance;
+                }
+                else
+                {
+                    searchTarget = lastKnownPlayerPosition + transform.forward * forwardGuessDistance;
+                }
+                break;
 
-            if (NavMesh.SamplePosition(
-                randomPosition,
-                out NavMeshHit hit,
-                2f,
-                NavMesh.AllAreas))
-            {
-                currentSearchPoint = hit.position;
-                agent.SetDestination(currentSearchPoint);
-                return;
-            }
+            case 2:
+                searchTarget = GetSideSearchPoint(1f);
+                break;
+
+            case 3:
+                searchTarget = GetSideSearchPoint(-1f);
+                break;
+
+            default:
+                searchTarget = GetWideningSearchPoint();
+                break;
         }
 
-        currentSearchPoint = lastKnownPlayerPosition;
-        agent.SetDestination(currentSearchPoint);
-    }
+        if (TrySetSearchDestination(searchTarget))
+        {
+            return;
+        }
 
+        TrySetSearchDestination(GetWideningSearchPoint());
+    }
     private void EnterReturnToPatrol()
     {
         currentState = GuardState.ReturnToPatrol;
@@ -816,5 +832,76 @@ public class AdvancedGuardAIController : MonoBehaviour
     {
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireSphere(lastKnownPlayerPosition, searchRadius);
+    }
+    private Vector3 GetSideSearchPoint(float side)
+    {
+        Vector3 baseDirection = hasEstimatedMoveDirection
+            ? estimatedPlayerMoveDirection
+            : transform.forward;
+
+        Vector3 sideDirection = Vector3.Cross(Vector3.up, baseDirection).normalized * side;
+
+        return lastKnownPlayerPosition + sideDirection * sideSearchDistance;
+}
+
+    private Vector3 GetWideningSearchPoint()
+    {
+        float currentRadius = searchRadius + searchPointsVisited * wideningSearchStep;
+
+        Vector2 randomCircle = Random.insideUnitCircle.normalized * Random.Range(searchRadius * 0.5f, currentRadius);
+
+        Vector3 randomPosition = new Vector3(
+            lastKnownPlayerPosition.x + randomCircle.x,
+            lastKnownPlayerPosition.y,
+            lastKnownPlayerPosition.z + randomCircle.y
+        );
+
+        return randomPosition;
+    }
+
+    private bool TrySetSearchDestination(Vector3 targetPosition)
+    {
+        if (NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
+        {
+            currentSearchPoint = hit.position;
+            agent.SetDestination(currentSearchPoint);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void LookAroundDuringSearch()
+    {
+        lookAroundTimer += Time.deltaTime;
+
+        float lookPhase = Mathf.Sin(lookAroundTimer * 3f);
+        float targetAngle = lookPhase * lookAroundTurnAngle;
+
+        Vector3 baseDirection;
+
+        if (hasEstimatedMoveDirection)
+        {
+            baseDirection = estimatedPlayerMoveDirection;
+        }
+        else
+        {
+            baseDirection = transform.forward;
+        }
+
+        if (baseDirection.sqrMagnitude < 0.01f)
+        {
+            return;
+        }
+
+        Vector3 targetDirection = Quaternion.Euler(0f, targetAngle, 0f) * baseDirection;
+
+        Quaternion targetRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            targetRotation,
+            lookAroundTurnSpeed * Time.deltaTime
+        );
     }
 }
