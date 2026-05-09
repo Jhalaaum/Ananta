@@ -904,4 +904,79 @@ public class AdvancedGuardAIController : MonoBehaviour
             lookAroundTurnSpeed * Time.deltaTime
         );
     }
+    private bool CanCapturePlayer()
+{
+    if (player == null || vision == null)
+    {
+        return false;
+    }
+
+    // Must be visible. This prevents unfair catches through walls/corners.
+    if (!vision.CanSeePlayer)
+    {
+        return false;
+    }
+
+    // Must be reachable through the NavMesh.
+    if (!CanReachPlayerByNavMesh(out float pathDistance))
+    {
+        return false;
+    }
+
+    // Must be close enough by walking path, not just straight-line distance.
+    return pathDistance <= catchDistance + catchPathExtraAllowance;
+}
+
+    private bool CanReachPlayerByNavMesh(out float pathDistance)
+    {
+        pathDistance = Mathf.Infinity;
+
+        if (agent == null || player == null)
+        {
+            return false;
+        }
+
+        if (!NavMesh.SamplePosition(
+            player.position,
+            out NavMeshHit playerHit,
+            playerNavMeshSampleDistance,
+            NavMesh.AllAreas))
+        {
+            return false;
+        }
+
+        NavMeshPath path = new NavMeshPath();
+
+        bool pathFound = NavMesh.CalculatePath(
+            transform.position,
+            playerHit.position,
+            NavMesh.AllAreas,
+            path
+        );
+
+        if (!pathFound || path.status != NavMeshPathStatus.PathComplete)
+        {
+            return false;
+        }
+
+        pathDistance = GetPathDistance(path);
+        return true;
+    }
+
+    private float GetPathDistance(NavMeshPath path)
+    {
+        if (path == null || path.corners == null || path.corners.Length < 2)
+        {
+            return 0f;
+        }
+
+        float distance = 0f;
+
+        for (int i = 1; i < path.corners.Length; i++)
+        {
+            distance += Vector3.Distance(path.corners[i - 1], path.corners[i]);
+        }
+
+        return distance;
+    }
 }
