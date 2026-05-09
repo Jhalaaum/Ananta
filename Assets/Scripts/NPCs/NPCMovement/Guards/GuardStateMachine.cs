@@ -61,6 +61,8 @@ public class AdvancedGuardAIController : MonoBehaviour
     [Header("Chase")]
     public float catchDistance = 1.4f;
     public float lostPlayerAfterSeconds = 2.5f;
+    public float catchPathExtraAllowance = 0.35f;
+    public float playerNavMeshSampleDistance = 1.5f;
 
     [Header("Search")]
     public float searchRadius = 6f;
@@ -596,12 +598,10 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         FaceTarget(agent.steeringTarget);
 
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-        if (distanceToPlayer <= catchDistance)
+        if (CanCapturePlayer())
         {
             EnterCapturePlayer();
-        }
+        }    
     }
 
     private void EnterSearchArea()
