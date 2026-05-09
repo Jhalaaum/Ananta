@@ -70,6 +70,7 @@ public class AdvancedGuardAIController : MonoBehaviour
     public float searchPointReachDistance = 0.8f;
     public float waitAtSearchPointTime = 1.2f;
     public int maxAttemptsToFindSearchPoint = 10;
+
     [Header("Smart Search")]
     public float firstSearchLookTime = 1.5f;
     public float forwardGuessDistance = 4f;
@@ -79,6 +80,14 @@ public class AdvancedGuardAIController : MonoBehaviour
     private Vector3 previousKnownPlayerPosition;
     private Vector3 estimatedPlayerMoveDirection;
     private bool hasEstimatedMoveDirection;
+    
+    [Header("Capture")]
+    public float captureFreezeDelay = 0.15f;
+    public bool disablePlayerOnCapture = true;
+    public MonoBehaviour[] playerScriptsToDisableOnCapture;
+    public Rigidbody playerRigidbody;
+    public CharacterController playerCharacterController;
+    public GameObject caughtUI;
 
     [Header("Visual Debug")]
     public Renderer guardRenderer;
