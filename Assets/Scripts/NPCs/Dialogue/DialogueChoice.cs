@@ -9,4 +9,5 @@ public class DialogueChoice
     public string responseText;
 
     public string nextLineID;
+    public int nextLineIndex = -1;
 }

@@ -13,6 +13,7 @@ public class PlayerNPCInteractor : MonoBehaviour
 
     private StoryNPCDialogue currentStoryNPC;
     private SimpleNPCDialogue currentSimpleNPC;
+
     private void Update()
     {
         if (dialogueManager != null && dialogueManager.IsDialogueActive)
@@ -38,6 +39,7 @@ public class PlayerNPCInteractor : MonoBehaviour
             dialogueUI?.HidePrompt();
         }
     }
+
     private void FindNearbyNPC()
     {
         currentStoryNPC = null;
@@ -84,8 +86,6 @@ public class PlayerNPCInteractor : MonoBehaviour
 
     private void TalkToNPC()
     {
-        isTalking = true;
-
         if (dialogueUI != null)
         {
             dialogueUI.HidePrompt();
@@ -116,19 +116,11 @@ public class PlayerNPCInteractor : MonoBehaviour
 
             return;
         }
-    }    private void OnDrawGizmosSelected()
+    }
+
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, interactDistance);
-    }
-    private void EndTalking()
-    {
-        isTalking = false;
-
-        if (dialogueUI != null)
-        {
-            dialogueUI.HideDialogue();
-            dialogueUI.HidePrompt();
-        }
     }
 }
