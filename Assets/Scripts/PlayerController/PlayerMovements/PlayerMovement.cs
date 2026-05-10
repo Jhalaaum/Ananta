@@ -451,7 +451,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (Keyboard.current.qKey.isPressed)
             leanInput = -1f;
-        else if (Keyboard.current.eKey.isPressed)
+        else if (Keyboard.current.vKey.isPressed)
             leanInput = 1f;
 
         float allowedDistance = leanInput != 0f ? GetAllowedLeanDistance(leanInput) : leanDistance;

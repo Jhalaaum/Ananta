@@ -2,28 +2,55 @@ using UnityEngine;
 
 public class StoryNPCDialogue : MonoBehaviour
 {
-    [Header("Story Dialogue")]
-    [TextArea(2, 4)]
-    public string[] storyLines;
+    [Header("Dialogue")]
+    public DialogueConversation conversation;
 
-    private int currentLineIndex = 0;
+    [Header("Interaction Feel")]
+    public bool facePlayerDuringDialogue = true;
+    public float facePlayerTurnSpeed = 8f;
 
-    public string GetNextLine()
+    private Transform currentPlayer;
+
+    public DialogueConversation GetConversation()
     {
-        if (storyLines == null || storyLines.Length == 0)
+        return conversation;
+    }
+
+    public void StartFacingPlayer(Transform player)
+    {
+        currentPlayer = player;
+    }
+
+    public void StopFacingPlayer()
+    {
+        currentPlayer = null;
+    }
+
+    private void Update()
+    {
+        if (!facePlayerDuringDialogue)
         {
-            return "";
+            return;
         }
 
-        string line = storyLines[currentLineIndex];
-
-        currentLineIndex++;
-
-        if (currentLineIndex >= storyLines.Length)
+        if (currentPlayer == null)
         {
-            currentLineIndex = 0;
+            return;
         }
 
-        return line;
+        Vector3 direction = currentPlayer.position - transform.position;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude < 0.01f)
+        {
+            return;
+        }
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRotation,
+            Time.deltaTime * facePlayerTurnSpeed
+        );
     }
 }

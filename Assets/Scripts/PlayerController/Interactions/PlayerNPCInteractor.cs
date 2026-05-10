@@ -7,23 +7,40 @@ public class PlayerNPCInteractor : MonoBehaviour
     public float interactDistance = 3f;
     public LayerMask npcLayer;
 
-    [Header("UI")]
+    [Header("References")]
     public DialogueUI dialogueUI;
+    public DialogueManager dialogueManager;
 
-    private GameObject currentNPC;
-
+    private StoryNPCDialogue currentStoryNPC;
+    private SimpleNPCDialogue currentSimpleNPC;
+    private bool isTalking;
     private void Update()
     {
         FindNearbyNPC();
 
-        if (currentNPC != null)
+        if (isTalking)
+        {
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                EndTalking();
+            }
+
+            return;
+        }
+
+        bool hasNPCNearby =
+            currentStoryNPC != null ||
+            currentSimpleNPC != null;
+
+        if (hasNPCNearby)
         {
             if (dialogueUI != null)
             {
                 dialogueUI.ShowPrompt();
             }
 
-            if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+            if (Keyboard.current != null &&
+                Keyboard.current.eKey.wasPressedThisFrame)
             {
                 TalkToNPC();
             }
@@ -33,26 +50,13 @@ public class PlayerNPCInteractor : MonoBehaviour
             if (dialogueUI != null)
             {
                 dialogueUI.HidePrompt();
-
-                if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-                {
-                    dialogueUI.HideDialogue();
-                }
-            }
-        }
-
-        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            if (dialogueUI != null)
-            {
-                dialogueUI.HideDialogue();
             }
         }
     }
-
     private void FindNearbyNPC()
     {
-        currentNPC = null;
+        currentStoryNPC = null;
+        currentSimpleNPC = null;
 
         Collider[] hits = Physics.OverlapSphere(
             transform.position,
@@ -67,7 +71,7 @@ public class PlayerNPCInteractor : MonoBehaviour
         }
 
         float closestDistance = Mathf.Infinity;
-        GameObject closestNPC = null;
+        Collider closestHit = null;
 
         foreach (Collider hit in hits)
         {
@@ -76,54 +80,70 @@ public class PlayerNPCInteractor : MonoBehaviour
             if (distance < closestDistance)
             {
                 closestDistance = distance;
-                closestNPC = hit.gameObject;
+                closestHit = hit;
             }
         }
 
-        currentNPC = closestNPC;
+        if (closestHit == null)
+        {
+            return;
+        }
+
+        currentStoryNPC = closestHit.GetComponentInParent<StoryNPCDialogue>();
+
+        if (currentStoryNPC == null)
+        {
+            currentSimpleNPC = closestHit.GetComponentInParent<SimpleNPCDialogue>();
+        }
     }
 
     private void TalkToNPC()
     {
-        if (currentNPC == null)
-        {
-            return;
-        }
-
-        StoryNPCDialogue storyDialogue = currentNPC.GetComponentInParent<StoryNPCDialogue>();
-
-        if (storyDialogue != null)
-        {
-            string line = storyDialogue.GetNextLine();
-            ShowLine("Story NPC: " + line);
-            return;
-        }
-
-        SimpleNPCDialogue simpleDialogue = currentNPC.GetComponentInParent<SimpleNPCDialogue>();
-
-        if (simpleDialogue != null)
-        {
-            string line = simpleDialogue.GetRandomLine();
-            ShowLine("NPC: " + line);
-            return;
-        }
-
-        ShowLine("This NPC has no dialogue component.");
-    }
-
-    private void ShowLine(string line)
-    {
-        Debug.Log(line);
+        isTalking = true;
 
         if (dialogueUI != null)
         {
-            dialogueUI.ShowDialogue(line);
+            dialogueUI.HidePrompt();
         }
-    }
 
-    private void OnDrawGizmosSelected()
+        if (currentStoryNPC != null)
+        {
+            DialogueConversation conversation = currentStoryNPC.GetConversation();
+
+            if (dialogueManager != null)
+            {
+                dialogueManager.StartDialogue(conversation, currentStoryNPC, transform);
+            }
+
+            return;
+        }
+
+        if (currentSimpleNPC != null)
+        {
+            string line = currentSimpleNPC.GetRandomLine();
+
+            if (dialogueUI != null)
+            {
+                dialogueUI.ShowDialoguePanel();
+                dialogueUI.ShowLine("Civilian", line);
+                dialogueUI.ShowContinuePrompt();
+            }
+
+            return;
+        }
+    }    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, interactDistance);
+    }
+    private void EndTalking()
+    {
+        isTalking = false;
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.HideDialogue();
+            dialogueUI.HidePrompt();
+        }
     }
 }
