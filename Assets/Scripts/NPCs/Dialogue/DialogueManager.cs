@@ -187,9 +187,7 @@ public class DialogueManager : MonoBehaviour
 
         StartCoroutine(ContinueAfterPlayerChoice(choice.nextLineIndex));
     }
-        currentLineIndex = choice.nextLineIndex;
-        ShowCurrentLine();
-    }
+ 
     private IEnumerator ContinueAfterPlayerChoice(int nextLineIndex)
     {
         yield return new WaitForSeconds(0.7f);
