@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab3327633db1744bfa092d56c72b627f, type: 3}
   m_Name: StoryNPC_BlackBazaarMerchant
   m_EditorClassIdentifier: Assembly-CSharp::NPCIdentityData
-  npcID: 
-  displayName: 
+  npcID: StoryNPC_BlackBazaarMerchant
+  displayName: Story Character
   npcType: 0
-  description: 
+  description: A story character of the black bazaar.

@@ -55,7 +55,7 @@ public class MouseLook : MonoBehaviour
         {
             targetLeanDirection = -1f;
         }
-        else if (Keyboard.current.eKey.isPressed)
+        else if (Keyboard.current.vKey.isPressed)
         {
             targetLeanDirection = 1f;
         }
