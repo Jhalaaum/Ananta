@@ -59,6 +59,10 @@ public class DialogueUI : MonoBehaviour
 
     public void HideDialogue()
     {
+        if (choiceContainer != null)
+        {
+            choiceContainer.gameObject.SetActive(false);
+        }
         if (dialoguePanel != null)
         {
             dialoguePanel.SetActive(false);
@@ -163,6 +167,11 @@ public class DialogueUI : MonoBehaviour
     {
         ClearChoices();
 
+        if (choiceContainer != null)
+        {
+            choiceContainer.gameObject.SetActive(false);
+        }
+
         if (choiceButtonPrefab != null)
         {
             choiceButtonPrefab.gameObject.SetActive(false);
@@ -177,6 +186,11 @@ public class DialogueUI : MonoBehaviour
         if (continuePromptText != null)
         {
             continuePromptText.gameObject.SetActive(false);
+        }
+
+        if (choiceContainer != null)
+        {
+            choiceContainer.gameObject.SetActive(true);
         }
 
         for (int i = 0; i < choices.Length; i++)
@@ -196,6 +210,7 @@ public class DialogueUI : MonoBehaviour
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() =>
             {
+                ClearChoices();
                 onChoiceSelected?.Invoke(choiceIndex);
             });
         }
@@ -207,12 +222,13 @@ public class DialogueUI : MonoBehaviour
             return;
         }
 
-        foreach (Transform child in choiceContainer)
+        for (int i = choiceContainer.childCount - 1; i >= 0; i--)
         {
-            child.gameObject.SetActive(false);
+            Transform child = choiceContainer.GetChild(i);
 
             if (choiceButtonPrefab != null && child.gameObject == choiceButtonPrefab.gameObject)
             {
+                child.gameObject.SetActive(false);
                 continue;
             }
 

@@ -13,44 +13,29 @@ public class PlayerNPCInteractor : MonoBehaviour
 
     private StoryNPCDialogue currentStoryNPC;
     private SimpleNPCDialogue currentSimpleNPC;
-    private bool isTalking;
     private void Update()
     {
-        FindNearbyNPC();
-
-        if (isTalking)
+        if (dialogueManager != null && dialogueManager.IsDialogueActive)
         {
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                EndTalking();
-            }
-
             return;
         }
 
-        bool hasNPCNearby =
-            currentStoryNPC != null ||
-            currentSimpleNPC != null;
+        FindNearbyNPC();
+
+        bool hasNPCNearby = currentStoryNPC != null || currentSimpleNPC != null;
 
         if (hasNPCNearby)
         {
-            if (dialogueUI != null)
-            {
-                dialogueUI.ShowPrompt();
-            }
+            dialogueUI?.ShowPrompt();
 
-            if (Keyboard.current != null &&
-                Keyboard.current.eKey.wasPressedThisFrame)
+            if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
             {
                 TalkToNPC();
             }
         }
         else
         {
-            if (dialogueUI != null)
-            {
-                dialogueUI.HidePrompt();
-            }
+            dialogueUI?.HidePrompt();
         }
     }
     private void FindNearbyNPC()

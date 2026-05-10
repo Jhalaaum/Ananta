@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 public class DialogueManager : MonoBehaviour
 {
@@ -89,6 +90,8 @@ public class DialogueManager : MonoBehaviour
 
     private void ShowCurrentLine()
     {
+        CancelInvoke(nameof(ShowChoicesOrContinue));
+
         if (!IsValidLineIndex(currentLineIndex))
         {
             EndDialogue();
@@ -176,13 +179,28 @@ public class DialogueManager : MonoBehaviour
 
         waitingForChoice = false;
 
-        if (choice.nextLineIndex < 0)
+        if (dialogueUI != null)
         {
-            EndDialogue();
-            return;
+            dialogueUI.ClearChoices();
+            dialogueUI.ShowLine("You", choice.responseText);
         }
 
+        StartCoroutine(ContinueAfterPlayerChoice(choice.nextLineIndex));
+    }
         currentLineIndex = choice.nextLineIndex;
+        ShowCurrentLine();
+    }
+    private IEnumerator ContinueAfterPlayerChoice(int nextLineIndex)
+    {
+        yield return new WaitForSeconds(0.7f);
+
+        if (nextLineIndex < 0)
+        {
+            EndDialogue();
+            yield break;
+        }
+
+        currentLineIndex = nextLineIndex;
         ShowCurrentLine();
     }
 
@@ -223,6 +241,7 @@ public class DialogueManager : MonoBehaviour
 
     public void EndDialogue()
     {
+        CancelInvoke(nameof(ShowChoicesOrContinue));
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         isDialogueActive = false;

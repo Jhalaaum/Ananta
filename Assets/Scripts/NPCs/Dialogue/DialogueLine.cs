@@ -4,6 +4,7 @@ using UnityEngine;
 [Serializable]
 public class DialogueLine
 {
+    public string lineID;
     public string speakerName;
 
     [TextArea(2, 5)]
