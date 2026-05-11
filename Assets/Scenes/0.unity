@@ -2766,7 +2766,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AdvancedGuardAIController
   currentState: 0
-  guardProfile: {fileID: 0}
+  guardProfile: {fileID: 11400000, guid: fe31a2f6a86ac49249c69a2ac9b9c10f, type: 2}
   patrolRouteParent: {fileID: 730049504}
   patrolPointReachDistance: 0.7
   waitAtPatrolPointTime: 2
