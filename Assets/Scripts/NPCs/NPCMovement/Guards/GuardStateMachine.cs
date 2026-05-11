@@ -20,6 +20,9 @@ public class AdvancedGuardAIController : MonoBehaviour
     [Header("Current State")]
     public GuardState currentState = GuardState.Patrol;
 
+    [Header("Guard Profile")]
+    public GuardProfile guardProfile;
+
     [Header("Patrol Route")]
     public Transform patrolRouteParent;
     public float patrolPointReachDistance = 0.7f;
@@ -170,9 +173,38 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void Start()
     {
+        ApplyGuardProfile();
         EnterPatrol();
     }
 
+    private void ApplyGuardProfile()
+    {
+        if (guardProfile == null)
+        {
+            return;
+        }
+
+        patrolSpeed = guardProfile.patrolSpeed;
+        investigateSpeed = guardProfile.investigateSpeed;
+        chaseSpeed = guardProfile.chaseSpeed;
+        returnSpeed = guardProfile.returnSpeed;
+
+        suspiciousThreshold = guardProfile.suspiciousThreshold;
+        chaseThreshold = guardProfile.chaseThreshold;
+        suspicionIncreasePerSecond = guardProfile.suspicionIncreasePerSecond;
+        suspicionDecreasePerSecond = guardProfile.suspicionDecreasePerSecond;
+        soundSuspicionBoost = guardProfile.soundSuspicionBoost;
+        minAudibilityToInvestigate = guardProfile.minAudibilityToInvestigate;
+
+        searchPointCount = guardProfile.searchPointCount;
+        searchRadius = guardProfile.searchRadius;
+
+        if (vision != null)
+        {
+            vision.viewDistance = guardProfile.viewDistance;
+            vision.viewAngle = guardProfile.viewAngle;
+        }
+    }
     private void Update()
     {
         UpdateSuspicionFromVision();
