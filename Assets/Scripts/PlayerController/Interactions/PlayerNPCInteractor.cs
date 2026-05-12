@@ -102,16 +102,13 @@ public class PlayerNPCInteractor : MonoBehaviour
 
             return;
         }
-
         if (currentSimpleNPC != null)
         {
-            string line = currentSimpleNPC.GetRandomLine();
+            DialogueConversation conversation = currentSimpleNPC.CreateRandomConversation();
 
-            if (dialogueUI != null)
+            if (conversation != null && dialogueManager != null)
             {
-                dialogueUI.ShowDialoguePanel();
-                dialogueUI.ShowLine("Civilian", line);
-                dialogueUI.ShowContinuePrompt();
+                dialogueManager.StartDialogue(conversation, null, transform);
             }
 
             return;
