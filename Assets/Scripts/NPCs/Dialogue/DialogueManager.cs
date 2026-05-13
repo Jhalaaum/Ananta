@@ -185,9 +185,10 @@ public class DialogueManager : MonoBehaviour
             dialogueUI.ShowLine("You", choice.responseText);
         }
 
+        CancelInvoke(nameof(ShowChoicesOrContinue));
+
         StartCoroutine(ContinueAfterPlayerChoice(choice.nextLineIndex));
-    }
- 
+    } 
     private IEnumerator ContinueAfterPlayerChoice(int nextLineIndex)
     {
         yield return new WaitForSeconds(0.7f);
@@ -212,9 +213,10 @@ public class DialogueManager : MonoBehaviour
 
         DialogueLine line = activeConversation.lines[currentLineIndex];
 
+        // If this line has choices, do NOT auto-continue
+        // The next line should ONLY come from the selected choice
         if (line.playerChoices != null && line.playerChoices.Length > 0)
         {
-            ShowChoicesOrContinue();
             return;
         }
 
@@ -228,7 +230,6 @@ public class DialogueManager : MonoBehaviour
 
         ShowCurrentLine();
     }
-
     private bool IsValidLineIndex(int index)
     {
         return activeConversation != null &&
