@@ -21,14 +21,12 @@ public class QuestStepData
     [Header("Optional Polish")]
     public bool showObjectiveMarker = true;
 
-    [Tooltip("Optional text shown when this step starts.")]
     [TextArea(2, 4)]
     public string stepStartMessage;
 
-    [Tooltip("Optional text shown when this step completes.")]
     [TextArea(2, 4)]
     public string stepCompleteMessage;
 
-    [Header("Optional Unlock")]
+    [Header("Step Rewards")]
     public QuestRewardData[] rewards;
 }

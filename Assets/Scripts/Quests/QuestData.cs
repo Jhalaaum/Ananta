@@ -13,9 +13,12 @@ public class QuestData : ScriptableObject
     [Header("Quest Steps")]
     public QuestStepData[] steps;
 
-    [Header("Completion")]
+    [Header("Quest Completion")]
     [TextArea(2, 4)]
     public string completionMessage;
+
+    [Header("Quest Completion Rewards")]
+    public QuestRewardData[] completionRewards;
 
     [Header("Optional Next Quest")]
     public QuestData nextQuestToUnlock;
