@@ -1592,7 +1592,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &34464177
 RectTransform:
   m_ObjectHideFlags: 0
@@ -40416,6 +40416,7 @@ MonoBehaviour:
   rewardPanel: {fileID: 34464176}
   rewardText: {fileID: 481703962}
   displayTime: 2
+  gapBetweenRewards: 0.25
 --- !u!114 &1484439839
 MonoBehaviour:
   m_ObjectHideFlags: 0
