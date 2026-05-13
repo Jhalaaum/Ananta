@@ -8,6 +8,9 @@ public class QuestGiver : MonoBehaviour
     [Header("NPC Target")]
     public QuestTarget questTarget;
 
+    [Header("NPC Info")]
+    public string speakerName = "NPC";
+
     [Header("Dialogue Lines")]
     [TextArea(2, 4)]
     public string beforeQuestLine = "I need your help.";
@@ -68,11 +71,11 @@ public class QuestGiver : MonoBehaviour
 
         if (dialogueUI != null)
         {
-            dialogueUI.ShowDialogue(line);
+            dialogueUI.ShowLine(speakerName, line);
         }
         else
         {
-            Debug.Log($"NPC says: {line}");
+            Debug.Log($"{speakerName}: {line}");
         }
     }
 }

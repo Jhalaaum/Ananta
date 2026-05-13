@@ -8,7 +8,13 @@ public class QuestReturnNPC : MonoBehaviour
     [Header("NPC Target")]
     public QuestTarget questTarget;
 
+    [Header("NPC Info")]
+    public string speakerName = "NPC";
+
     [Header("Dialogue")]
+    [TextArea(2, 4)]
+    public string notStartedLine = "I do not have anything for you right now.";
+
     [TextArea(2, 4)]
     public string notReadyLine = "You have not finished what I asked.";
 
@@ -20,9 +26,15 @@ public class QuestReturnNPC : MonoBehaviour
 
     public void Interact()
     {
-        if (relatedQuest == null || questTarget == null)
+        if (relatedQuest == null)
         {
-            Debug.LogWarning($"{name} is missing quest or target data.");
+            Debug.LogWarning($"{name} is missing relatedQuest.");
+            return;
+        }
+
+        if (questTarget == null)
+        {
+            Debug.LogWarning($"{name} is missing QuestTarget.");
             return;
         }
 
@@ -42,7 +54,7 @@ public class QuestReturnNPC : MonoBehaviour
 
         if (state == null)
         {
-            ShowLine(notReadyLine);
+            ShowLine(notStartedLine);
             return;
         }
 
@@ -54,8 +66,11 @@ public class QuestReturnNPC : MonoBehaviour
             return;
         }
 
-        if (step.objectiveType == QuestObjectiveType.ReturnToNPC &&
-            step.targetID == questTarget.targetID)
+        bool isCorrectObjective =
+            step.objectiveType == QuestObjectiveType.ReturnToNPC &&
+            step.targetID == questTarget.targetID;
+
+        if (isCorrectObjective)
         {
             ShowLine(returnLine);
 
@@ -76,11 +91,11 @@ public class QuestReturnNPC : MonoBehaviour
 
         if (dialogueUI != null)
         {
-            dialogueUI.ShowDialogue(line);
+            dialogueUI.ShowLine(speakerName, line);
         }
         else
         {
-            Debug.Log($"NPC says: {line}");
+            Debug.Log($"{speakerName}: {line}");
         }
     }
 }

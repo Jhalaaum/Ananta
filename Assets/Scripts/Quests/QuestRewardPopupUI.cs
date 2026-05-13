@@ -1,6 +1,8 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using System.Collections.Generic;
+
 
 public class QuestRewardPopupUI : MonoBehaviour
 {
@@ -9,9 +11,11 @@ public class QuestRewardPopupUI : MonoBehaviour
     public TMP_Text rewardText;
 
     [Header("Timing")]
-    public float displayTime = 2f;
+    public float displayTime = 2.2f;
+    public float gapBetweenRewards = 0.25f;
 
-    private Coroutine currentRoutine;
+    private Coroutine queueRoutine;
+    private readonly Queue<string> messageQueue = new Queue<string>();
 
     private void Start()
     {
@@ -45,34 +49,55 @@ public class QuestRewardPopupUI : MonoBehaviour
             message = BuildDefaultMessage(reward);
         }
 
-        ShowReward(message);
+        EnqueueMessage(message);
     }
 
-    private void ShowReward(string message)
+    private void EnqueueMessage(string message)
+    {
+        messageQueue.Enqueue(message);
+
+        if (queueRoutine == null)
+        {
+            queueRoutine = StartCoroutine(ProcessQueue());
+        }
+    }
+
+    private IEnumerator ProcessQueue()
+    {
+        while (messageQueue.Count > 0)
+        {
+            string message = messageQueue.Dequeue();
+
+            ShowInstant(message);
+
+            yield return new WaitForSeconds(displayTime);
+
+            HideInstant();
+
+            yield return new WaitForSeconds(gapBetweenRewards);
+        }
+
+        queueRoutine = null;
+    }
+
+    private void ShowInstant(string message)
     {
         if (rewardPanel == null || rewardText == null)
         {
-            Debug.LogWarning("QuestRewardPopupUI is missing references.");
+            Debug.LogWarning("QuestRewardPopupUI is missing rewardPanel or rewardText.");
             return;
         }
 
-        if (currentRoutine != null)
-        {
-            StopCoroutine(currentRoutine);
-        }
-
-        currentRoutine = StartCoroutine(ShowRoutine(message));
-    }
-
-    private IEnumerator ShowRoutine(string message)
-    {
         rewardPanel.SetActive(true);
         rewardText.text = message;
+    }
 
-        yield return new WaitForSeconds(displayTime);
-
-        rewardPanel.SetActive(false);
-        currentRoutine = null;
+    private void HideInstant()
+    {
+        if (rewardPanel != null)
+        {
+            rewardPanel.SetActive(false);
+        }
     }
 
     private string BuildDefaultMessage(QuestRewardData reward)
@@ -92,13 +117,13 @@ public class QuestRewardPopupUI : MonoBehaviour
                 return $"Skill unlocked: {reward.rewardID}";
 
             case QuestRewardType.GiveInformation:
-                return $"New information discovered";
+                return "New information discovered";
 
             case QuestRewardType.UnlockDialogue:
-                return $"New dialogue unlocked";
+                return "New dialogue unlocked";
 
             case QuestRewardType.UnlockQuest:
-                return $"New quest unlocked";
+                return "New quest unlocked";
 
             case QuestRewardType.IncreaseReputation:
                 return $"Reputation increased: {reward.rewardID} +{reward.amount}";
@@ -113,27 +138,19 @@ public class QuestRewardPopupUI : MonoBehaviour
                 return $"Vendor unlocked: {reward.rewardID}";
 
             case QuestRewardType.AddJournalEntry:
-                return $"Journal updated";
+                return "Journal updated";
 
             case QuestRewardType.EnableObject:
-                return $"Something changed nearby";
+                return "Something changed nearby";
 
             case QuestRewardType.DisableObject:
-                return $"Something changed nearby";
+                return "Something changed nearby";
 
             case QuestRewardType.Custom:
-                return $"Reward received";
+                return "Reward received";
 
             default:
-                return $"Reward received";
-        }
-    }
-
-    private void HideInstant()
-    {
-        if (rewardPanel != null)
-        {
-            rewardPanel.SetActive(false);
+                return "Reward received";
         }
     }
 }
