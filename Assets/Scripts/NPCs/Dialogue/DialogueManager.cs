@@ -213,14 +213,25 @@ public class DialogueManager : MonoBehaviour
 
         DialogueLine line = activeConversation.lines[currentLineIndex];
 
-        // If this line has choices, do NOT auto-continue
-        // The next line should ONLY come from the selected choice
         if (line.playerChoices != null && line.playerChoices.Length > 0)
         {
             return;
         }
 
-        currentLineIndex++;
+        if (line.endAfterThisLine)
+        {
+            EndDialogue();
+            return;
+        }
+
+        if (line.nextLineIndex >= 0)
+        {
+            currentLineIndex = line.nextLineIndex;
+        }
+        else
+        {
+            currentLineIndex++;
+        }
 
         if (!IsValidLineIndex(currentLineIndex))
         {

@@ -4,6 +4,8 @@ using UnityEngine;
 [Serializable]
 public class DialogueLine
 {
+    public bool endAfterThisLine;
+    public int nextLineIndex = -1;
     public string lineID;
     public string speakerName;
 
