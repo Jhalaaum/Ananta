@@ -15608,7 +15608,7 @@ MonoBehaviour:
   climbTopSearchStart: 0.2
   climbTopSearchEnd: 2.2
   climbTopSearchStep: 0.15
-  climbTopEdgeInset: 0.12
+  climbTopEdgeInset: 100
   climbTopGroundCheckDistance: 0.6
   climbTopRequiredSupport: 0.75
   enableHeadBob: 1
