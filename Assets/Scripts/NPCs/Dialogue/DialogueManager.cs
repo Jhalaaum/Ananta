@@ -14,7 +14,9 @@ public class DialogueManager : MonoBehaviour
     private int currentLineIndex;
     private bool isDialogueActive;
     private bool waitingForChoice;
-
+    private DialogueActor[] activeActors;
+    private DialogueMode dialogueMode;
+    private Coroutine autoContinueCoroutine;
     public bool IsDialogueActive => isDialogueActive;
 
     public void StartDialogue(DialogueConversation conversation, StoryNPCDialogue npc, Transform playerTransform)
@@ -51,7 +53,38 @@ public class DialogueManager : MonoBehaviour
 
         ShowCurrentLine();
     }
+    public void StartNPCConversation(DialogueConversation conversation, DialogueActor[] actors)
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
 
+        if (conversation == null || conversation.lines == null || conversation.lines.Length == 0)
+        {
+            Debug.LogWarning("No NPC conversation assigned.");
+            return;
+        }
+
+        activeConversation = conversation;
+        activeActors = actors;
+        activeNPC = null;
+        player = null;
+        currentLineIndex = 0;
+        isDialogueActive = true;
+        waitingForChoice = false;
+        dialogueMode = DialogueMode.NPCToNPC;
+
+        if (playerMovementScript != null)
+        {
+            playerMovementScript.enabled = true;
+        }
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.HidePrompt();
+        }
+
+        ShowCurrentLine();
+    }
     private void Update()
     {
         if (!isDialogueActive)
@@ -92,6 +125,12 @@ public class DialogueManager : MonoBehaviour
     {
         CancelInvoke(nameof(ShowChoicesOrContinue));
 
+        if (autoContinueCoroutine != null)
+        {
+            StopCoroutine(autoContinueCoroutine);
+            autoContinueCoroutine = null;
+        }
+
         if (!IsValidLineIndex(currentLineIndex))
         {
             EndDialogue();
@@ -100,6 +139,8 @@ public class DialogueManager : MonoBehaviour
 
         DialogueLine line = activeConversation.lines[currentLineIndex];
 
+        HandleActorFacing(line);
+
         if (dialogueUI != null)
         {
             dialogueUI.ShowLine(line.speakerName, line.lineText);
@@ -107,22 +148,46 @@ public class DialogueManager : MonoBehaviour
 
         Invoke(nameof(ShowChoicesOrContinue), GetLineRevealDelay(line.lineText));
     }
-
-    private float GetLineRevealDelay(string line)
+    private void HandleActorFacing(DialogueLine line)
     {
-        if (dialogueUI == null)
+        if (dialogueMode != DialogueMode.NPCToNPC)
         {
-            return 0f;
+            return;
         }
 
-        if (string.IsNullOrEmpty(line))
+        DialogueActor speaker = FindActorByID(line.speakerID);
+        DialogueActor lookTarget = FindActorByID(line.lookAtTargetID);
+
+        foreach (DialogueActor actor in activeActors)
         {
-            return 0f;
+            if (actor != null)
+            {
+                actor.StopLooking();
+            }
         }
 
-        return Mathf.Max(0.1f, line.Length * dialogueUI.typewriterSpeed + 0.05f);
+        if (speaker != null && lookTarget != null)
+        {
+            speaker.LookAt(lookTarget.transform);
+        }
     }
+    private DialogueActor FindActorByID(string actorID)
+    {
+        if (string.IsNullOrEmpty(actorID) || activeActors == null)
+        {
+            return null;
+        }
 
+        foreach (DialogueActor actor in activeActors)
+        {
+            if (actor != null && actor.actorID == actorID)
+            {
+                return actor;
+            }
+        }
+
+        return null;
+    }
     private void ShowChoicesOrContinue()
     {
         if (!isDialogueActive)
@@ -142,11 +207,31 @@ public class DialogueManager : MonoBehaviour
 
         DialogueLine line = activeConversation.lines[currentLineIndex];
 
+        if (dialogueMode == DialogueMode.NPCToNPC)
+        {
+            if (line.autoContinue)
+            {
+                autoContinueCoroutine = StartCoroutine(AutoContinueAfterDelay(line.autoContinueDelay));
+            }
+            else
+            {
+                if (dialogueUI != null)
+                {
+                    dialogueUI.ShowContinuePrompt();
+                }
+            }
+
+            return;
+        }
+
         if (line.playerChoices != null && line.playerChoices.Length > 0)
         {
             waitingForChoice = true;
 
-            dialogueUI.ShowChoices(line.playerChoices, HandleChoiceSelected);
+            if (dialogueUI != null)
+            {
+                dialogueUI.ShowChoices(line.playerChoices, HandleChoiceSelected);
+            }
         }
         else
         {
@@ -157,6 +242,25 @@ public class DialogueManager : MonoBehaviour
                 dialogueUI.ShowContinuePrompt();
             }
         }
+    }
+    private IEnumerator AutoContinueAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        GoToNextLine();
+    }
+    private float GetLineRevealDelay(string line)
+    {
+        if (dialogueUI == null)
+        {
+            return 0f;
+        }
+
+        if (string.IsNullOrEmpty(line))
+        {
+            return 0f;
+        }
+
+        return Mathf.Max(0.1f, line.Length * dialogueUI.typewriterSpeed + 0.05f);
     }
 
     private void HandleChoiceSelected(int choiceIndex)
@@ -275,5 +379,23 @@ public class DialogueManager : MonoBehaviour
         activeConversation = null;
         activeNPC = null;
         player = null;
+        if (autoContinueCoroutine != null)
+        {
+            StopCoroutine(autoContinueCoroutine);
+            autoContinueCoroutine = null;
+        }
+
+        if (activeActors != null)
+        {
+            foreach (DialogueActor actor in activeActors)
+            {
+                if (actor != null)
+                {
+                    actor.StopLooking();
+                }
+            }
+        }
+        activeActors = null;
+        dialogueMode = DialogueMode.PlayerToNPC;
     }
 }
