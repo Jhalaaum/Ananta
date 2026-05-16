@@ -22318,6 +22318,7 @@ GameObject:
   m_Component:
   - component: {fileID: 659969079}
   - component: {fileID: 659969078}
+  - component: {fileID: 659969080}
   m_Layer: 0
   m_Name: NPCConversationTrigger
   m_TagString: Untagged
@@ -22358,6 +22359,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &659969080
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 659969077}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!65 &662281504
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -25128,9 +25150,6 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2091586306}
     - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2091586311}
@@ -42333,9 +42352,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1759365798}
-    - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1759365803}
   m_SourcePrefab: {fileID: 100100000, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
 --- !u!1 &1491347282
@@ -48288,21 +48304,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
   m_PrefabInstance: {fileID: 1490306843}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1759365798
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1759365797}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c5c17627ad0d4b8884f447d6669edc4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StoryNPCDialogue
-  conversation: {fileID: 11400000, guid: 1dc3505759e784532ad5193ceabe6169, type: 2}
-  facePlayerDuringDialogue: 1
-  facePlayerTurnSpeed: 8
 --- !u!114 &1759365803
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -54117,21 +54118,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
   m_PrefabInstance: {fileID: 784235960}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2091586306
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2091586305}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c5c17627ad0d4b8884f447d6669edc4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StoryNPCDialogue
-  conversation: {fileID: 11400000, guid: 1dc3505759e784532ad5193ceabe6169, type: 2}
-  facePlayerDuringDialogue: 1
-  facePlayerTurnSpeed: 8
 --- !u!114 &2091586311
 MonoBehaviour:
   m_ObjectHideFlags: 0

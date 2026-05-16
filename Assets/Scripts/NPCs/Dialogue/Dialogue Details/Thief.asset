@@ -15,7 +15,7 @@ MonoBehaviour:
   conversationID: 2
   lines:
   - speakerName: Thief
-    speakerID: Thief_01
+    speakerID: guard_01
     lookAtTargetID: merchant
     lineText: No carts past the gate after sunset.
     nextLineIndex: 1
