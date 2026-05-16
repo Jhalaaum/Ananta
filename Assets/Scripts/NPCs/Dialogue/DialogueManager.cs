@@ -10,7 +10,7 @@ public class DialogueManager : MonoBehaviour
     private DialogueConversation activeConversation;
     private StoryNPCDialogue activeNPC;
     private Transform player;
-
+    private float inputUnlockTime;
     private int currentLineIndex;
     private bool isDialogueActive;
     private bool waitingForChoice;
@@ -34,6 +34,7 @@ public class DialogueManager : MonoBehaviour
         player = playerTransform;
         currentLineIndex = 0;
         isDialogueActive = true;
+        inputUnlockTime = Time.time + 0.2f;
         waitingForChoice = false;
 
         if (playerMovementScript != null)
@@ -70,6 +71,7 @@ public class DialogueManager : MonoBehaviour
         player = null;
         currentLineIndex = 0;
         isDialogueActive = true;
+        inputUnlockTime = Time.time + 0.2f;
         waitingForChoice = false;
         dialogueMode = DialogueMode.NPCToNPC;
 
@@ -96,7 +98,10 @@ public class DialogueManager : MonoBehaviour
         {
             return;
         }
-
+        if (Time.time < inputUnlockTime+ 0.5f)
+        {
+            return;
+        }
         if (Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             EndDialogue();

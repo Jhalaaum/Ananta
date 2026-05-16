@@ -21,7 +21,7 @@ MonoBehaviour:
     nextLineIndex: 1
     endAfterThisLine: 0
     autoContinue: 1
-    autoContinueDelay: 0
+    autoContinueDelay: 4
     playerChoices: []
   - speakerName: Merchant
     speakerID: merchant
@@ -39,5 +39,5 @@ MonoBehaviour:
     nextLineIndex: 0
     endAfterThisLine: 1
     autoContinue: 1
-    autoContinueDelay: 0
+    autoContinueDelay: 4
     playerChoices: []

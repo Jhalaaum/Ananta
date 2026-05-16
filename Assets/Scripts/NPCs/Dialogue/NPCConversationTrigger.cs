@@ -1,45 +1,64 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
-public class NPCConversationTrigger : MonoBehaviour
+public class NPCConversationInteractable : MonoBehaviour
 {
     [Header("Conversation")]
     public DialogueConversation conversation;
-
-    [Header("Actors")]
     public DialogueActor[] actors;
 
-    [Header("Trigger Settings")]
-    public bool playOnlyOnce = true;
-    public bool startWhenPlayerEnters = true;
+    [Header("References")]
+    public DialogueManager dialogueManager;
+    public DialogueUI dialogueUI;
 
-    private bool hasPlayed;
+    [Header("Prompt")]
+    public string promptText = "Press E to listen";
+
+    private bool playerInRange;
+
+    private void Update()
+    {
+        if (!playerInRange)
+        {
+            return;
+        }
+
+        if (dialogueManager != null && dialogueManager.IsDialogueActive)
+        {
+            return;
+        }
+
+        dialogueUI?.ShowPrompt(promptText);
+
+        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+        {
+            dialogueUI?.HidePrompt();
+
+            if (dialogueManager != null)
+            {
+                dialogueManager.StartNPCConversation(conversation, actors);
+            }
+        }
+    }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!startWhenPlayerEnters)
-        {
-            return;
-        }
-
-        if (hasPlayed && playOnlyOnce)
-        {
-            return;
-        }
-
         if (!other.CompareTag("Player"))
         {
             return;
         }
 
-        DialogueManager dialogueManager = FindObjectOfType<DialogueManager>();
+        playerInRange = true;
+    }
 
-        if (dialogueManager == null)
+    private void OnTriggerExit(Collider other)
+    {
+        if (!other.CompareTag("Player"))
         {
-            Debug.LogWarning("No DialogueManager found in scene.");
             return;
         }
 
-        hasPlayed = true;
-        dialogueManager.StartNPCConversation(conversation, actors);
+        playerInRange = false;
+        dialogueUI?.HidePrompt();
     }
 }

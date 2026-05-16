@@ -19211,7 +19211,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 800, y: 600}
@@ -19234,7 +19234,7 @@ Canvas:
   m_RenderMode: 0
   m_Camera: {fileID: 0}
   m_PlaneDistance: 100
-  m_PixelPerfect: 0
+  m_PixelPerfect: 1
   m_ReceivesEvents: 1
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
@@ -22308,78 +22308,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 659111989}
   m_Mesh: {fileID: -8860536619630564212, guid: 8a82c54dce449534f8aee167f26ff3ad, type: 3}
---- !u!1 &659969077
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 659969079}
-  - component: {fileID: 659969078}
-  - component: {fileID: 659969080}
-  m_Layer: 0
-  m_Name: NPCConversationTrigger
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &659969078
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 659969077}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: abbedc68169ee4df29cd43d142b5f043, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NPCConversationTrigger
-  conversation: {fileID: 11400000, guid: 1dc3505759e784532ad5193ceabe6169, type: 2}
-  actors:
-  - {fileID: 1759365803}
-  - {fileID: 2091586311}
-  playOnlyOnce: 1
-  startWhenPlayerEnters: 1
---- !u!4 &659969079
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 659969077}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -60.69, y: 1.59, z: -9.13}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &659969080
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 659969077}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!65 &662281504
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -38293,7 +38221,7 @@ MonoBehaviour:
   m_fontSize: 36
   m_fontSizeBase: 36
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
@@ -61138,6 +61066,79 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6358106229041778473}
   m_Mesh: {fileID: 2020843647326764662, guid: 8a82c54dce449534f8aee167f26ff3ad, type: 3}
+--- !u!1001 &8393080411897181212
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -60.69
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.59
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -9.13
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: dialogueUI
+      value: 
+      objectReference: {fileID: 581266290}
+    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: dialogueManager
+      value: 
+      objectReference: {fileID: 1244534062}
+    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: 'actors.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1759365803}
+    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: 'actors.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2091586311}
+    - target: {fileID: 5640419700068224506, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_Name
+      value: NPCConversationTrigger
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 729d15737802e4bad859eb405d269607, type: 3}
 --- !u!23 &8418640414604746450
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -61790,5 +61791,5 @@ SceneRoots:
   - {fileID: 2099501469}
   - {fileID: 714905538}
   - {fileID: 1490306843}
-  - {fileID: 659969079}
+  - {fileID: 8393080411897181212}
   - {fileID: 784235960}

@@ -33,14 +33,14 @@ public class DialogueUI : MonoBehaviour
         HidePrompt();
     }
 
-    public void ShowPrompt()
+    public void ShowPrompt(string prompt = "Press E to talk")
     {
         if (interactPromptText != null)
         {
             interactPromptText.gameObject.SetActive(true);
+            interactPromptText.text = prompt;
         }
     }
-
     public void HidePrompt()
     {
         if (interactPromptText != null)
