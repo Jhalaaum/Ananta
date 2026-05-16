@@ -14,11 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
   conversationID: Conversation_BlackBazaarMerchant_FirstMeeting
   lines:
-  - endAfterThisLine: 1
-    nextLineIndex: -1
-    lineID: 0
-    speakerName: Black Bazaar Merchant
+  - speakerName: Black Bazaar Merchant
+    speakerID: 
+    lookAtTargetID: 
     lineText: Where are you going
+    nextLineIndex: 1
+    endAfterThisLine: 0
+    autoContinue: 0
+    autoContinueDelay: 1.2
     playerChoices:
     - playerSpeakerName: You
       responseText: Home
@@ -27,16 +30,22 @@ MonoBehaviour:
     - playerSpeakerName: You
       responseText: Not Home
       nextLineID: 2
-      nextLineIndex: 1
-  - endAfterThisLine: 1
-    nextLineIndex: -1
-    lineID: 1
-    speakerName: Black Bazaar Merchant
+      nextLineIndex: 2
+  - speakerName: Black Bazaar Merchant
+    speakerID: 
+    lookAtTargetID: 
     lineText: I am the goat
-    playerChoices: []
-  - endAfterThisLine: 1
     nextLineIndex: -1
-    lineID: 2
-    speakerName: Black Bazaar Merchant
+    endAfterThisLine: 1
+    autoContinue: 0
+    autoContinueDelay: 1.2
+    playerChoices: []
+  - speakerName: Black Bazaar Merchant
+    speakerID: 
+    lookAtTargetID: 
     lineText: I am not the goat
+    nextLineIndex: -1
+    endAfterThisLine: 1
+    autoContinue: 0
+    autoContinueDelay: 1.2
     playerChoices: []
