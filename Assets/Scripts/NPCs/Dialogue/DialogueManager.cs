@@ -36,6 +36,7 @@ public class DialogueManager : MonoBehaviour
         isDialogueActive = true;
         inputUnlockTime = Time.time + 0.2f;
         waitingForChoice = false;
+        dialogueMode = DialogueMode.PlayerToNPC;
 
         if (playerMovementScript != null)
         {
@@ -378,6 +379,7 @@ public class DialogueManager : MonoBehaviour
 
         if (activeNPC != null)
         {
+            activeNPC.MarkConversationCompleted();
             activeNPC.StopFacingPlayer();
         }
 
