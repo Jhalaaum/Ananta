@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6625dd72531cf421798bac9111b0e5d8, type: 3}
   m_Name: Q_TestRewards
   m_EditorClassIdentifier: Assembly-CSharp::QuestData
-  questID: 'test_rewards '
-  questName: 'Test Rewards Quest '
+  questID: test_rewards
+  questName: Test Rewards Quest
   questDescription: A simple quest used to test modular rewards.
   steps:
   - stepName: 'Collect Test Clue '
@@ -21,7 +21,7 @@ MonoBehaviour:
 
 '
     objectiveType: 2
-    targetID: 'test_clue '
+    targetID: test_clue
     requiredAmount: 1
     showObjectiveMarker: 1
     stepStartMessage: Idk

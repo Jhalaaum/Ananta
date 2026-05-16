@@ -41922,7 +41922,7 @@ GameObject:
   - component: {fileID: 1484439838}
   - component: {fileID: 1484439837}
   m_Layer: 0
-  m_Name: GameSystems
+  m_Name: QuestManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
