@@ -430,7 +430,7 @@ MonoBehaviour:
   - The market is crowded today.
   - I heard the palace guards are restless.
   - The forest path feels strange lately.
---- !u!114 &19990491
+--- !u!114 &19990497
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -439,11 +439,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 19990488}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44178183be5db4b1db6be94831efd9d5, type: 3}
+  m_Script: {fileID: 11500000, guid: 1cf0f6697b9b243bf93fef0442de0298, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SimpleNPCDialogue
-  speakerName: Civilian
-  lines: []
+  m_EditorClassIdentifier: Assembly-CSharp::NPCDialogueInteractable
+  promptText: Press E to talk
+  storyNPC: {fileID: 0}
+  simpleNPC: {fileID: 0}
+  dialogueManager: {fileID: 0}
+  canInteract: 1
 --- !u!65 &26616311
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1014,7 +1017,7 @@ PrefabInstance:
       addedObject: {fileID: 19990490}
     - targetCorrespondingSourceObject: {fileID: 5362006542756640345, guid: 2f654d768d66940e7b6680d7b88d413a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 19990491}
+      addedObject: {fileID: 19990497}
   m_SourcePrefab: {fileID: 100100000, guid: 2f654d768d66940e7b6680d7b88d413a, type: 3}
 --- !u!1 &101471522
 GameObject:
@@ -6202,13 +6205,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a43f1c19d8862449db1eeee1e0509748, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerNPCInteractor
+  playerCamera: {fileID: 330585545}
   interactDistance: 3
-  npcLayer:
+  interactLayerMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 704
+  triggerInteraction: 2
   dialogueUI: {fileID: 581266290}
   dialogueManager: {fileID: 1244534062}
-  blockPromptWhenDialogueTriggerNearby: 1
+  fallbackPrompt: Press E to interact
+  showDebugRay: 1
+  showDebugLogs: 0
 --- !u!1 &504902371
 GameObject:
   m_ObjectHideFlags: 0
@@ -11670,6 +11677,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1341440554}
+    - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1341440559}
   m_SourcePrefab: {fileID: 100100000, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
 --- !u!1 &855114928
 GameObject:
@@ -18244,6 +18254,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCIdentity
   identityData: {fileID: 11400000, guid: c98411987b2324e4bad1bc578c869564, type: 2}
+--- !u!114 &1341440559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1341440548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cf0f6697b9b243bf93fef0442de0298, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCDialogueInteractable
+  promptText: Press E to talk
+  storyNPC: {fileID: 0}
+  simpleNPC: {fileID: 0}
+  dialogueManager: {fileID: 0}
+  canInteract: 1
 --- !u!65 &1343966560
 BoxCollider:
   m_ObjectHideFlags: 0
