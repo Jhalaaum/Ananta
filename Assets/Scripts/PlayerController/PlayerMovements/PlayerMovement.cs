@@ -429,6 +429,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void UpdateStanceDimensions()
     {
+        if (controller == null || !controller.enabled)
+            return;
         targetHeight = GetHeightForStance(currentStance);
 
         controller.height = Mathf.Lerp(
@@ -439,18 +441,27 @@ public class PlayerMovement : MonoBehaviour
 
         controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
 
-        if (currentStance == Stance.Standing)
-            controller.stepOffset = standingStepOffset;
-        else if (currentStance == Stance.Crouching)
-            controller.stepOffset = crouchStepOffset;
+        // FIX: Prevent PhysX crashes by zeroing stepOffset in the air
+        if (!IsGrounded)
+        {
+            controller.stepOffset = 0f;
+        }
         else
-            controller.stepOffset = crawlStepOffset;
+        {
+            if (currentStance == Stance.Standing)
+                controller.stepOffset = standingStepOffset;
+            else if (currentStance == Stance.Crouching)
+                controller.stepOffset = crouchStepOffset;
+            else
+                controller.stepOffset = crawlStepOffset;
+        }
 
         targetCameraY = controller.height * eyeLevelRatio;
     }
-
     private void MovePlayer()
     {
+        if (controller == null || !controller.enabled || IsMovementLocked)
+            return;
         bool wasGrounded = IsGrounded;
         float previousVerticalVelocity = verticalVelocity.y;
 
@@ -1007,9 +1018,6 @@ public class PlayerMovement : MonoBehaviour
         if (!enableMantle)
             return false;
 
-        if (!IsGrounded)
-            return false;
-
         if (currentStance != Stance.Standing)
             return false;
 
@@ -1017,6 +1025,7 @@ public class PlayerMovement : MonoBehaviour
             return false;
 
         Vector3 forward = transform.forward;
+        
         Vector3 lowerOrigin = transform.position + Vector3.up * mantleMinHeight;
         Vector3 upperOrigin = transform.position + Vector3.up * mantleMaxHeight;
 
@@ -1043,13 +1052,13 @@ public class PlayerMovement : MonoBehaviour
         if (upperBlocked)
             return false;
 
-        Vector3 ledgeProbeStart = wallHit.point + forward * mantleForwardOffset + Vector3.up * mantleMaxHeight;
+        Vector3 ledgeProbeStart = wallHit.point + forward * 0.1f + Vector3.up * (mantleMaxHeight + 0.5f);
 
         bool foundTop = Physics.Raycast(
             ledgeProbeStart,
             Vector3.down,
             out RaycastHit topHit,
-            mantleMaxHeight + 0.5f,
+            mantleMaxHeight + 1.0f,
             mantleMask,
             QueryTriggerInteraction.Ignore
         );
@@ -1062,8 +1071,8 @@ public class PlayerMovement : MonoBehaviour
         if (mantleHeight < mantleMinHeight || mantleHeight > mantleMaxHeight)
             return false;
 
-        Vector3 targetPosition = topHit.point + forward * 0.25f;
-        targetPosition.y += 0.03f;
+        Vector3 targetPosition = topHit.point + forward * (controller.radius + 0.05f);
+        targetPosition.y += 0.05f;
 
         if (!HasRoomAtPosition(targetPosition, standingHeight))
             return false;
@@ -1071,7 +1080,6 @@ public class PlayerMovement : MonoBehaviour
         StartCoroutine(MantleRoutine(targetPosition));
         return true;
     }
-
     private IEnumerator MantleRoutine(Vector3 targetPosition)
     {
         isMantling = true;
@@ -1113,7 +1121,7 @@ public class PlayerMovement : MonoBehaviour
     private bool HasRoomAtPosition(Vector3 position, float desiredHeight)
     {
         float radius = Mathf.Max(0.05f, controller.radius - standCheckRadiusPadding);
-
+        
         Vector3 bottom = position + Vector3.up * (radius + standCheckFloorOffset);
         Vector3 top = position + Vector3.up * (desiredHeight - radius);
 
@@ -1121,19 +1129,17 @@ public class PlayerMovement : MonoBehaviour
             bottom,
             top,
             radius,
-            mantleCheckResults,
+            standCheckResults,
             obstructionMask,
             QueryTriggerInteraction.Ignore
         );
 
         for (int i = 0; i < hits; i++)
         {
-            Collider hit = mantleCheckResults[i];
+            Collider hit = standCheckResults[i];
+            if (hit == null) continue;
 
-            if (hit == null)
-                continue;
-
-            if (hit.transform == transform || hit.transform.IsChildOf(transform))
+            if (hit == controller || hit.transform.IsChildOf(transform))
                 continue;
 
             return false;
@@ -1141,7 +1147,6 @@ public class PlayerMovement : MonoBehaviour
 
         return true;
     }
-
     private void HandleLeanPosition()
     {
         if (Keyboard.current == null || playerCamera == null || isInteracting || isHidden || isMantling || isWallClimbing)
