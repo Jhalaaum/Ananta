@@ -34,7 +34,21 @@ public class DialogueUI : MonoBehaviour
     }
 
     private object promptOwner;
+    public void ResetDialogueUIForCheckpoint()
+    {
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+        }
 
+        isTyping = false;
+        currentFullLine = "";
+
+        HidePrompt();
+        HideDialogue();
+        ClearChoices();
+    }
     public void ShowPrompt(string prompt = "Press E to talk", object owner = null)
     {
         if (promptOwner != null && owner != null && promptOwner != owner)

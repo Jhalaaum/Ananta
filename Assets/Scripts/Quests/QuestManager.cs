@@ -85,7 +85,118 @@ public class QuestManager : MonoBehaviour
 
         OnQuestUpdated?.Invoke(newState);
     }
+    public QuestSaveCollection CaptureQuestProgress()
+    {
+        QuestSaveCollection collection = new QuestSaveCollection();
 
+        foreach (QuestState state in activeQuests)
+        {
+            if (state == null || state.questData == null)
+            {
+                continue;
+            }
+
+            QuestSaveData saveData = new QuestSaveData
+            {
+                questID = state.questData.questID,
+                currentStepIndex = state.currentStepIndex,
+                currentAmount = state.currentAmount,
+                isStarted = state.isStarted,
+                isCompleted = state.isCompleted
+            };
+
+            collection.quests.Add(saveData);
+        }
+
+        foreach (string completedQuestID in completedQuestIDs)
+        {
+            bool alreadyIncluded = false;
+
+            foreach (QuestSaveData quest in collection.quests)
+            {
+                if (quest.questID == completedQuestID)
+                {
+                    alreadyIncluded = true;
+                    quest.isCompleted = true;
+                    break;
+                }
+            }
+
+            if (!alreadyIncluded)
+            {
+                collection.quests.Add(new QuestSaveData
+                {
+                    questID = completedQuestID,
+                    currentStepIndex = 0,
+                    currentAmount = 0,
+                    isStarted = true,
+                    isCompleted = true
+                });
+            }
+        }
+
+        return collection;
+    }
+    public void RestoreQuestProgress(QuestSaveCollection saveCollection)
+    {
+        activeQuests.Clear();
+        completedQuestIDs.Clear();
+
+        if (saveCollection == null || saveCollection.quests == null)
+        {
+            return;
+        }
+
+        foreach (QuestSaveData saveData in saveCollection.quests)
+        {
+            if (saveData == null || string.IsNullOrWhiteSpace(saveData.questID))
+            {
+                continue;
+            }
+
+            QuestData questData = null;
+
+            if (QuestDatabase.Instance != null)
+            {
+                questData = QuestDatabase.Instance.GetQuestByID(saveData.questID);
+            }
+
+            if (questData == null)
+            {
+                Debug.LogWarning($"[QuestManager] Could not restore quest. Missing quest data for ID: {saveData.questID}");
+                continue;
+            }
+
+            QuestState restoredState = new QuestState(questData)
+            {
+                currentStepIndex = saveData.currentStepIndex,
+                currentAmount = saveData.currentAmount,
+                isStarted = saveData.isStarted,
+                isCompleted = saveData.isCompleted
+            };
+
+            activeQuests.Add(restoredState);
+
+            if (saveData.isCompleted && !completedQuestIDs.Contains(saveData.questID))
+            {
+                completedQuestIDs.Add(saveData.questID);
+            }
+
+            if (!saveData.isCompleted)
+            {
+                OnQuestStarted?.Invoke(restoredState);
+
+                QuestStepData currentStep = restoredState.GetCurrentStep();
+
+                if (currentStep != null)
+                {
+                    OnQuestStepStarted?.Invoke(currentStep);
+                }
+
+                OnQuestUpdated?.Invoke(restoredState);
+            }
+        }
+    }
     public void ProgressObjective(QuestObjectiveType objectiveType, string targetID, int amount = 1)
     {
         if (string.IsNullOrWhiteSpace(targetID))

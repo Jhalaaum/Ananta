@@ -779,6 +779,21 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         Debug.Log("PLAYER CAUGHT by " + gameObject.name);
 
+        CatchPlayer();
+    }
+
+    private void CatchPlayer()
+    {
+        GuardCaughtReporter reporter = GetComponent<GuardCaughtReporter>();
+
+        if (reporter != null)
+        {
+            reporter.ReportPlayerCaught();
+        }
+        else
+        {
+            Debug.LogWarning($"{gameObject.name} has no GuardCaughtReporter attached.");
+        }
     }
 
     private void UpdateCapturePlayer()
@@ -788,7 +803,6 @@ public class AdvancedGuardAIController : MonoBehaviour
             FaceTarget(player.position);
         }
     }
-
     private int GetNearestPatrolPointIndex()
     {
         int nearestIndex = 0;

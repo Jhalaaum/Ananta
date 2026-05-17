@@ -5243,6 +5243,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1500860559}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1500860571}
   m_SourcePrefab: {fileID: 100100000, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
 --- !u!1 &403195913
 GameObject:
@@ -5836,6 +5839,177 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 449994611}
   m_Mesh: {fileID: -8707661616284395026, guid: 9c4fbb562fc9cc4438226df3fa551d96, type: 3}
+--- !u!1 &463113603
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 463113610}
+  - component: {fileID: 463113609}
+  - component: {fileID: 463113608}
+  - component: {fileID: 463113607}
+  - component: {fileID: 463113606}
+  - component: {fileID: 463113605}
+  - component: {fileID: 463113604}
+  - component: {fileID: 463113613}
+  - component: {fileID: 463113612}
+  - component: {fileID: 463113611}
+  m_Layer: 0
+  m_Name: Game Systems
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &463113604
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9414e115aecc4499ea4537f41deb875b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SaveManager
+  player: {fileID: 0}
+  playerCheckpointState: {fileID: 0}
+  zoneTracker: {fileID: 0}
+  checkpointFileName: checkpoint_save.json
+  showDebugLogs: 1
+--- !u!114 &463113605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df6052ee1aae45c98a3910ffca30055, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestTestStarter
+  questToStart: {fileID: 11400000, guid: 3401c63be53ed460d8b9613ad404c12a, type: 2}
+--- !u!114 &463113606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32c9182366fde4a9a89b0575d75ffc19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestRewardPopupUI
+  rewardPanel: {fileID: 34464176}
+  rewardText: {fileID: 481703962}
+  displayTime: 2
+  gapBetweenRewards: 0.25
+--- !u!114 &463113607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d8a769dc991c404c807b7085c71f458, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestRewardManager
+  showDebugLogs: 1
+--- !u!114 &463113608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3e2e57489143439f9cc318dc668dda9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestManager
+  showDebugLogs: 1
+  activeQuests: []
+  completedQuestIDs: []
+--- !u!114 &463113609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 561ddb9e5db2e4c4ba97f6951173786a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueManager
+  dialogueUI: {fileID: 581266290}
+  playerMovementScript: {fileID: 493262995}
+--- !u!4 &463113610
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+  m_LocalPosition: {x: 0, y: 3.42, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &463113611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 826b8c0782d7146059ed0500a881478a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCaughtManager
+  caughtDelay: 0.5
+  isHandlingCaught: 0
+  caughtPanel: {fileID: 0}
+  showDebugLogs: 1
+--- !u!114 &463113612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f6a39ed503c6477386251f9d91dc0c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointManager
+  reloadCheckpointWhenCaught: 1
+  saveAfterApplyingCaughtPenalty: 0
+  showDebugLogs: 1
+--- !u!114 &463113613
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0f75a0f306234eb48fcc1feac5b6b07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PendingCheckpointLoader
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0
@@ -5985,6 +6159,8 @@ GameObject:
   - component: {fileID: 493262994}
   - component: {fileID: 493262995}
   - component: {fileID: 493262996}
+  - component: {fileID: 493262997}
+  - component: {fileID: 493262998}
   m_Layer: 0
   m_Name: First Person Player
   m_TagString: Player
@@ -6212,10 +6388,37 @@ MonoBehaviour:
     m_Bits: 704
   triggerInteraction: 2
   dialogueUI: {fileID: 581266290}
-  dialogueManager: {fileID: 1244534062}
+  dialogueManager: {fileID: 0}
   fallbackPrompt: Press E to interact
   showDebugRay: 1
   showDebugLogs: 0
+--- !u!114 &493262997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 493262990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7fd4ea6729a6401c8154c2da2257f15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCheckpointState
+  characterController: {fileID: 493262991}
+  playerRigidbody: {fileID: 0}
+--- !u!114 &493262998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 493262990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92cb6975bdb9442cba4ea7c7e00ebd2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneTracker
+  currentZoneID: default_zone
 --- !u!1 &504902371
 GameObject:
   m_ObjectHideFlags: 0
@@ -16616,52 +16819,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1237923655}
   m_Mesh: {fileID: -8860536619630564212, guid: 8a82c54dce449534f8aee167f26ff3ad, type: 3}
---- !u!1 &1244534061
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1244534063}
-  - component: {fileID: 1244534062}
-  m_Layer: 0
-  m_Name: DialogueManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1244534062
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1244534061}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 561ddb9e5db2e4c4ba97f6951173786a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DialogueManager
-  dialogueUI: {fileID: 581266290}
-  playerMovementScript: {fileID: 493262995}
---- !u!4 &1244534063
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1244534061}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 197.75203, y: 0, z: -2392.1375}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1252414206
 GameObject:
   m_ObjectHideFlags: 0
@@ -19806,98 +19963,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCIdentity
   identityData: {fileID: 11400000, guid: 5ca105e38309640608e1d1d6f72ad463, type: 2}
---- !u!1 &1484439836
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1484439841}
-  - component: {fileID: 1484439840}
-  - component: {fileID: 1484439839}
-  - component: {fileID: 1484439838}
-  - component: {fileID: 1484439837}
-  m_Layer: 0
-  m_Name: QuestManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1484439837
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1484439836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8df6052ee1aae45c98a3910ffca30055, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestTestStarter
-  questToStart: {fileID: 11400000, guid: 3401c63be53ed460d8b9613ad404c12a, type: 2}
---- !u!114 &1484439838
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1484439836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32c9182366fde4a9a89b0575d75ffc19, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestRewardPopupUI
-  rewardPanel: {fileID: 34464176}
-  rewardText: {fileID: 481703962}
-  displayTime: 2
-  gapBetweenRewards: 0.25
---- !u!114 &1484439839
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1484439836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d8a769dc991c404c807b7085c71f458, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestRewardManager
-  showDebugLogs: 1
---- !u!114 &1484439840
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1484439836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d3e2e57489143439f9cc318dc668dda9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestManager
-  showDebugLogs: 1
-  activeQuests: []
-  completedQuestIDs: []
---- !u!4 &1484439841
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1484439836}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.28812, y: 3.48155, z: 0.93385}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &1485530670
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -20230,6 +20295,19 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
   m_PrefabInstance: {fileID: 399963380}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1500860571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500860558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07df4dfb727b04d209c7533a16ab3096, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardCaughtReporter
+  guardID: guard_01
 --- !u!65 &1513970380
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21956,6 +22034,76 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1779813099}
   m_Mesh: {fileID: -8860536619630564212, guid: 8a82c54dce449534f8aee167f26ff3ad, type: 3}
+--- !u!1 &1790789919
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1790789922}
+  - component: {fileID: 1790789921}
+  - component: {fileID: 1790789920}
+  m_Layer: 10
+  m_Name: Checkpoint_MarketEntrance
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1790789920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790789919}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1305a3d2423e947989eb7191f69a0aef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Checkpoint
+  checkpointID: checkpoint_01
+  checkpointDisplayName: Checkpoint
+  saveOnlyOnce: 0
+  playerTag: Player
+--- !u!65 &1790789921
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790789919}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &1790789922
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1790789919}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -60.86, y: 1.58, z: -9.4}
+  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1794424466
 GameObject:
   m_ObjectHideFlags: 0
@@ -22672,7 +22820,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0a87a18ddecb54f4ab43f3368c7cc5ff, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2063118188}
   m_SourcePrefab: {fileID: 100100000, guid: 0a87a18ddecb54f4ab43f3368c7cc5ff, type: 3}
 --- !u!1 &1875269311
 GameObject:
@@ -23974,6 +24125,32 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 2785786425442716585, guid: 427134db07784e04eb7a7ab1cf7a5fae, type: 3}
+--- !u!1 &2063118184 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0a87a18ddecb54f4ab43f3368c7cc5ff, type: 3}
+  m_PrefabInstance: {fileID: 1862635658}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &2063118188
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2063118184}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.023274792, y: 0.020452516, z: 0.020164017}
+  m_Center: {x: 0.0010559536, y: -1.22511255e-11, z: 0.000082009006}
 --- !u!65 &2067916240
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -31064,7 +31241,7 @@ PrefabInstance:
     - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
       propertyPath: dialogueManager
       value: 
-      objectReference: {fileID: 1244534062}
+      objectReference: {fileID: 0}
     - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
       propertyPath: 'actors.Array.data[0]'
       value: 
@@ -31699,20 +31876,20 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 410087041}
+  - {fileID: 463113610}
   - {fileID: 832575519}
   - {fileID: 299684430}
   - {fileID: 493262992}
   - {fileID: 2114281814}
   - {fileID: 700567106}
+  - {fileID: 1790789922}
   - {fileID: 730049504}
   - {fileID: 399963380}
   - {fileID: 83368671}
   - {fileID: 854216007}
   - {fileID: 581266289}
   - {fileID: 857188205}
-  - {fileID: 1244534063}
   - {fileID: 150163990}
-  - {fileID: 1484439841}
   - {fileID: 1794424472}
   - {fileID: 1120334592}
   - {fileID: 1681136729}
