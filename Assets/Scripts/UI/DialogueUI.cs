@@ -33,6 +33,39 @@ public class DialogueUI : MonoBehaviour
         HidePrompt();
     }
 
+    private object promptOwner;
+
+    public void ShowPrompt(string prompt = "Press E to talk", object owner = null)
+    {
+        if (promptOwner != null && owner != null && promptOwner != owner)
+        {
+            return;
+        }
+
+        promptOwner = owner;
+
+        if (interactPromptText != null)
+        {
+            interactPromptText.gameObject.SetActive(true);
+            interactPromptText.text = prompt;
+        }
+    }
+
+    public void HidePrompt(object owner = null)
+    {
+        if (promptOwner != null && owner != null && promptOwner != owner)
+        {
+            return;
+        }
+
+        promptOwner = null;
+
+        if (interactPromptText != null)
+        {
+            interactPromptText.gameObject.SetActive(false);
+        }
+    }
+
     public void ShowPrompt(string prompt = "Press E to talk")
     {
         if (interactPromptText != null)

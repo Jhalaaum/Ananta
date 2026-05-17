@@ -28,11 +28,11 @@ public class NPCConversationInteractable : MonoBehaviour
             return;
         }
 
-        dialogueUI?.ShowPrompt(promptText);
+        dialogueUI.ShowPrompt(promptText, this);
 
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
-            dialogueUI?.HidePrompt();
+            dialogueUI?.HidePrompt(this);
 
             if (dialogueManager != null)
             {

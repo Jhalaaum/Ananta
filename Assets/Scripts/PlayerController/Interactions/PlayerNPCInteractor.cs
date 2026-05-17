@@ -13,7 +13,7 @@ public class PlayerNPCInteractor : MonoBehaviour
 
     private StoryNPCDialogue currentStoryNPC;
     private SimpleNPCDialogue currentSimpleNPC;
-
+    public bool blockPromptWhenDialogueTriggerNearby = true;
     private void Update()
     {
         if (dialogueManager != null && dialogueManager.IsDialogueActive)
@@ -27,7 +27,7 @@ public class PlayerNPCInteractor : MonoBehaviour
 
         if (hasNPCNearby)
         {
-            dialogueUI?.ShowPrompt();
+            dialogueUI?.ShowPrompt("Press E to talk", this);
 
             if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
             {
@@ -36,7 +36,7 @@ public class PlayerNPCInteractor : MonoBehaviour
         }
         else
         {
-            dialogueUI?.HidePrompt();
+            dialogueUI?.HidePrompt(this);
         }
     }
 
