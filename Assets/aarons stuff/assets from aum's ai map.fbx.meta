@@ -1,14 +1,19 @@
 fileFormatVersion: 2
-guid: 8a82c54dce449534f8aee167f26ff3ad
+guid: 00d8f27ea09ae3b4783da1ec40436878
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
   externalObjects:
   - first:
-      type: UnityEngine:Material
+      type: UnityEngine:Texture2D
       assembly: UnityEngine.CoreModule
-      name: Material.001
-    second: {fileID: 2100000, guid: eda3a7880342b415faf0d8a639b73346, type: 2}
+      name: wall texture brick grey a_norm
+    second: {fileID: 2800000, guid: 1225743f32eeb12459593f8d527ec1f1, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: wall texture brick grey a_rough
+    second: {fileID: 2800000, guid: ed9fb45a51647cb45801465c033ce18a, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
