@@ -24,6 +24,7 @@ public class DialogueUI : MonoBehaviour
     private Coroutine typingCoroutine;
     private string currentFullLine;
     private bool isTyping;
+    private object promptOwner;
 
     public bool IsTyping => isTyping;
 
@@ -33,7 +34,6 @@ public class DialogueUI : MonoBehaviour
         HidePrompt();
     }
 
-    private object promptOwner;
     public void ResetDialogueUIForCheckpoint()
     {
         if (typingCoroutine != null)
@@ -45,12 +45,17 @@ public class DialogueUI : MonoBehaviour
         isTyping = false;
         currentFullLine = "";
 
-        HidePrompt();
+        ForceHidePrompt();
         HideDialogue();
         ClearChoices();
     }
     public void ShowPrompt(string prompt = "Press E to talk", object owner = null)
     {
+        if (interactPromptText == null)
+        {
+            return;
+        }
+
         if (promptOwner != null && owner != null && promptOwner != owner)
         {
             return;
@@ -58,44 +63,37 @@ public class DialogueUI : MonoBehaviour
 
         promptOwner = owner;
 
-        if (interactPromptText != null)
-        {
-            interactPromptText.gameObject.SetActive(true);
-            interactPromptText.text = prompt;
-        }
+        interactPromptText.text = prompt;
+        interactPromptText.gameObject.SetActive(true);
     }
 
     public void HidePrompt(object owner = null)
     {
+        if (interactPromptText == null)
+        {
+            return;
+        }
+
         if (promptOwner != null && owner != null && promptOwner != owner)
         {
             return;
         }
 
         promptOwner = null;
+        interactPromptText.text = "";
+        interactPromptText.gameObject.SetActive(false);
+    }
+
+    public void ForceHidePrompt()
+    {
+        promptOwner = null;
 
         if (interactPromptText != null)
         {
+            interactPromptText.text = "";
             interactPromptText.gameObject.SetActive(false);
         }
     }
-
-    public void ShowPrompt(string prompt = "Press E to talk")
-    {
-        if (interactPromptText != null)
-        {
-            interactPromptText.gameObject.SetActive(true);
-            interactPromptText.text = prompt;
-        }
-    }
-    public void HidePrompt()
-    {
-        if (interactPromptText != null)
-        {
-            interactPromptText.gameObject.SetActive(false);
-        }
-    }
-
     public void ShowDialoguePanel()
     {
         if (dialoguePanel != null)
@@ -106,10 +104,20 @@ public class DialogueUI : MonoBehaviour
 
     public void HideDialogue()
     {
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
+        }
+
+        isTyping = false;
+        currentFullLine = "";
+
         if (choiceContainer != null)
         {
             choiceContainer.gameObject.SetActive(false);
         }
+
         if (dialoguePanel != null)
         {
             dialoguePanel.SetActive(false);
@@ -132,7 +140,6 @@ public class DialogueUI : MonoBehaviour
 
         ClearChoices();
     }
-
     public void ShowLine(string speakerName, string line)
     {
         ShowDialoguePanel();

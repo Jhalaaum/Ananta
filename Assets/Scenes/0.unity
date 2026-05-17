@@ -5876,10 +5876,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9414e115aecc4499ea4537f41deb875b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SaveManager
-  player: {fileID: 0}
-  playerCheckpointState: {fileID: 0}
-  zoneTracker: {fileID: 0}
+  player: {fileID: 493262992}
+  playerCheckpointState: {fileID: 493262997}
+  zoneTracker: {fileID: 493262998}
   checkpointFileName: checkpoint_save.json
+  dialogueUI: {fileID: 581266290}
+  dialogueManager: {fileID: 463113609}
   showDebugLogs: 1
 --- !u!114 &463113605
 MonoBehaviour:
@@ -6308,7 +6310,7 @@ MonoBehaviour:
   sprintBuildTime: 4
   maxSprintDuration: 6
   sprintRecoveryTime: 5
-  exhaustedSpeedMultiplier: 0.6
+  exhaustedSpeedMultiplier: 0.8
   sprintSlowdownTime: 2
   sprintRecoveryDelayAfterSlowdown: 4
   sprintRecoveryStartThreshold: 0.05
@@ -10995,6 +10997,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Thief 2
       objectReference: {fileID: 0}
+    - target: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 7328689193239849858, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
       propertyPath: m_LocalPosition.x
       value: -61.9
@@ -11042,6 +11048,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2091586311}
+    - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2091586316}
   m_SourcePrefab: {fileID: 100100000, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
 --- !u!1 &785951700
 GameObject:
@@ -18424,9 +18433,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCDialogueInteractable
   promptText: Press E to talk
-  storyNPC: {fileID: 0}
+  storyNPC: {fileID: 1341440553}
   simpleNPC: {fileID: 0}
-  dialogueManager: {fileID: 0}
+  dialogueManager: {fileID: 463113609}
   canInteract: 1
 --- !u!65 &1343966560
 BoxCollider:
@@ -20107,6 +20116,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Thief
       objectReference: {fileID: 0}
+    - target: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 7328689193239849858, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
       propertyPath: m_LocalPosition.x
       value: -59.5
@@ -20154,6 +20167,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1759365803}
+    - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1759365808}
   m_SourcePrefab: {fileID: 100100000, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
 --- !u!65 &1491200394
 BoxCollider:
@@ -21881,6 +21897,26 @@ MonoBehaviour:
   displayName: Guard
   faceTargetDuringDialogue: 1
   turnSpeed: 8
+--- !u!114 &1759365808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1759365797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abbedc68169ee4df29cd43d142b5f043, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCConversationInteractable
+  conversation: {fileID: 11400000, guid: 1dc3505759e784532ad5193ceabe6169, type: 2}
+  actors:
+  - {fileID: 1759365803}
+  - {fileID: 2091586311}
+  dialogueManager: {fileID: 463113609}
+  dialogueUI: {fileID: 581266290}
+  promptText: Press E to listen
+  canOnlyListenOnce: 0
 --- !u!65 &1773313952
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -22066,7 +22102,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Checkpoint
   checkpointID: checkpoint_01
   checkpointDisplayName: Checkpoint
-  saveOnlyOnce: 0
+  saveOnlyOnce: 1
   playerTag: Player
 --- !u!65 &1790789921
 BoxCollider:
@@ -22098,8 +22134,8 @@ Transform:
   m_GameObject: {fileID: 1790789919}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -60.86, y: 1.58, z: -9.4}
-  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_LocalPosition: {x: -60.63, y: 1.58, z: -9.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -23206,6 +23242,79 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1904909514}
   m_Mesh: {fileID: -8860536619630564212, guid: 8a82c54dce449534f8aee167f26ff3ad, type: 3}
+--- !u!1001 &1913558171
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -60.41
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.76
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -9.208
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: dialogueUI
+      value: 
+      objectReference: {fileID: 581266290}
+    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: dialogueManager
+      value: 
+      objectReference: {fileID: 463113609}
+    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: 'actors.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1759365803}
+    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: 'actors.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2091586311}
+    - target: {fileID: 5640419700068224506, guid: 729d15737802e4bad859eb405d269607, type: 3}
+      propertyPath: m_Name
+      value: NPCConversationTrigger
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 729d15737802e4bad859eb405d269607, type: 3}
 --- !u!65 &1924652990
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -24331,6 +24440,26 @@ MonoBehaviour:
   displayName: Merchant
   faceTargetDuringDialogue: 1
   turnSpeed: 8
+--- !u!114 &2091586316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2091586305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abbedc68169ee4df29cd43d142b5f043, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCConversationInteractable
+  conversation: {fileID: 11400000, guid: 1dc3505759e784532ad5193ceabe6169, type: 2}
+  actors:
+  - {fileID: 1759365803}
+  - {fileID: 2091586311}
+  dialogueManager: {fileID: 463113609}
+  dialogueUI: {fileID: 581266290}
+  promptText: Press E to listen
+  canOnlyListenOnce: 0
 --- !u!65 &2093820539
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -31186,79 +31315,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6358106229060395408}
   m_Mesh: {fileID: 2020843647326764662, guid: 427134db07784e04eb7a7ab1cf7a5fae, type: 3}
---- !u!1001 &8393080411897181212
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -60.69
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1.59
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -9.13
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1999641541997275987, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: dialogueUI
-      value: 
-      objectReference: {fileID: 581266290}
-    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: dialogueManager
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: 'actors.Array.data[0]'
-      value: 
-      objectReference: {fileID: 1759365803}
-    - target: {fileID: 3800151322900513614, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: 'actors.Array.data[1]'
-      value: 
-      objectReference: {fileID: 2091586311}
-    - target: {fileID: 5640419700068224506, guid: 729d15737802e4bad859eb405d269607, type: 3}
-      propertyPath: m_Name
-      value: NPCConversationTrigger
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 729d15737802e4bad859eb405d269607, type: 3}
 --- !u!23 &8418640414604746450
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -31904,8 +31960,8 @@ SceneRoots:
   - {fileID: 543450652386291183}
   - {fileID: 2099501469}
   - {fileID: 714905538}
+  - {fileID: 1913558171}
   - {fileID: 1490306843}
-  - {fileID: 8393080411897181212}
   - {fileID: 784235960}
   - {fileID: 522083102}
   - {fileID: 1862635658}
