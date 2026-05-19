@@ -246,7 +246,36 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         DebugStateChange();
     }
+    public void ResetGuardForCheckpoint()
+    {
+        StopAllCoroutines();
+        CancelInvoke();
 
+        suspicion = 0f;
+        recentlySawPlayerTimer = 0f;
+        lostPlayerTimer = 0f;
+        searchWaitTimer = 0f;
+        patrolWaitTimer = 0f;
+        lookAroundTimer = 0f;
+
+        isWaitingAtSearchPoint = false;
+        searchPointsVisited = 0;
+        hasEstimatedMoveDirection = false;
+
+        if (agent != null)
+        {
+            agent.isStopped = false;
+            agent.ResetPath();
+        }
+
+        if (alertIcon != null)
+        {
+            alertIcon.SetActive(false);
+        }
+
+        currentPatrolIndex = GetNearestPatrolPointIndex();
+        EnterPatrol();
+    }
     private void LoadPatrolPoints()
     {
         if (patrolRouteParent == null)
@@ -805,6 +834,11 @@ public class AdvancedGuardAIController : MonoBehaviour
     }
     private int GetNearestPatrolPointIndex()
     {
+        if (patrolPoints == null || patrolPoints.Length == 0)
+        {
+            return 0;
+        }
+
         int nearestIndex = 0;
         float nearestDistance = Mathf.Infinity;
 
@@ -821,7 +855,6 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         return nearestIndex;
     }
-
     private bool ReachedDestination(float reachDistance)
     {
         if (agent.pathPending)

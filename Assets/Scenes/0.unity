@@ -12267,7 +12267,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1305a3d2423e947989eb7191f69a0aef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Checkpoint
-  checkpointID: checkpoint_02
+  checkpointID: StartCheckpoint
   checkpointDisplayName: StartCheckpoint
   saveOnlyOnce: 1
   playerTag: Player
@@ -12301,8 +12301,8 @@ Transform:
   m_GameObject: {fileID: 858040862}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.65, y: 1.58, z: -0.1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 1.51, y: 1.58, z: -0.13}
+  m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
