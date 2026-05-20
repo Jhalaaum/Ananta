@@ -33,22 +33,16 @@ public class PlayerCheckpointState : MonoBehaviour
             playerRigidbody.isKinematic = true;
         }
 
-        transform.position = position;
-        transform.rotation = rotation;
+        transform.SetPositionAndRotation(position, rotation);
 
-        Physics.SyncTransforms();
+        if (playerRigidbody != null)
+        {
+            playerRigidbody.isKinematic = false;
+        }
 
         if (characterController != null)
         {
             characterController.enabled = true;
-        }
-
-        // Keep Rigidbody kinematic if you are using CharacterController movement
-        if (playerRigidbody != null)
-        {
-            playerRigidbody.linearVelocity = Vector3.zero;
-            playerRigidbody.angularVelocity = Vector3.zero;
-            playerRigidbody.isKinematic = true;
         }
     }
 }

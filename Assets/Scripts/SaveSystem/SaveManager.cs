@@ -19,10 +19,7 @@ public class SaveManager : MonoBehaviour
 
     [Header("Start Checkpoint")]
     public bool createStartCheckpoint = true;
-
-    [Tooltip("If true, the start checkpoint will ONLY be created when there is no checkpoint already saved.")]
-    public bool onlyCreateStartCheckpointIfNoneExists = true;
-
+    public bool overwriteSaveOnSceneStart = true;
     public float startCheckpointDelay = 0.2f;
 
     [Header("Save File")]
@@ -39,9 +36,6 @@ public class SaveManager : MonoBehaviour
 
     private GameSaveData currentCheckpointData;
     private bool isApplyingCheckpoint;
-    private bool hasCreatedStartCheckpointThisScene;
-
-    private const string PendingCheckpointLoadKey = "PendingCheckpointLoad";
 
     private void Awake()
     {
@@ -58,51 +52,14 @@ public class SaveManager : MonoBehaviour
     {
         AutoFindReferences();
 
-        if (PlayerPrefs.HasKey(PendingCheckpointLoadKey))
-        {
-            string pendingJson = PlayerPrefs.GetString(PendingCheckpointLoadKey);
-            PlayerPrefs.DeleteKey(PendingCheckpointLoadKey);
-
-            if (!string.IsNullOrWhiteSpace(pendingJson))
-            {
-                GameSaveData pendingSave = JsonUtility.FromJson<GameSaveData>(pendingJson);
-
-                if (pendingSave != null)
-                {
-                    StartCoroutine(ApplyPendingCheckpointAfterSceneSettles(pendingSave));
-                    return;
-                }
-            }
-        }
-
         if (createStartCheckpoint)
         {
             StartCoroutine(CreateStartCheckpointAfterSceneSettles());
         }
     }
 
-    private IEnumerator ApplyPendingCheckpointAfterSceneSettles(GameSaveData pendingSave)
-    {
-        yield return null;
-
-        if (startCheckpointDelay > 0f)
-        {
-            yield return new WaitForSeconds(startCheckpointDelay);
-        }
-
-        AutoFindReferences();
-        ApplyCheckpointData(pendingSave);
-    }
-
     private IEnumerator CreateStartCheckpointAfterSceneSettles()
     {
-        if (hasCreatedStartCheckpointThisScene)
-        {
-            yield break;
-        }
-
-        hasCreatedStartCheckpointThisScene = true;
-
         yield return null;
 
         if (startCheckpointDelay > 0f)
@@ -124,15 +81,14 @@ public class SaveManager : MonoBehaviour
             yield break;
         }
 
-        if (onlyCreateStartCheckpointIfNoneExists && HasCheckpoint())
+        if (overwriteSaveOnSceneStart)
         {
-            Log("Start checkpoint skipped because a checkpoint already exists.");
-            yield break;
+            ClearCheckpoint();
         }
 
-        SaveCheckpoint("Start");
+        SaveCheckpoint("Start", false);
 
-        Log("Start checkpoint created.");
+        Log("Start checkpoint created after scene settled.");
     }
 
     private void AutoFindReferences()
@@ -173,7 +129,17 @@ public class SaveManager : MonoBehaviour
 
     public void SaveCheckpoint(string saveName = "Checkpoint")
     {
+        SaveCheckpoint(saveName, true);
+    }
+
+    public void SaveCheckpoint(string saveName, bool resetRuntimeUI)
+    {
         AutoFindReferences();
+
+        if (resetRuntimeUI)
+        {
+            ResetRuntimeUI();
+        }
 
         if (player == null)
         {
@@ -195,11 +161,6 @@ public class SaveManager : MonoBehaviour
         string sceneName = SceneManager.GetActiveScene().name;
         string zoneID = zoneTracker != null ? zoneTracker.GetCurrentZoneID() : "unknown_zone";
 
-        if (saveData.player == null)
-        {
-            saveData.player = new PlayerSaveData();
-        }
-
         saveData.player.Capture(player, sceneName, zoneID);
 
         if (QuestManager.Instance != null)
@@ -210,19 +171,15 @@ public class SaveManager : MonoBehaviour
         currentCheckpointData = saveData;
 
         string json = JsonUtility.ToJson(saveData, true);
+
+        // This explicitly overrides the previous checkpoint.
         File.WriteAllText(CheckpointPath, json);
 
-        Log($"Checkpoint saved and previous checkpoint overwritten: {saveName}");
-        Log($"Saved position: {player.position}");
+        Log($"Checkpoint saved and previous checkpoint overwritten: {CheckpointPath}");
     }
 
     public void LoadCheckpoint()
     {
-        if (isApplyingCheckpoint)
-        {
-            return;
-        }
-
         AutoFindReferences();
 
         GameSaveData saveData = currentCheckpointData;
@@ -239,19 +196,12 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        if (saveData.player == null)
-        {
-            Debug.LogWarning("[SaveManager] Checkpoint data has no player data. Using fallback respawn.");
-            RespawnWithoutCheckpoint();
-            return;
-        }
-
         string currentScene = SceneManager.GetActiveScene().name;
 
         if (!string.IsNullOrWhiteSpace(saveData.player.sceneName) &&
             saveData.player.sceneName != currentScene)
         {
-            PlayerPrefs.SetString(PendingCheckpointLoadKey, JsonUtility.ToJson(saveData));
+            PlayerPrefs.SetString("PendingCheckpointLoad", JsonUtility.ToJson(saveData));
             SceneManager.LoadScene(saveData.player.sceneName);
             return;
         }
@@ -269,19 +219,12 @@ public class SaveManager : MonoBehaviour
         isApplyingCheckpoint = true;
 
         AutoFindReferences();
+        ResetRuntimeUI();
 
         if (saveData == null)
         {
             Debug.LogWarning("[SaveManager] Cannot apply null save data.");
             isApplyingCheckpoint = false;
-            return;
-        }
-
-        if (saveData.player == null)
-        {
-            Debug.LogWarning("[SaveManager] Cannot apply checkpoint. Player save data is null.");
-            isApplyingCheckpoint = false;
-            RespawnWithoutCheckpoint();
             return;
         }
 
@@ -298,8 +241,6 @@ public class SaveManager : MonoBehaviour
             isApplyingCheckpoint = false;
             return;
         }
-
-        ResetRuntimeUI();
 
         playerCheckpointState.RestoreTransform(
             saveData.player.GetPosition(),
@@ -323,8 +264,7 @@ public class SaveManager : MonoBehaviour
 
         isApplyingCheckpoint = false;
 
-        Log($"Checkpoint loaded: {saveData.saveName}");
-        Log($"Loaded position: {saveData.player.GetPosition()}");
+        Log("Checkpoint loaded.");
     }
 
     private void RespawnWithoutCheckpoint()
@@ -359,10 +299,8 @@ public class SaveManager : MonoBehaviour
         }
         else
         {
-            player.SetPositionAndRotation(
-                defaultRespawnPoint.position,
-                defaultRespawnPoint.rotation
-            );
+            player.position = defaultRespawnPoint.position;
+            player.rotation = defaultRespawnPoint.rotation;
         }
 
         ResetAllGuardsForCheckpoint();
@@ -378,20 +316,9 @@ public class SaveManager : MonoBehaviour
             dialogueUI = FindObjectOfType<DialogueUI>();
         }
 
-        if (dialogueManager == null)
+        if (dialogueUI != null)
         {
-            dialogueManager = FindObjectOfType<DialogueManager>();
-        }
-
-        if (dialogueManager != null)
-        {
-            dialogueManager.ResetDialogueManagerForCheckpoint();
-        }
-        else if (dialogueUI != null)
-        {
-            dialogueUI.ClearChoices();
-            dialogueUI.HidePrompt();
-            dialogueUI.HideDialogue();
+            dialogueUI.ResetDialogueUIForCheckpoint();
         }
 
         Log("Runtime UI reset for checkpoint.");
@@ -427,20 +354,6 @@ public class SaveManager : MonoBehaviour
         }
 
         GameSaveData saveData = JsonUtility.FromJson<GameSaveData>(json);
-
-        if (saveData == null)
-        {
-            Debug.LogWarning("[SaveManager] Failed to read checkpoint file.");
-            return null;
-        }
-
-        if (saveData.player == null)
-        {
-            Debug.LogWarning("[SaveManager] Checkpoint file has no player data.");
-            return null;
-        }
-
-        currentCheckpointData = saveData;
         return saveData;
     }
 
