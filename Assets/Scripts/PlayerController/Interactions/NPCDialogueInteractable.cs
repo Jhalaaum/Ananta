@@ -16,6 +16,8 @@ public class NPCDialogueInteractable : MonoBehaviour, IInteractable
     public bool canInteract = true;
 
     private void Awake()
+
+
     {
         if (storyNPC == null)
         {
@@ -33,7 +35,15 @@ public class NPCDialogueInteractable : MonoBehaviour, IInteractable
         }
     }
 
+
     public string GetPromptText()
+
+
+
+
+
+
+
     {
         return promptText;
     }
@@ -51,11 +61,17 @@ public class NPCDialogueInteractable : MonoBehaviour, IInteractable
         }
 
         return storyNPC != null || simpleNPC != null;
+
+
+
+
     }
 
     public void Interact(Transform interactor)
     {
         if (!CanInteract(interactor))
+
+
         {
             return;
         }
