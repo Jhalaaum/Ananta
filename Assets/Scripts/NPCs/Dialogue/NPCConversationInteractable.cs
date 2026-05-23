@@ -28,7 +28,7 @@ public class NPCConversationInteractable : MonoBehaviour
             return;
         }
 
-        if (hasListened && canOnlyListenOnce)
+        if (GameBookUI.Instance != null && GameBookUI.Instance.isOpen)
         {
             dialogueUI?.HidePrompt(this);
             return;
@@ -40,17 +40,13 @@ public class NPCConversationInteractable : MonoBehaviour
             return;
         }
 
-        if (dialogueUI != null)
-        {
-            dialogueUI.ShowPrompt(promptText, this);
-        }
+        dialogueUI?.ShowPrompt(promptText, this);
 
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
             StartListening();
         }
     }
-
     private void StartListening()
     {
         dialogueUI?.HidePrompt(this);

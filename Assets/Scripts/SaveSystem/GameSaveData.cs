@@ -13,8 +13,8 @@ public class GameSaveData
 
     public QuestSaveCollection questProgress = new QuestSaveCollection();
 
-    // Future-ready sections.
     public InventorySaveData inventory = new InventorySaveData();
+
     public MoneySaveData money = new MoneySaveData();
     public DisguiseSaveData disguise = new DisguiseSaveData();
     public WorldSuspicionSaveData worldSuspicion = new WorldSuspicionSaveData();
@@ -25,11 +25,11 @@ public class GameSaveData
 [Serializable]
 public class InventorySaveData
 {
-    public List<ItemStackSaveData> items = new List<ItemStackSaveData>();
+    public List<InventoryItemSaveData> items = new List<InventoryItemSaveData>();
 }
 
 [Serializable]
-public class ItemStackSaveData
+public class InventoryItemSaveData
 {
     public string itemID;
     public int amount;

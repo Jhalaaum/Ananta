@@ -50,20 +50,35 @@ public class GameBookUI : MonoBehaviour
     public bool isOpen;
     public GameBookPageType currentPage = GameBookPageType.Quests;
 
-    [Header("Tab Visuals")]
-    public Color selectedTabColor = Color.white;
-    public Color unselectedTabColor = Color.gray;
+    [Header("Tab Background Colors")]
+    public Color selectedTabBackgroundColor;
+    public Color unselectedTabBackgroundColor = new Color(0.18f, 0.14f, 0.09f, 1f);
+
+    [Header("Tab Text Colors")]
+    public Color selectedTabTextColor = Color.black;
+    public Color unselectedTabTextColor = new Color(0.82f, 0.76f, 0.65f, 1f);
+
+    private Image questsTabImage;
+    private Image hintsTabImage;
+    private Image inventoryTabImage;
+    private Image loreTabImage;
+    private Image settingsTabImage;
 
     private void Awake()
     {
         Instance = this;
+
+        // Selected gold color: #C9A45D
+        ColorUtility.TryParseHtmlString("#C9A45D", out selectedTabBackgroundColor);
     }
 
     private void Start()
     {
         AutoFindReferences();
+        CacheTabImages();
         HookButtons();
         CloseBookInstant();
+        ShowPage(currentPage);
     }
 
     private void Update()
@@ -97,30 +112,44 @@ public class GameBookUI : MonoBehaviour
         }
     }
 
+    private void CacheTabImages()
+    {
+        questsTabImage = questsTabButton != null ? questsTabButton.GetComponent<Image>() : null;
+        hintsTabImage = hintsTabButton != null ? hintsTabButton.GetComponent<Image>() : null;
+        inventoryTabImage = inventoryTabButton != null ? inventoryTabButton.GetComponent<Image>() : null;
+        loreTabImage = loreTabButton != null ? loreTabButton.GetComponent<Image>() : null;
+        settingsTabImage = settingsTabButton != null ? settingsTabButton.GetComponent<Image>() : null;
+    }
+
     private void HookButtons()
     {
         if (questsTabButton != null)
         {
+            questsTabButton.onClick.RemoveAllListeners();
             questsTabButton.onClick.AddListener(() => ShowPage(GameBookPageType.Quests));
         }
 
         if (hintsTabButton != null)
         {
+            hintsTabButton.onClick.RemoveAllListeners();
             hintsTabButton.onClick.AddListener(() => ShowPage(GameBookPageType.Hints));
         }
 
         if (inventoryTabButton != null)
         {
+            inventoryTabButton.onClick.RemoveAllListeners();
             inventoryTabButton.onClick.AddListener(() => ShowPage(GameBookPageType.Inventory));
         }
 
         if (loreTabButton != null)
         {
+            loreTabButton.onClick.RemoveAllListeners();
             loreTabButton.onClick.AddListener(() => ShowPage(GameBookPageType.Lore));
         }
 
         if (settingsTabButton != null)
         {
+            settingsTabButton.onClick.RemoveAllListeners();
             settingsTabButton.onClick.AddListener(() => ShowPage(GameBookPageType.Settings));
         }
     }
@@ -149,6 +178,13 @@ public class GameBookUI : MonoBehaviour
         if (bookPanel != null)
         {
             bookPanel.SetActive(true);
+        }
+
+        DialogueUI dialogueUI = FindObjectOfType<DialogueUI>();
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.ForceHidePrompt();
         }
 
         if (playerInteractor != null)
@@ -234,18 +270,57 @@ public class GameBookUI : MonoBehaviour
 
     private void UpdateTabVisuals()
     {
-        SetTabTextColor(questsTabText, currentPage == GameBookPageType.Quests);
-        SetTabTextColor(hintsTabText, currentPage == GameBookPageType.Hints);
-        SetTabTextColor(inventoryTabText, currentPage == GameBookPageType.Inventory);
-        SetTabTextColor(loreTabText, currentPage == GameBookPageType.Lore);
-        SetTabTextColor(settingsTabText, currentPage == GameBookPageType.Settings);
+        bool questsSelected = currentPage == GameBookPageType.Quests;
+        bool hintsSelected = currentPage == GameBookPageType.Hints;
+        bool inventorySelected = currentPage == GameBookPageType.Inventory;
+        bool loreSelected = currentPage == GameBookPageType.Lore;
+        bool settingsSelected = currentPage == GameBookPageType.Settings;
+
+        SetTabVisual(
+            questsTabImage,
+            questsTabText,
+            questsSelected
+        );
+
+        SetTabVisual(
+            hintsTabImage,
+            hintsTabText,
+            hintsSelected
+        );
+
+        SetTabVisual(
+            inventoryTabImage,
+            inventoryTabText,
+            inventorySelected
+        );
+
+        SetTabVisual(
+            loreTabImage,
+            loreTabText,
+            loreSelected
+        );
+
+        SetTabVisual(
+            settingsTabImage,
+            settingsTabText,
+            settingsSelected
+        );
     }
 
-    private void SetTabTextColor(TMP_Text text, bool selected)
+    private void SetTabVisual(Image tabImage, TMP_Text tabText, bool selected)
     {
-        if (text != null)
+        if (tabImage != null)
         {
-            text.color = selected ? selectedTabColor : unselectedTabColor;
+            tabImage.color = selected
+                ? selectedTabBackgroundColor
+                : unselectedTabBackgroundColor;
+        }
+
+        if (tabText != null)
+        {
+            tabText.color = selected
+                ? selectedTabTextColor
+                : unselectedTabTextColor;
         }
     }
 }

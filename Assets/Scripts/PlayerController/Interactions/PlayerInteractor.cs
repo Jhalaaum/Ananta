@@ -33,6 +33,12 @@ public class PlayerInteractor : MonoBehaviour
 
     private void Update()
     {
+        if (GameBookUI.Instance != null && GameBookUI.Instance.isOpen)
+        {
+            HidePrompt();
+            return;
+        }
+
         if (ShouldBlockInteraction())
         {
             ClearCurrentInteractable();
@@ -55,7 +61,6 @@ public class PlayerInteractor : MonoBehaviour
             HidePrompt();
         }
     }
-
     private bool ShouldBlockInteraction()
     {
         if (dialogueManager != null && dialogueManager.IsDialogueActive)
