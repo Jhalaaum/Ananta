@@ -10501,6 +10501,7 @@ GameObject:
   - component: {fileID: 587754642}
   - component: {fileID: 587754641}
   - component: {fileID: 587754640}
+  - component: {fileID: 587754644}
   m_Layer: 10
   m_Name: GameBookCanvas
   m_TagString: Untagged
@@ -10591,6 +10592,45 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &587754644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 587754639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9ca739aec68f44f18fedb05682b08cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameBookUI
+  bookPanel: {fileID: 440790368}
+  questsPage: {fileID: 1197823474}
+  hintsPage: {fileID: 2091050320}
+  inventoryPage: {fileID: 410041104}
+  lorePage: {fileID: 1397784046}
+  settingsPage: {fileID: 134904301}
+  questsTabButton: {fileID: 95563370}
+  hintsTabButton: {fileID: 1680228972}
+  inventoryTabButton: {fileID: 1156900078}
+  loreTabButton: {fileID: 355257510}
+  settingsTabButton: {fileID: 543658606}
+  questsTabText: {fileID: 954267814}
+  hintsTabText: {fileID: 78260838}
+  inventoryTabText: {fileID: 1486678371}
+  loreTabText: {fileID: 2022431876}
+  settingsTabText: {fileID: 766253612}
+  openCloseKey: 24
+  closeKey: 60
+  dialogueManager: {fileID: 463113609}
+  playerInteractor: {fileID: 493262996}
+  unlockCursorWhenOpen: 1
+  lockCursorWhenClosed: 1
+  pauseGameWhenOpen: 1
+  isOpen: 0
+  currentPage: 0
+  selectedTabColor: {r: 1, g: 1, b: 1, a: 1}
+  unselectedTabColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!1 &587906492
 GameObject:
   m_ObjectHideFlags: 0
@@ -21586,6 +21626,7 @@ GameObject:
   - component: {fileID: 1197823475}
   - component: {fileID: 1197823477}
   - component: {fileID: 1197823476}
+  - component: {fileID: 1197823478}
   m_Layer: 10
   m_Name: QuestsPage
   m_TagString: Untagged
@@ -21652,6 +21693,28 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1197823474}
   m_CullTransparentMesh: 1
+--- !u!114 &1197823478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1197823474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 001be0472717d46f0b348170768b30d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestBookUI
+  inProgressQuestContainer: {fileID: 1631128063}
+  completedQuestContainer: {fileID: 1557328288}
+  questButtonPrefab: {fileID: 5356958245999542242, guid: b25c0f59a33034e29913965dab2680db, type: 3}
+  selectedQuestTitleText: {fileID: 1335013871}
+  selectedQuestDescriptionText: {fileID: 1330622121}
+  selectedQuestStepText: {fileID: 1600479439}
+  selectedQuestObjectiveTypeText: {fileID: 881232746}
+  selectedQuestTargetText: {fileID: 270717497}
+  selectedQuestStatusText: {fileID: 1147821178}
+  noQuestSelectedText: Select a quest to view details.
 --- !u!65 &1199327637
 BoxCollider:
   m_ObjectHideFlags: 0
