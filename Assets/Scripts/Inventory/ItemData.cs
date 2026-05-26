@@ -29,4 +29,12 @@ public class ItemData : ScriptableObject
 
     [Header("Quest / Story")]
     public bool isImportant;
+
+    [Header("Equipment / Disguise")]
+    public bool canEquip;
+    public EquipmentSlotType equipmentSlotType;
+    public bool countsAsDisguisePiece;
+
+    [Tooltip("Example: guard, merchant, monk, servant, noble")]
+    public string disguiseSetID;
 }
