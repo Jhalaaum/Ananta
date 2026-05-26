@@ -228,7 +228,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6455395550587889673
 RectTransform:
   m_ObjectHideFlags: 0
@@ -422,9 +422,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4716d297e0a274ecab5ba01e91558411, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventorySlotUI
-  button: {fileID: 5945385737208154126}
   backgroundImage: {fileID: 3404497859052760269}
   itemIconImage: {fileID: 7276634726061593185}
   amountText: {fileID: 2945079572117210616}
+  slotNumberText: {fileID: 0}
   normalColor: {r: 0.18, g: 0.14, b: 0.09, a: 1}
+  hoverColor: {r: 0.28, g: 0.22, b: 0.14, a: 1}
   selectedColor: {r: 0, g: 0, b: 0, a: 0}
