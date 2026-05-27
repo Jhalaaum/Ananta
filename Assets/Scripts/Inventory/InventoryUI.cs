@@ -27,6 +27,10 @@ public class InventoryUI : MonoBehaviour
     public EquipmentSlotUI feetSlot;
     public EquipmentSlotUI[] accessorySlots;
 
+    [Header("Drag Visual")]
+    public Canvas rootCanvas;
+    public Image dragIconImage;
+
     [Header("Empty Text")]
     public string noItemHeader = "Description";
     public string noItemDescription = "Select an item to view details.";
@@ -38,6 +42,18 @@ public class InventoryUI : MonoBehaviour
 
     private int selectedSlotIndex = -1;
     private EquipmentSlotUI selectedEquipmentSlot;
+
+    private int draggedInventorySlotIndex = -1;
+    private ItemData draggedItem;
+    private int draggedAmount;
+
+    private void Awake()
+    {
+        if (rootCanvas == null)
+        {
+            rootCanvas = GetComponentInParent<Canvas>();
+        }
+    }
 
     private void OnEnable()
     {
@@ -58,6 +74,7 @@ public class InventoryUI : MonoBehaviour
             selectedItemActionButton.onClick.AddListener(UseSelectedItemAction);
         }
 
+        CreateDragIconIfMissing();
         SetupEquipmentSlots();
         BuildOrRefreshGrid();
         RefreshEquipmentSlots();
@@ -80,6 +97,33 @@ public class InventoryUI : MonoBehaviour
         {
             InventoryManager.Instance.OnInventoryChanged -= BuildOrRefreshGrid;
         }
+    }
+
+    private void CreateDragIconIfMissing()
+    {
+        if (dragIconImage != null)
+        {
+            dragIconImage.gameObject.SetActive(false);
+            return;
+        }
+
+        if (rootCanvas == null)
+        {
+            return;
+        }
+
+        GameObject dragObject = new GameObject("InventoryDragIcon");
+        dragObject.transform.SetParent(rootCanvas.transform, false);
+        dragObject.transform.SetAsLastSibling();
+
+        dragIconImage = dragObject.AddComponent<Image>();
+        dragIconImage.raycastTarget = false;
+        dragIconImage.preserveAspect = true;
+
+        RectTransform rect = dragIconImage.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(64, 64);
+
+        dragIconImage.gameObject.SetActive(false);
     }
 
     private void SetupEquipmentSlots()
@@ -177,15 +221,9 @@ public class InventoryUI : MonoBehaviour
     {
         ClearGrid();
 
-        if (inventoryGridContainer == null)
+        if (inventoryGridContainer == null || inventorySlotPrefab == null)
         {
-            Debug.LogWarning("[InventoryUI] Missing InventoryGridContainer.");
-            return;
-        }
-
-        if (inventorySlotPrefab == null)
-        {
-            Debug.LogWarning("[InventoryUI] Missing InventorySlotPrefab.");
+            Debug.LogWarning("[InventoryUI] Missing grid container or slot prefab.");
             return;
         }
 
@@ -228,11 +266,6 @@ public class InventoryUI : MonoBehaviour
 
         selectedSlotIndex = slotIndex;
         selectedEquipmentSlot = null;
-
-        if (showDebugLogs)
-        {
-            Debug.Log($"[InventoryUI] Selected inventory slot {slotIndex + 1}");
-        }
 
         BuildOrRefreshGrid();
         ShowInventorySlotDetails(slotIndex);
@@ -278,6 +311,10 @@ public class InventoryUI : MonoBehaviour
             {
                 selectedItemActionButtonText.text = "Use Item";
             }
+            else if (item.canDrop && !item.isImportant)
+            {
+                selectedItemActionButtonText.text = "Drop Item";
+            }
             else
             {
                 selectedItemActionButtonText.text = "Select Item";
@@ -305,12 +342,7 @@ public class InventoryUI : MonoBehaviour
 
     private void UseSelectedItemAction()
     {
-        if (InventoryManager.Instance == null)
-        {
-            return;
-        }
-
-        if (selectedSlotIndex < 0)
+        if (InventoryManager.Instance == null || selectedSlotIndex < 0)
         {
             return;
         }
@@ -326,7 +358,8 @@ public class InventoryUI : MonoBehaviour
 
         if (item.canEquip)
         {
-            EquipSelectedItem(item);
+            EquipmentSlotUI targetSlot = GetEquipmentSlotForItem(item);
+            TryEquipFromInventorySlot(selectedSlotIndex, targetSlot);
             return;
         }
 
@@ -336,30 +369,133 @@ public class InventoryUI : MonoBehaviour
             return;
         }
 
-        Debug.Log($"[InventoryUI] Selected item: {item.itemName}");
+        if (item.canDrop && !item.isImportant)
+        {
+            DropInventorySlot(selectedSlotIndex);
+        }
     }
 
-    private void EquipSelectedItem(ItemData item)
+    public void BeginDragFromInventory(int slotIndex, ItemData item, int amount)
     {
-        EquipmentSlotUI targetSlot = GetEquipmentSlotForItem(item);
+        if (item == null)
+        {
+            return;
+        }
+
+        draggedInventorySlotIndex = slotIndex;
+        draggedItem = item;
+        draggedAmount = amount;
+
+        if (dragIconImage != null)
+        {
+            dragIconImage.sprite = item.itemIcon;
+            dragIconImage.color = Color.white;
+            dragIconImage.gameObject.SetActive(item.itemIcon != null);
+            dragIconImage.transform.SetAsLastSibling();
+        }
+    }
+
+    public void UpdateDrag(Vector2 screenPosition)
+    {
+        if (dragIconImage == null || !dragIconImage.gameObject.activeSelf)
+        {
+            return;
+        }
+
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            rootCanvas.transform as RectTransform,
+            screenPosition,
+            rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : rootCanvas.worldCamera,
+            out Vector2 localPoint
+        );
+
+        dragIconImage.rectTransform.anchoredPosition = localPoint;
+    }
+
+    public void EndDrag()
+    {
+        if (dragIconImage != null)
+        {
+            dragIconImage.gameObject.SetActive(false);
+        }
+
+        draggedInventorySlotIndex = -1;
+        draggedItem = null;
+        draggedAmount = 0;
+    }
+
+    public void TryDropDraggedItemOnEquipmentSlot(EquipmentSlotUI equipmentSlot)
+    {
+        if (draggedItem == null || draggedInventorySlotIndex < 0 || equipmentSlot == null)
+        {
+            EndDrag();
+            return;
+        }
+
+        TryEquipFromInventorySlot(draggedInventorySlotIndex, equipmentSlot);
+        EndDrag();
+    }
+
+    private bool TryEquipFromInventorySlot(int inventorySlotIndex, EquipmentSlotUI targetSlot)
+    {
+        if (InventoryManager.Instance == null)
+        {
+            return false;
+        }
+
+        InventorySlot inventorySlot = InventoryManager.Instance.GetSlot(inventorySlotIndex);
+
+        if (inventorySlot == null || inventorySlot.IsEmpty())
+        {
+            return false;
+        }
+
+        ItemData itemToEquip = inventorySlot.itemData;
 
         if (targetSlot == null)
         {
-            Debug.LogWarning($"[InventoryUI] No equipment slot found for {item.itemName}");
-            return;
+            Debug.LogWarning($"[InventoryUI] No valid equipment slot for {itemToEquip.itemName}");
+            return false;
         }
 
-        if (!targetSlot.CanAccept(item))
+        if (!targetSlot.CanAccept(itemToEquip))
         {
-            Debug.LogWarning($"[InventoryUI] Slot cannot accept {item.itemName}");
-            return;
+            Debug.LogWarning($"[InventoryUI] {itemToEquip.itemName} cannot go into {targetSlot.slotType} slot.");
+            return false;
         }
 
-        targetSlot.SetItem(item);
+        ItemData oldEquippedItem = targetSlot.GetItem();
 
-        Debug.Log($"[InventoryUI] Equipped {item.itemName} to {item.equipmentSlotType}");
+        if (oldEquippedItem != null)
+        {
+            if (!InventoryManager.Instance.CanAddItem(oldEquippedItem, 1))
+            {
+                Debug.LogWarning("[InventoryUI] Cannot unequip old item because inventory is full.");
+                return false;
+            }
+
+            InventoryManager.Instance.AddItem(oldEquippedItem, 1);
+        }
+
+        bool removed = InventoryManager.Instance.RemoveFromSlot(inventorySlotIndex, 1);
+
+        if (!removed)
+        {
+            return false;
+        }
+
+        targetSlot.SetItem(itemToEquip);
+
+        selectedSlotIndex = -1;
+        selectedEquipmentSlot = targetSlot;
 
         RefreshEquipmentSlots();
+        BuildOrRefreshGrid();
+        ShowEquipmentSlotDetails(targetSlot);
+
+        Debug.Log($"[InventoryUI] Equipped {itemToEquip.itemName} to {targetSlot.slotType}");
+
+        return true;
     }
 
     private EquipmentSlotUI GetEquipmentSlotForItem(ItemData item)
@@ -409,13 +545,26 @@ public class InventoryUI : MonoBehaviour
         return accessorySlots[0];
     }
 
+    public void DropInventorySlot(int slotIndex)
+    {
+        if (InventoryManager.Instance == null)
+        {
+            return;
+        }
+
+        InventoryManager.Instance.DropSlot(slotIndex);
+        selectedSlotIndex = -1;
+        BuildOrRefreshGrid();
+        ClearDetails();
+    }
+
     public void SelectEquipmentSlot(EquipmentSlotUI equipmentSlot)
     {
         selectedEquipmentSlot = equipmentSlot;
         selectedSlotIndex = -1;
 
-        ShowEquipmentSlotDetails(equipmentSlot);
         BuildOrRefreshGrid();
+        ShowEquipmentSlotDetails(equipmentSlot);
     }
 
     private void ShowEquipmentSlotDetails(EquipmentSlotUI equipmentSlot)
@@ -458,7 +607,8 @@ public class InventoryUI : MonoBehaviour
             itemDescriptionText.text =
                 $"{item.itemDescription}\n\n" +
                 $"Equipped Slot: {equipmentSlot.slotType}\n" +
-                $"Disguise Set: {(string.IsNullOrWhiteSpace(item.disguiseSetID) ? "None" : item.disguiseSetID)}";
+                $"Disguise Set: {(string.IsNullOrWhiteSpace(item.disguiseSetID) ? "None" : item.disguiseSetID)}\n\n" +
+                $"Right-click this slot to unequip.";
         }
 
         if (selectedItemActionButton != null)
@@ -474,13 +624,27 @@ public class InventoryUI : MonoBehaviour
             return;
         }
 
-        ItemData item = equipmentSlot.GetItem();
-        equipmentSlot.SetItem(null);
+        if (InventoryManager.Instance == null)
+        {
+            return;
+        }
 
-        Debug.Log($"[InventoryUI] Unequipped {item.itemName}");
+        ItemData item = equipmentSlot.GetItem();
+
+        if (!InventoryManager.Instance.CanAddItem(item, 1))
+        {
+            Debug.LogWarning("[InventoryUI] Cannot unequip. Inventory is full.");
+            return;
+        }
+
+        equipmentSlot.SetItem(null);
+        InventoryManager.Instance.AddItem(item, 1);
 
         RefreshEquipmentSlots();
+        BuildOrRefreshGrid();
         ClearDetails();
+
+        Debug.Log($"[InventoryUI] Unequipped {item.itemName}");
     }
 
     private void RefreshEquipmentSlots()
@@ -513,14 +677,9 @@ public class InventoryUI : MonoBehaviour
 
         string disguiseSet = GetCurrentDisguiseSetID();
 
-        if (string.IsNullOrWhiteSpace(disguiseSet))
-        {
-            disguiseStatusText.text = "Disguise: None";
-        }
-        else
-        {
-            disguiseStatusText.text = $"Disguise: {disguiseSet}";
-        }
+        disguiseStatusText.text = string.IsNullOrWhiteSpace(disguiseSet)
+            ? "Disguise: None"
+            : $"Disguise: {disguiseSet}";
     }
 
     private string GetCurrentDisguiseSetID()
@@ -570,8 +729,7 @@ public class InventoryUI : MonoBehaviour
 
     public void QuickUseOrDrop(int slotIndex)
     {
-        SelectSlot(slotIndex);
-        UseSelectedItemAction();
+        DropInventorySlot(slotIndex);
     }
 
     private void ClearGrid()

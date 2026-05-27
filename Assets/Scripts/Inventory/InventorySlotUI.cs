@@ -3,7 +3,11 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
+public class InventorySlotUI : MonoBehaviour, 
+    IPointerClickHandler,
+    IBeginDragHandler,
+    IDragHandler,
+    IEndDragHandler
 {
     [Header("UI References")]
     public Image backgroundImage;
@@ -17,12 +21,11 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
     public Color amountTextColor = Color.white;
     public Color slotNumberTextColor = new Color(0.75f, 0.68f, 0.55f, 1f);
 
-    [Header("Debug")]
-    public bool showDebugLogs;
-
     private InventoryUI inventoryUI;
     private InventorySlot slot;
     private int slotIndex;
+
+    private bool isDragging;
 
     private void Awake()
     {
@@ -77,7 +80,6 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
         if (backgroundImage != null)
         {
             backgroundImage.enabled = true;
-            backgroundImage.color = normalColor;
             backgroundImage.raycastTarget = true;
         }
 
@@ -103,7 +105,6 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
             slotNumberText.color = slotNumberTextColor;
             slotNumberText.alpha = 1f;
             slotNumberText.fontSize = 12;
-            slotNumberText.alignment = TextAlignmentOptions.TopLeft;
         }
     }
 
@@ -147,11 +148,6 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
             itemIconImage.enabled = true;
             itemIconImage.color = Color.white;
             itemIconImage.sprite = item.itemIcon;
-
-            if (item.itemIcon == null)
-            {
-                Debug.LogWarning($"[InventorySlotUI] Item '{item.itemName}' has no icon Sprite assigned.");
-            }
         }
 
         if (amountText != null)
@@ -161,13 +157,6 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
             amountText.gameObject.SetActive(shouldShowAmount);
             amountText.enabled = shouldShowAmount;
             amountText.text = shouldShowAmount ? slot.amount.ToString() : "";
-            amountText.color = amountTextColor;
-            amountText.alpha = 1f;
-        }
-
-        if (showDebugLogs)
-        {
-            Debug.Log($"[InventorySlotUI] Slot {slotIndex + 1}: {item.itemName} x{slot.amount}, Icon: {item.itemIcon}");
         }
     }
 
@@ -201,7 +190,39 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
         }
         else if (eventData.button == PointerEventData.InputButton.Right)
         {
-            inventoryUI.QuickUseOrDrop(slotIndex);
+            inventoryUI.DropInventorySlot(slotIndex);
         }
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (inventoryUI == null || slot == null || slot.IsEmpty())
+        {
+            return;
+        }
+
+        isDragging = true;
+        inventoryUI.BeginDragFromInventory(slotIndex, slot.itemData, slot.amount);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (!isDragging || inventoryUI == null)
+        {
+            return;
+        }
+
+        inventoryUI.UpdateDrag(eventData.position);
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (!isDragging || inventoryUI == null)
+        {
+            return;
+        }
+
+        isDragging = false;
+        inventoryUI.EndDrag();
     }
 }

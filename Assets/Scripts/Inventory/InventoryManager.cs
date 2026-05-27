@@ -7,7 +7,7 @@ public class InventoryManager : MonoBehaviour
     public static InventoryManager Instance;
 
     [Header("Inventory Size")]
-    public int maxSlots = 36;
+    public int maxSlots = 32;
 
     [Header("Runtime Slots")]
     [SerializeField] private List<InventorySlot> slots = new List<InventorySlot>();
@@ -59,15 +59,8 @@ public class InventoryManager : MonoBehaviour
 
     public bool AddItem(ItemData itemData, int amount = 1)
     {
-        if (itemData == null)
+        if (itemData == null || amount <= 0)
         {
-            Debug.LogWarning("[InventoryManager] Cannot add null item.");
-            return false;
-        }
-
-        if (amount <= 0)
-        {
-            Debug.LogWarning("[InventoryManager] Cannot add amount <= 0.");
             return false;
         }
 
@@ -107,12 +100,7 @@ public class InventoryManager : MonoBehaviour
         {
             InventorySlot slot = slots[i];
 
-            if (slot == null)
-            {
-                continue;
-            }
-
-            if (!slot.IsEmpty())
+            if (slot == null || !slot.IsEmpty())
             {
                 continue;
             }
@@ -157,14 +145,98 @@ public class InventoryManager : MonoBehaviour
         return AddItem(itemData, amount);
     }
 
-    public bool RemoveItem(ItemData itemData, int amount = 1)
+    public bool HasEmptySlot()
+    {
+        foreach (InventorySlot slot in slots)
+        {
+            if (slot != null && slot.IsEmpty())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool CanAddItem(ItemData itemData, int amount = 1)
     {
         if (itemData == null || amount <= 0)
         {
             return false;
         }
 
-        if (!HasItem(itemData, amount))
+        int remainingAmount = amount;
+
+        if (itemData.isStackable)
+        {
+            foreach (InventorySlot slot in slots)
+            {
+                if (slot == null || slot.IsEmpty())
+                {
+                    continue;
+                }
+
+                if (slot.CanStackWith(itemData))
+                {
+                    remainingAmount -= slot.GetSpaceRemaining();
+
+                    if (remainingAmount <= 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        foreach (InventorySlot slot in slots)
+        {
+            if (slot == null || !slot.IsEmpty())
+            {
+                continue;
+            }
+
+            int amountForSlot = itemData.isStackable
+                ? Mathf.Min(itemData.maxStackSize, remainingAmount)
+                : 1;
+
+            remainingAmount -= amountForSlot;
+
+            if (remainingAmount <= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool RemoveFromSlot(int slotIndex, int amount = 1)
+    {
+        InventorySlot slot = GetSlot(slotIndex);
+
+        if (slot == null || slot.IsEmpty() || amount <= 0)
+        {
+            return false;
+        }
+
+        ItemData removedItem = slot.itemData;
+        int removedAmount = Mathf.Min(amount, slot.amount);
+
+        slot.amount -= removedAmount;
+
+        if (slot.amount <= 0)
+        {
+            slot.itemData = null;
+            slot.amount = 0;
+        }
+
+        NotifyItemRemoved(removedItem, removedAmount);
+        return true;
+    }
+
+    public bool RemoveItem(ItemData itemData, int amount = 1)
+    {
+        if (itemData == null || amount <= 0)
         {
             return false;
         }
@@ -204,74 +276,7 @@ public class InventoryManager : MonoBehaviour
         }
 
         OnInventoryChanged?.Invoke();
-        return true;
-    }
-
-    public bool RemoveItemByID(string itemID, int amount = 1)
-    {
-        if (ItemDatabase.Instance == null)
-        {
-            return false;
-        }
-
-        ItemData itemData = ItemDatabase.Instance.GetItemByID(itemID);
-
-        if (itemData == null)
-        {
-            return false;
-        }
-
-        return RemoveItem(itemData, amount);
-    }
-
-    public bool HasItem(ItemData itemData, int amount = 1)
-    {
-        if (itemData == null)
-        {
-            return false;
-        }
-
-        int total = 0;
-
-        foreach (InventorySlot slot in slots)
-        {
-            if (slot == null || slot.IsEmpty())
-            {
-                continue;
-            }
-
-            if (slot.itemData.itemID == itemData.itemID)
-            {
-                total += slot.amount;
-            }
-        }
-
-        return total >= amount;
-    }
-
-    public bool HasItemByID(string itemID, int amount = 1)
-    {
-        if (string.IsNullOrWhiteSpace(itemID))
-        {
-            return false;
-        }
-
-        int total = 0;
-
-        foreach (InventorySlot slot in slots)
-        {
-            if (slot == null || slot.IsEmpty())
-            {
-                continue;
-            }
-
-            if (slot.itemData.itemID == itemID)
-            {
-                total += slot.amount;
-            }
-        }
-
-        return total >= amount;
+        return false;
     }
 
     public void UseSlot(int slotIndex)
@@ -302,7 +307,7 @@ public class InventoryManager : MonoBehaviour
 
         if (item.itemType == ItemType.Consumable)
         {
-            RemoveItem(item, 1);
+            RemoveFromSlot(slotIndex, 1);
         }
 
         OnInventoryChanged?.Invoke();
@@ -325,8 +330,12 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
-        RemoveItem(item, 1);
+        RemoveFromSlot(slotIndex, 1);
+
         Debug.Log($"[InventoryManager] Dropped item: {item.itemName}");
+
+        // Later:
+        // SpawnWorldItem(item);
     }
 
     public void ClearInventory()

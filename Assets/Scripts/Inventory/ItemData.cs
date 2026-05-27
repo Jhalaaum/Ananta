@@ -13,28 +13,26 @@ public class ItemData : ScriptableObject
     [Header("Classification")]
     public ItemType itemType = ItemType.Misc;
 
-    [Header("Icon / Visual")]
+    [Header("Icon")]
     public Sprite itemIcon;
 
     [Header("Stacking")]
     public bool isStackable = true;
     public int maxStackSize = 99;
 
-    [Header("Usage")]
+    [Header("Use / Drop")]
     public bool canUse;
     public bool canDrop = true;
 
     [TextArea(2, 4)]
     public string useMessage = "Used item.";
 
-    [Header("Quest / Story")]
+    [Header("Important")]
     public bool isImportant;
 
     [Header("Equipment / Disguise")]
     public bool canEquip;
     public EquipmentSlotType equipmentSlotType;
     public bool countsAsDisguisePiece;
-
-    [Tooltip("Example: guard, merchant, monk, servant, noble")]
     public string disguiseSetID;
 }

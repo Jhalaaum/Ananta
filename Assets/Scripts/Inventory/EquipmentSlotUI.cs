@@ -3,7 +3,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class EquipmentSlotUI : MonoBehaviour, IPointerClickHandler
+public class EquipmentSlotUI : MonoBehaviour, 
+    IPointerClickHandler,
+    IDropHandler
 {
     [Header("Slot")]
     public EquipmentSlotType slotType;
@@ -15,7 +17,8 @@ public class EquipmentSlotUI : MonoBehaviour, IPointerClickHandler
     public TMP_Text slotLabelText;
 
     [Header("Colors")]
-    public Color normalColor = new Color(0.18f, 0.14f, 0.09f, 1f);
+    public Color normalColor;
+    public Color occupiedColor;
     public Color selectedColor;
 
     private ItemData equippedItem;
@@ -28,13 +31,66 @@ public class EquipmentSlotUI : MonoBehaviour, IPointerClickHandler
             backgroundImage = GetComponent<Image>();
         }
 
+        AutoFindReferences();
+
+        ColorUtility.TryParseHtmlString("#2E2417", out normalColor);
+        ColorUtility.TryParseHtmlString("#3A2F1D", out occupiedColor);
         ColorUtility.TryParseHtmlString("#C9A45D", out selectedColor);
-        Refresh();
+
+        ForceVisualDefaults();
+    }
+
+    private void AutoFindReferences()
+    {
+        if (itemIconImage == null)
+        {
+            Transform icon = transform.Find("EquipmentIconImage");
+
+            if (icon != null)
+            {
+                itemIconImage = icon.GetComponent<Image>();
+            }
+        }
+
+        if (slotLabelText == null)
+        {
+            Transform label = transform.Find("SlotLabelText");
+
+            if (label != null)
+            {
+                slotLabelText = label.GetComponent<TMP_Text>();
+            }
+        }
+    }
+
+    private void ForceVisualDefaults()
+    {
+        if (backgroundImage != null)
+        {
+            backgroundImage.enabled = true;
+            backgroundImage.raycastTarget = true;
+        }
+
+        if (itemIconImage != null)
+        {
+            itemIconImage.raycastTarget = false;
+            itemIconImage.preserveAspect = true;
+            itemIconImage.color = Color.white;
+        }
+
+        if (slotLabelText != null)
+        {
+            slotLabelText.raycastTarget = false;
+            slotLabelText.color = new Color(0.85f, 0.78f, 0.62f, 1f);
+            slotLabelText.alpha = 1f;
+        }
     }
 
     public void Setup(InventoryUI ui)
     {
         inventoryUI = ui;
+        AutoFindReferences();
+        ForceVisualDefaults();
         Refresh();
     }
 
@@ -56,12 +112,7 @@ public class EquipmentSlotUI : MonoBehaviour, IPointerClickHandler
 
     public bool CanAccept(ItemData item)
     {
-        if (item == null)
-        {
-            return false;
-        }
-
-        if (!item.canEquip)
+        if (item == null || !item.canEquip)
         {
             return false;
         }
@@ -76,9 +127,12 @@ public class EquipmentSlotUI : MonoBehaviour, IPointerClickHandler
 
     public void Refresh()
     {
+        AutoFindReferences();
+        ForceVisualDefaults();
+
         if (backgroundImage != null)
         {
-            backgroundImage.color = normalColor;
+            backgroundImage.color = equippedItem == null ? normalColor : occupiedColor;
         }
 
         if (itemIconImage != null)
@@ -86,24 +140,29 @@ public class EquipmentSlotUI : MonoBehaviour, IPointerClickHandler
             if (equippedItem != null && equippedItem.itemIcon != null)
             {
                 itemIconImage.gameObject.SetActive(true);
+                itemIconImage.enabled = true;
                 itemIconImage.sprite = equippedItem.itemIcon;
+                itemIconImage.color = Color.white;
             }
             else
             {
                 itemIconImage.sprite = null;
+                itemIconImage.enabled = false;
                 itemIconImage.gameObject.SetActive(false);
             }
         }
 
         if (slotLabelText != null)
         {
-            if (equippedItem != null)
+            if (equippedItem == null)
             {
-                slotLabelText.text = "";
+                slotLabelText.gameObject.SetActive(true);
+                slotLabelText.text = GetShortLabel();
             }
             else
             {
-                slotLabelText.text = GetShortLabel();
+                slotLabelText.text = "";
+                slotLabelText.gameObject.SetActive(false);
             }
         }
     }
@@ -132,6 +191,16 @@ public class EquipmentSlotUI : MonoBehaviour, IPointerClickHandler
         }
     }
 
+    public void OnDrop(PointerEventData eventData)
+    {
+        if (inventoryUI == null)
+        {
+            return;
+        }
+
+        inventoryUI.TryDropDraggedItemOnEquipmentSlot(this);
+    }
+
     public void OnPointerClick(PointerEventData eventData)
     {
         if (inventoryUI == null)
@@ -143,8 +212,7 @@ public class EquipmentSlotUI : MonoBehaviour, IPointerClickHandler
         {
             inventoryUI.SelectEquipmentSlot(this);
         }
-
-        if (eventData.button == PointerEventData.InputButton.Right)
+        else if (eventData.button == PointerEventData.InputButton.Right)
         {
             inventoryUI.UnequipSlot(this);
         }
