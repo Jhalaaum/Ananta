@@ -18,10 +18,34 @@ public class QuestBookUI : MonoBehaviour
     public TMP_Text selectedQuestTargetText;
     public TMP_Text selectedQuestStatusText;
 
+    [Header("Button Colors")]
+    public Color inProgressButtonColor;
+    public Color completedButtonColor;
+    public Color selectedButtonColor;
+    public Color inProgressTextColor;
+    public Color completedTextColor;
+    public Color selectedTextColor = Color.black;
+
+    [Header("Button Layout")]
+    public float buttonHeight = 44f;
+
     [Header("Empty State")]
     public string noQuestSelectedText = "Select a quest to view details.";
 
+    [Header("Debug")]
+    public bool showDebugLogs = true;
+
     private QuestState selectedQuest;
+    private readonly Dictionary<Button, QuestState> buttonQuestLookup = new Dictionary<Button, QuestState>();
+
+    private void Awake()
+    {
+        ColorUtility.TryParseHtmlString("#2E2417", out inProgressButtonColor);
+        ColorUtility.TryParseHtmlString("#1F2E1F", out completedButtonColor);
+        ColorUtility.TryParseHtmlString("#C9A45D", out selectedButtonColor);
+        ColorUtility.TryParseHtmlString("#F1E6C8", out inProgressTextColor);
+        ColorUtility.TryParseHtmlString("#BDE5B8", out completedTextColor);
+    }
 
     private void OnEnable()
     {
@@ -59,6 +83,7 @@ public class QuestBookUI : MonoBehaviour
     {
         ClearContainer(inProgressQuestContainer);
         ClearContainer(completedQuestContainer);
+        buttonQuestLookup.Clear();
 
         if (QuestManager.Instance == null)
         {
@@ -68,7 +93,10 @@ public class QuestBookUI : MonoBehaviour
 
         List<QuestState> quests = QuestManager.Instance.GetActiveQuests();
 
-        selectedQuest = null;
+        if (selectedQuest != null)
+        {
+            selectedQuest = FindSameQuestAgain(quests, selectedQuest);
+        }
 
         foreach (QuestState questState in quests)
         {
@@ -94,43 +122,212 @@ public class QuestBookUI : MonoBehaviour
 
         if (selectedQuest == null)
         {
-            foreach (QuestState questState in quests)
+            selectedQuest = FindFirstQuest(quests);
+        }
+
+        UpdateAllButtonVisuals();
+        ShowQuestDetails(selectedQuest);
+    }
+
+    private QuestState FindSameQuestAgain(List<QuestState> quests, QuestState previousSelected)
+    {
+        if (previousSelected == null || previousSelected.questData == null)
+        {
+            return null;
+        }
+
+        string previousID = previousSelected.questData.questID;
+
+        foreach (QuestState questState in quests)
+        {
+            if (questState == null || questState.questData == null)
             {
-                if (questState != null && questState.questData != null)
-                {
-                    selectedQuest = questState;
-                    break;
-                }
+                continue;
+            }
+
+            if (questState.questData.questID == previousID)
+            {
+                return questState;
             }
         }
 
-        ShowQuestDetails(selectedQuest);
+        return null;
+    }
+
+    private QuestState FindFirstQuest(List<QuestState> quests)
+    {
+        foreach (QuestState questState in quests)
+        {
+            if (questState != null && questState.questData != null)
+            {
+                return questState;
+            }
+        }
+
+        return null;
     }
 
     private void CreateQuestButton(Transform container, QuestState questState)
     {
-        if (container == null || questButtonPrefab == null)
+        if (container == null)
         {
+            Debug.LogWarning("[QuestBookUI] Missing quest container.");
+            return;
+        }
+
+        if (questButtonPrefab == null)
+        {
+            Debug.LogWarning("[QuestBookUI] Missing QuestButtonPrefab.");
             return;
         }
 
         Button button = Instantiate(questButtonPrefab, container);
         button.gameObject.SetActive(true);
+        button.name = questState.questData.questName + "_Button";
 
-        TMP_Text text = button.GetComponentInChildren<TMP_Text>();
-
-        if (text != null)
-        {
-            string prefix = questState.isCompleted ? "✓ " : "";
-            text.text = prefix + questState.questData.questName;
-        }
+        ForceButtonObjectVisible(button);
+        SetButtonText(button, questState);
 
         button.onClick.RemoveAllListeners();
         button.onClick.AddListener(() =>
         {
             selectedQuest = questState;
+            UpdateAllButtonVisuals();
             ShowQuestDetails(selectedQuest);
         });
+
+        buttonQuestLookup[button] = questState;
+
+        if (showDebugLogs)
+        {
+            Debug.Log($"[QuestBookUI] Created quest button: {questState.questData.questName}, Completed: {questState.isCompleted}");
+        }
+    }
+
+    private void ForceButtonObjectVisible(Button button)
+    {
+        RectTransform rect = button.GetComponent<RectTransform>();
+
+        if (rect != null)
+        {
+            rect.localScale = Vector3.one;
+            rect.localRotation = Quaternion.identity;
+            rect.anchoredPosition3D = Vector3.zero;
+            rect.sizeDelta = new Vector2(rect.sizeDelta.x, buttonHeight);
+        }
+
+        LayoutElement layoutElement = button.GetComponent<LayoutElement>();
+
+        if (layoutElement == null)
+        {
+            layoutElement = button.gameObject.AddComponent<LayoutElement>();
+        }
+
+        layoutElement.minHeight = buttonHeight;
+        layoutElement.preferredHeight = buttonHeight;
+        layoutElement.flexibleHeight = 0;
+
+        Image image = button.GetComponent<Image>();
+
+        if (image != null)
+        {
+            image.enabled = true;
+            image.raycastTarget = true;
+            image.color = inProgressButtonColor;
+        }
+
+        CanvasGroup canvasGroup = button.GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null)
+        {
+            canvasGroup = button.gameObject.AddComponent<CanvasGroup>();
+        }
+
+        canvasGroup.alpha = 1f;
+        canvasGroup.interactable = true;
+        canvasGroup.blocksRaycasts = true;
+
+        button.interactable = true;
+    }
+
+    private void SetButtonText(Button button, QuestState questState)
+    {
+        TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+
+        if (text == null)
+        {
+            Debug.LogWarning($"[QuestBookUI] Quest button prefab has no TMP_Text child: {button.name}");
+            return;
+        }
+
+        text.gameObject.SetActive(true);
+        text.enabled = true;
+        text.alpha = 1f;
+        text.raycastTarget = false;
+        text.fontSize = 18;
+        text.alignment = TextAlignmentOptions.MidlineLeft;
+        text.enableWordWrapping = false;
+
+        string prefix = questState.isCompleted ? "✓ " : "";
+        text.text = prefix + questState.questData.questName;
+    }
+
+    private void UpdateAllButtonVisuals()
+    {
+        foreach (KeyValuePair<Button, QuestState> pair in buttonQuestLookup)
+        {
+            Button button = pair.Key;
+            QuestState questState = pair.Value;
+
+            if (button == null || questState == null)
+            {
+                continue;
+            }
+
+            bool isSelected =
+                selectedQuest != null &&
+                selectedQuest.questData != null &&
+                questState.questData != null &&
+                selectedQuest.questData.questID == questState.questData.questID;
+
+            ApplyButtonVisual(button, questState, isSelected);
+        }
+    }
+
+    private void ApplyButtonVisual(Button button, QuestState questState, bool selected)
+    {
+        Image image = button.GetComponent<Image>();
+        TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+
+        if (image != null)
+        {
+            image.enabled = true;
+
+            if (selected)
+            {
+                image.color = selectedButtonColor;
+            }
+            else
+            {
+                image.color = questState.isCompleted ? completedButtonColor : inProgressButtonColor;
+            }
+        }
+
+        if (text != null)
+        {
+            text.gameObject.SetActive(true);
+            text.enabled = true;
+            text.alpha = 1f;
+
+            if (selected)
+            {
+                text.color = selectedTextColor;
+            }
+            else
+            {
+                text.color = questState.isCompleted ? completedTextColor : inProgressTextColor;
+            }
+        }
     }
 
     private void ShowQuestDetails(QuestState questState)
