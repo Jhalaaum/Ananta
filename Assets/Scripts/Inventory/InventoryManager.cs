@@ -9,6 +9,10 @@ public class InventoryManager : MonoBehaviour
     [Header("Inventory Size")]
     public int maxSlots = 32;
 
+    [Header("Hotbar")]
+    public int hotbarSlotCount = 9;
+    public int selectedHotbarIndex = 0;
+
     [Header("Runtime Slots")]
     [SerializeField] private List<InventorySlot> slots = new List<InventorySlot>();
 
@@ -16,6 +20,7 @@ public class InventoryManager : MonoBehaviour
     public bool showDebugLogs = true;
 
     public event Action OnInventoryChanged;
+    public event Action<int> OnSelectedHotbarChanged;
     public event Action<ItemData, int> OnItemAdded;
     public event Action<ItemData, int> OnItemRemoved;
     public event Action<ItemData> OnItemUsed;
@@ -40,6 +45,8 @@ public class InventoryManager : MonoBehaviour
         {
             slots.Add(new InventorySlot(null, 0));
         }
+
+        selectedHotbarIndex = Mathf.Clamp(selectedHotbarIndex, 0, hotbarSlotCount - 1);
     }
 
     public List<InventorySlot> GetSlots()
@@ -55,6 +62,50 @@ public class InventoryManager : MonoBehaviour
         }
 
         return slots[index];
+    }
+
+    public InventorySlot GetSelectedHotbarSlot()
+    {
+        return GetSlot(selectedHotbarIndex);
+    }
+
+    public void SelectHotbarSlot(int index)
+    {
+        if (index < 0 || index >= hotbarSlotCount)
+        {
+            return;
+        }
+
+        selectedHotbarIndex = index;
+
+        Log($"Selected hotbar slot {selectedHotbarIndex + 1}");
+
+        OnSelectedHotbarChanged?.Invoke(selectedHotbarIndex);
+        OnInventoryChanged?.Invoke();
+    }
+
+    public void SelectNextHotbarSlot()
+    {
+        int next = selectedHotbarIndex + 1;
+
+        if (next >= hotbarSlotCount)
+        {
+            next = 0;
+        }
+
+        SelectHotbarSlot(next);
+    }
+
+    public void SelectPreviousHotbarSlot()
+    {
+        int previous = selectedHotbarIndex - 1;
+
+        if (previous < 0)
+        {
+            previous = hotbarSlotCount - 1;
+        }
+
+        SelectHotbarSlot(previous);
     }
 
     public bool AddItem(ItemData itemData, int amount = 1)
@@ -145,19 +196,6 @@ public class InventoryManager : MonoBehaviour
         return AddItem(itemData, amount);
     }
 
-    public bool HasEmptySlot()
-    {
-        foreach (InventorySlot slot in slots)
-        {
-            if (slot != null && slot.IsEmpty())
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public bool CanAddItem(ItemData itemData, int amount = 1)
     {
         if (itemData == null || amount <= 0)
@@ -234,51 +272,6 @@ public class InventoryManager : MonoBehaviour
         return true;
     }
 
-    public bool RemoveItem(ItemData itemData, int amount = 1)
-    {
-        if (itemData == null || amount <= 0)
-        {
-            return false;
-        }
-
-        int remainingAmount = amount;
-
-        for (int i = slots.Count - 1; i >= 0; i--)
-        {
-            InventorySlot slot = slots[i];
-
-            if (slot == null || slot.IsEmpty())
-            {
-                continue;
-            }
-
-            if (slot.itemData.itemID != itemData.itemID)
-            {
-                continue;
-            }
-
-            int amountToRemove = Mathf.Min(slot.amount, remainingAmount);
-
-            slot.amount -= amountToRemove;
-            remainingAmount -= amountToRemove;
-
-            if (slot.amount <= 0)
-            {
-                slot.itemData = null;
-                slot.amount = 0;
-            }
-
-            if (remainingAmount <= 0)
-            {
-                NotifyItemRemoved(itemData, amount);
-                return true;
-            }
-        }
-
-        OnInventoryChanged?.Invoke();
-        return false;
-    }
-
     public void UseSlot(int slotIndex)
     {
         InventorySlot slot = GetSlot(slotIndex);
@@ -313,6 +306,11 @@ public class InventoryManager : MonoBehaviour
         OnInventoryChanged?.Invoke();
     }
 
+    public void UseSelectedHotbarItem()
+    {
+        UseSlot(selectedHotbarIndex);
+    }
+
     public void DropSlot(int slotIndex)
     {
         InventorySlot slot = GetSlot(slotIndex);
@@ -332,10 +330,17 @@ public class InventoryManager : MonoBehaviour
 
         RemoveFromSlot(slotIndex, 1);
 
-        Debug.Log($"[InventoryManager] Dropped item: {item.itemName}");
+        if (WorldItemDropper.Instance != null)
+        {
+            WorldItemDropper.Instance.DropItem(item);
+        }
 
-        // Later:
-        // SpawnWorldItem(item);
+        Debug.Log($"[InventoryManager] Dropped item: {item.itemName}");
+    }
+
+    public void DropSelectedHotbarItem()
+    {
+        DropSlot(selectedHotbarIndex);
     }
 
     public void ClearInventory()

@@ -23,7 +23,7 @@ MonoBehaviour:
   canDrop: 1
   useMessage: Used item.
   isImportant: 0
-  canEquip: 0
+  canEquip: 1
   equipmentSlotType: 0
   countsAsDisguisePiece: 1
   disguiseSetID: Guard Turban

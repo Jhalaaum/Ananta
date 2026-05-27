@@ -22,7 +22,7 @@ MonoBehaviour:
   canUse: 0
   canDrop: 1
   useMessage: Used item.
-  isImportant: 1
+  isImportant: 0
   canEquip: 0
   equipmentSlotType: 0
   countsAsDisguisePiece: 0

@@ -1158,7 +1158,7 @@ public class PlayerMovement : MonoBehaviour
 
         float leanInput = 0f;
 
-        if (Keyboard.current.qKey.isPressed)
+        if (Keyboard.current.bKey.isPressed)
             leanInput = -1f;
         else if (Keyboard.current.vKey.isPressed)
             leanInput = 1f;
