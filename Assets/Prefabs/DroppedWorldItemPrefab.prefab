@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4422309018934186413}
-  - component: {fileID: 6475897859260703576}
   - component: {fileID: 755896460692949576}
   - component: {fileID: 6628347035018448390}
   - component: {fileID: 7461232026756517388}
+  - component: {fileID: 4718629461022779920}
   m_Layer: 9
   m_Name: DroppedWorldItemPrefab
   m_TagString: Untagged
@@ -35,27 +35,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &6475897859260703576
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5772254825575684217}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &755896460692949576
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -99,6 +78,8 @@ MonoBehaviour:
   amount: 1
   pickupPrompt: Press E to pick up
   spriteRenderer: {fileID: 7461232026756517388}
+  fallbackVisual: {fileID: 0}
+  visualScale: 0.6
 --- !u!212 &7461232026756517388
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -157,3 +138,24 @@ SpriteRenderer:
   m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!135 &4718629461022779920
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5772254825575684217}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.5
+  m_Center: {x: 0, y: 0, z: 0}

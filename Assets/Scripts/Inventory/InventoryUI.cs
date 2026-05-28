@@ -6,7 +6,8 @@ using UnityEngine.UI;
 
 public class InventoryUI : MonoBehaviour
 {
-    [Header("Grid")]
+    [Header("Grid Containers")]
+    public Transform hotbarGridContainer;
     public Transform inventoryGridContainer;
     public InventorySlotUI inventorySlotPrefab;
 
@@ -15,10 +16,6 @@ public class InventoryUI : MonoBehaviour
     public TMP_Text itemDescriptionText;
     public Button selectedItemActionButton;
     public TMP_Text selectedItemActionButtonText;
-
-    [Header("Disguise / Equipment Preview")]
-    public Image characterPreviewImage;
-    public TMP_Text disguiseStatusText;
 
     [Header("Equipment Slots")]
     public EquipmentSlotUI headSlot;
@@ -170,20 +167,20 @@ public class InventoryUI : MonoBehaviour
 
     private void HandleNumberHotkeys()
     {
-        if (Keyboard.current == null)
+        if (Keyboard.current == null || InventoryManager.Instance == null)
         {
             return;
         }
 
-        if (Keyboard.current.digit1Key.wasPressedThisFrame) SelectSlot(0);
-        if (Keyboard.current.digit2Key.wasPressedThisFrame) SelectSlot(1);
-        if (Keyboard.current.digit3Key.wasPressedThisFrame) SelectSlot(2);
-        if (Keyboard.current.digit4Key.wasPressedThisFrame) SelectSlot(3);
-        if (Keyboard.current.digit5Key.wasPressedThisFrame) SelectSlot(4);
-        if (Keyboard.current.digit6Key.wasPressedThisFrame) SelectSlot(5);
-        if (Keyboard.current.digit7Key.wasPressedThisFrame) SelectSlot(6);
-        if (Keyboard.current.digit8Key.wasPressedThisFrame) SelectSlot(7);
-        if (Keyboard.current.digit9Key.wasPressedThisFrame) SelectSlot(8);
+        if (Keyboard.current.digit1Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(0);
+        if (Keyboard.current.digit2Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(1);
+        if (Keyboard.current.digit3Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(2);
+        if (Keyboard.current.digit4Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(3);
+        if (Keyboard.current.digit5Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(4);
+        if (Keyboard.current.digit6Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(5);
+        if (Keyboard.current.digit7Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(6);
+        if (Keyboard.current.digit8Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(7);
+        if (Keyboard.current.digit9Key.wasPressedThisFrame) InventoryManager.Instance.SelectHotbarSlot(8);
     }
 
     public void BuildOrRefreshGrid()
@@ -221,15 +218,31 @@ public class InventoryUI : MonoBehaviour
     {
         ClearGrid();
 
-        if (inventoryGridContainer == null || inventorySlotPrefab == null)
+        if (hotbarGridContainer == null)
         {
-            Debug.LogWarning("[InventoryUI] Missing grid container or slot prefab.");
+            Debug.LogWarning("[InventoryUI] Missing HotbarGridContainer.");
+            return;
+        }
+
+        if (inventoryGridContainer == null)
+        {
+            Debug.LogWarning("[InventoryUI] Missing InventoryGridContainer.");
+            return;
+        }
+
+        if (inventorySlotPrefab == null)
+        {
+            Debug.LogWarning("[InventoryUI] Missing InventorySlotPrefab.");
             return;
         }
 
         for (int i = 0; i < slots.Count; i++)
         {
-            InventorySlotUI slotUI = Instantiate(inventorySlotPrefab, inventoryGridContainer);
+            Transform parent = InventoryManager.Instance.IsHotbarSlot(i)
+                ? hotbarGridContainer
+                : inventoryGridContainer;
+
+            InventorySlotUI slotUI = Instantiate(inventorySlotPrefab, parent);
             slotUI.gameObject.SetActive(true);
             slotUI.Setup(this, slots[i], i);
             slotUIs.Add(slotUI);
@@ -240,7 +253,10 @@ public class InventoryUI : MonoBehaviour
     {
         for (int i = 0; i < slotUIs.Count; i++)
         {
-            bool selected = i == selectedSlotIndex;
+            bool selected =
+                InventoryManager.Instance != null &&
+                i == InventoryManager.Instance.selectedHotbarIndex &&
+                InventoryManager.Instance.IsHotbarSlot(i);
 
             if (slotUIs[i] != null)
             {
@@ -266,6 +282,11 @@ public class InventoryUI : MonoBehaviour
 
         selectedSlotIndex = slotIndex;
         selectedEquipmentSlot = null;
+
+        if (InventoryManager.Instance.IsHotbarSlot(slotIndex))
+        {
+            InventoryManager.Instance.SelectHotbarSlot(slotIndex);
+        }
 
         BuildOrRefreshGrid();
         ShowInventorySlotDetails(slotIndex);
@@ -293,7 +314,8 @@ public class InventoryUI : MonoBehaviour
             itemDescriptionText.text =
                 $"{item.itemDescription}\n\n" +
                 $"Type: {item.itemType}\n" +
-                $"Amount: {slot.amount}";
+                $"Amount: {slot.amount}\n" +
+                $"Location: {(InventoryManager.Instance.IsHotbarSlot(slotIndex) ? "Hotbar" : "Backpack")}";
         }
 
         if (selectedItemActionButton != null)
@@ -397,7 +419,7 @@ public class InventoryUI : MonoBehaviour
 
     public void UpdateDrag(Vector2 screenPosition)
     {
-        if (dragIconImage == null || !dragIconImage.gameObject.activeSelf)
+        if (dragIconImage == null || !dragIconImage.gameObject.activeSelf || rootCanvas == null)
         {
             return;
         }
@@ -422,6 +444,24 @@ public class InventoryUI : MonoBehaviour
         draggedInventorySlotIndex = -1;
         draggedItem = null;
         draggedAmount = 0;
+    }
+
+    public void TryDropDraggedItemOnInventorySlot(int targetSlotIndex)
+    {
+        if (InventoryManager.Instance == null)
+        {
+            EndDrag();
+            return;
+        }
+
+        if (draggedInventorySlotIndex < 0)
+        {
+            EndDrag();
+            return;
+        }
+
+        InventoryManager.Instance.MoveOrSwapSlots(draggedInventorySlotIndex, targetSlotIndex);
+        EndDrag();
     }
 
     public void TryDropDraggedItemOnEquipmentSlot(EquipmentSlotUI equipmentSlot)
@@ -452,15 +492,9 @@ public class InventoryUI : MonoBehaviour
 
         ItemData itemToEquip = inventorySlot.itemData;
 
-        if (targetSlot == null)
+        if (targetSlot == null || !targetSlot.CanAccept(itemToEquip))
         {
-            Debug.LogWarning($"[InventoryUI] No valid equipment slot for {itemToEquip.itemName}");
-            return false;
-        }
-
-        if (!targetSlot.CanAccept(itemToEquip))
-        {
-            Debug.LogWarning($"[InventoryUI] {itemToEquip.itemName} cannot go into {targetSlot.slotType} slot.");
+            Debug.LogWarning($"[InventoryUI] {itemToEquip.itemName} cannot be equipped there.");
             return false;
         }
 
@@ -493,8 +527,6 @@ public class InventoryUI : MonoBehaviour
         BuildOrRefreshGrid();
         ShowEquipmentSlotDetails(targetSlot);
 
-        Debug.Log($"[InventoryUI] Equipped {itemToEquip.itemName} to {targetSlot.slotType}");
-
         return true;
     }
 
@@ -509,19 +541,14 @@ public class InventoryUI : MonoBehaviour
         {
             case EquipmentSlotType.Head:
                 return headSlot;
-
             case EquipmentSlotType.Body:
                 return bodySlot;
-
             case EquipmentSlotType.Legs:
                 return legsSlot;
-
             case EquipmentSlotType.Feet:
                 return feetSlot;
-
             case EquipmentSlotType.Accessory:
                 return GetFirstAvailableAccessorySlot();
-
             default:
                 return null;
         }
@@ -553,6 +580,7 @@ public class InventoryUI : MonoBehaviour
         }
 
         InventoryManager.Instance.DropSlot(slotIndex);
+
         selectedSlotIndex = -1;
         BuildOrRefreshGrid();
         ClearDetails();
@@ -607,8 +635,7 @@ public class InventoryUI : MonoBehaviour
             itemDescriptionText.text =
                 $"{item.itemDescription}\n\n" +
                 $"Equipped Slot: {equipmentSlot.slotType}\n" +
-                $"Disguise Set: {(string.IsNullOrWhiteSpace(item.disguiseSetID) ? "None" : item.disguiseSetID)}\n\n" +
-                $"Right-click this slot to unequip.";
+                $"Right-click equipment slot to unequip.";
         }
 
         if (selectedItemActionButton != null)
@@ -643,8 +670,6 @@ public class InventoryUI : MonoBehaviour
         RefreshEquipmentSlots();
         BuildOrRefreshGrid();
         ClearDetails();
-
-        Debug.Log($"[InventoryUI] Unequipped {item.itemName}");
     }
 
     private void RefreshEquipmentSlots()
@@ -663,67 +688,6 @@ public class InventoryUI : MonoBehaviour
                     slot.Refresh();
                 }
             }
-        }
-
-        RefreshDisguiseStatus();
-    }
-
-    private void RefreshDisguiseStatus()
-    {
-        if (disguiseStatusText == null)
-        {
-            return;
-        }
-
-        string disguiseSet = GetCurrentDisguiseSetID();
-
-        disguiseStatusText.text = string.IsNullOrWhiteSpace(disguiseSet)
-            ? "Disguise: None"
-            : $"Disguise: {disguiseSet}";
-    }
-
-    private string GetCurrentDisguiseSetID()
-    {
-        List<ItemData> equippedItems = new List<ItemData>();
-
-        AddEquippedItem(equippedItems, headSlot);
-        AddEquippedItem(equippedItems, bodySlot);
-        AddEquippedItem(equippedItems, legsSlot);
-        AddEquippedItem(equippedItems, feetSlot);
-
-        if (accessorySlots != null)
-        {
-            foreach (EquipmentSlotUI slot in accessorySlots)
-            {
-                AddEquippedItem(equippedItems, slot);
-            }
-        }
-
-        foreach (ItemData item in equippedItems)
-        {
-            if (item != null &&
-                item.countsAsDisguisePiece &&
-                !string.IsNullOrWhiteSpace(item.disguiseSetID))
-            {
-                return item.disguiseSetID;
-            }
-        }
-
-        return "";
-    }
-
-    private void AddEquippedItem(List<ItemData> list, EquipmentSlotUI slot)
-    {
-        if (slot == null)
-        {
-            return;
-        }
-
-        ItemData item = slot.GetItem();
-
-        if (item != null)
-        {
-            list.Add(item);
         }
     }
 
@@ -744,14 +708,20 @@ public class InventoryUI : MonoBehaviour
 
         slotUIs.Clear();
 
-        if (inventoryGridContainer == null)
+        ClearChildren(hotbarGridContainer);
+        ClearChildren(inventoryGridContainer);
+    }
+
+    private void ClearChildren(Transform parent)
+    {
+        if (parent == null)
         {
             return;
         }
 
-        for (int i = inventoryGridContainer.childCount - 1; i >= 0; i--)
+        for (int i = parent.childCount - 1; i >= 0; i--)
         {
-            Destroy(inventoryGridContainer.GetChild(i).gameObject);
+            Destroy(parent.GetChild(i).gameObject);
         }
     }
 }

@@ -3,11 +3,12 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class InventorySlotUI : MonoBehaviour, 
+public class InventorySlotUI : MonoBehaviour,
     IPointerClickHandler,
     IBeginDragHandler,
     IDragHandler,
-    IEndDragHandler
+    IEndDragHandler,
+    IDropHandler
 {
     [Header("UI References")]
     public Image backgroundImage;
@@ -17,6 +18,7 @@ public class InventorySlotUI : MonoBehaviour,
 
     [Header("Colors")]
     public Color normalColor;
+    public Color hotbarColor;
     public Color selectedColor;
     public Color amountTextColor = Color.white;
     public Color slotNumberTextColor = new Color(0.75f, 0.68f, 0.55f, 1f);
@@ -32,6 +34,7 @@ public class InventorySlotUI : MonoBehaviour,
         AutoFindReferences();
 
         ColorUtility.TryParseHtmlString("#2E2417", out normalColor);
+        ColorUtility.TryParseHtmlString("#3A2D18", out hotbarColor);
         ColorUtility.TryParseHtmlString("#C9A45D", out selectedColor);
 
         ForceVisualDefaults();
@@ -47,31 +50,19 @@ public class InventorySlotUI : MonoBehaviour,
         if (itemIconImage == null)
         {
             Transform icon = transform.Find("ItemIconImage");
-
-            if (icon != null)
-            {
-                itemIconImage = icon.GetComponent<Image>();
-            }
+            if (icon != null) itemIconImage = icon.GetComponent<Image>();
         }
 
         if (amountText == null)
         {
             Transform amount = transform.Find("ItemAmountText");
-
-            if (amount != null)
-            {
-                amountText = amount.GetComponent<TMP_Text>();
-            }
+            if (amount != null) amountText = amount.GetComponent<TMP_Text>();
         }
 
         if (slotNumberText == null)
         {
             Transform number = transform.Find("SlotNumberText");
-
-            if (number != null)
-            {
-                slotNumberText = number.GetComponent<TMP_Text>();
-            }
+            if (number != null) slotNumberText = number.GetComponent<TMP_Text>();
         }
     }
 
@@ -123,15 +114,33 @@ public class InventorySlotUI : MonoBehaviour,
         AutoFindReferences();
         ForceVisualDefaults();
 
+        bool isHotbar = InventoryManager.Instance != null &&
+                        InventoryManager.Instance.IsHotbarSlot(slotIndex);
+
         if (backgroundImage != null)
         {
-            backgroundImage.color = selected ? selectedColor : normalColor;
+            if (selected)
+            {
+                backgroundImage.color = selectedColor;
+            }
+            else
+            {
+                backgroundImage.color = isHotbar ? hotbarColor : normalColor;
+            }
         }
 
         if (slotNumberText != null)
         {
             slotNumberText.gameObject.SetActive(true);
-            slotNumberText.text = (slotIndex + 1).ToString();
+
+            if (isHotbar)
+            {
+                slotNumberText.text = (slotIndex + 1).ToString();
+            }
+            else
+            {
+                slotNumberText.text = "";
+            }
         }
 
         if (slot == null || slot.IsEmpty())
@@ -144,16 +153,15 @@ public class InventorySlotUI : MonoBehaviour,
 
         if (itemIconImage != null)
         {
-            itemIconImage.gameObject.SetActive(true);
-            itemIconImage.enabled = true;
-            itemIconImage.color = Color.white;
+            itemIconImage.gameObject.SetActive(item.itemIcon != null);
+            itemIconImage.enabled = item.itemIcon != null;
             itemIconImage.sprite = item.itemIcon;
+            itemIconImage.color = Color.white;
         }
 
         if (amountText != null)
         {
             bool shouldShowAmount = slot.amount > 1;
-
             amountText.gameObject.SetActive(shouldShowAmount);
             amountText.enabled = shouldShowAmount;
             amountText.text = shouldShowAmount ? slot.amount.ToString() : "";
@@ -224,5 +232,15 @@ public class InventorySlotUI : MonoBehaviour,
 
         isDragging = false;
         inventoryUI.EndDrag();
+    }
+
+    public void OnDrop(PointerEventData eventData)
+    {
+        if (inventoryUI == null)
+        {
+            return;
+        }
+
+        inventoryUI.TryDropDraggedItemOnInventorySlot(slotIndex);
     }
 }

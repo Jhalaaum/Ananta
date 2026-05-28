@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: Conversation_BlackBazaarMerchant_FirstMeeting
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
   conversationID: Conversation_BlackBazaarMerchant_FirstMeeting
+  canRepeat: 0
+  repeatConversation: {fileID: 0}
   lines:
   - speakerName: Black Bazaar Merchant
     speakerID: 

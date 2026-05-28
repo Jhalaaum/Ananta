@@ -7,10 +7,10 @@ public class InventoryManager : MonoBehaviour
     public static InventoryManager Instance;
 
     [Header("Inventory Size")]
-    public int maxSlots = 32;
-
-    [Header("Hotbar")]
     public int hotbarSlotCount = 9;
+    public int backpackSlotCount = 24;
+
+    [Header("Selected Hotbar")]
     public int selectedHotbarIndex = 0;
 
     [Header("Runtime Slots")]
@@ -24,6 +24,8 @@ public class InventoryManager : MonoBehaviour
     public event Action<ItemData, int> OnItemAdded;
     public event Action<ItemData, int> OnItemRemoved;
     public event Action<ItemData> OnItemUsed;
+
+    public int TotalSlotCount => hotbarSlotCount + backpackSlotCount;
 
     private void Awake()
     {
@@ -41,7 +43,7 @@ public class InventoryManager : MonoBehaviour
     {
         slots.Clear();
 
-        for (int i = 0; i < maxSlots; i++)
+        for (int i = 0; i < TotalSlotCount; i++)
         {
             slots.Add(new InventorySlot(null, 0));
         }
@@ -64,6 +66,11 @@ public class InventoryManager : MonoBehaviour
         return slots[index];
     }
 
+    public bool IsHotbarSlot(int index)
+    {
+        return index >= 0 && index < hotbarSlotCount;
+    }
+
     public InventorySlot GetSelectedHotbarSlot()
     {
         return GetSlot(selectedHotbarIndex);
@@ -77,17 +84,15 @@ public class InventoryManager : MonoBehaviour
         }
 
         selectedHotbarIndex = index;
-
-        Log($"Selected hotbar slot {selectedHotbarIndex + 1}");
-
         OnSelectedHotbarChanged?.Invoke(selectedHotbarIndex);
         OnInventoryChanged?.Invoke();
+
+        Log($"Selected hotbar slot {selectedHotbarIndex + 1}");
     }
 
     public void SelectNextHotbarSlot()
     {
         int next = selectedHotbarIndex + 1;
-
         if (next >= hotbarSlotCount)
         {
             next = 0;
@@ -99,7 +104,6 @@ public class InventoryManager : MonoBehaviour
     public void SelectPreviousHotbarSlot()
     {
         int previous = selectedHotbarIndex - 1;
-
         if (previous < 0)
         {
             previous = hotbarSlotCount - 1;
@@ -133,9 +137,7 @@ public class InventoryManager : MonoBehaviour
                     continue;
                 }
 
-                int space = slot.GetSpaceRemaining();
-                int amountToAdd = Mathf.Min(space, remainingAmount);
-
+                int amountToAdd = Mathf.Min(slot.GetSpaceRemaining(), remainingAmount);
                 slot.amount += amountToAdd;
                 remainingAmount -= amountToAdd;
 
@@ -228,18 +230,7 @@ public class InventoryManager : MonoBehaviour
 
         foreach (InventorySlot slot in slots)
         {
-            if (slot == null || !slot.IsEmpty())
-            {
-                continue;
-            }
-
-            int amountForSlot = itemData.isStackable
-                ? Mathf.Min(itemData.maxStackSize, remainingAmount)
-                : 1;
-
-            remainingAmount -= amountForSlot;
-
-            if (remainingAmount <= 0)
+            if (slot != null && slot.IsEmpty())
             {
                 return true;
             }
@@ -269,6 +260,57 @@ public class InventoryManager : MonoBehaviour
         }
 
         NotifyItemRemoved(removedItem, removedAmount);
+        return true;
+    }
+
+    public bool MoveOrSwapSlots(int fromIndex, int toIndex)
+    {
+        if (fromIndex == toIndex)
+        {
+            return false;
+        }
+
+        InventorySlot fromSlot = GetSlot(fromIndex);
+        InventorySlot toSlot = GetSlot(toIndex);
+
+        if (fromSlot == null || toSlot == null || fromSlot.IsEmpty())
+        {
+            return false;
+        }
+
+        if (!toSlot.IsEmpty() &&
+            fromSlot.itemData.itemID == toSlot.itemData.itemID &&
+            fromSlot.itemData.isStackable)
+        {
+            int space = toSlot.GetSpaceRemaining();
+            int amountToMove = Mathf.Min(space, fromSlot.amount);
+
+            if (amountToMove > 0)
+            {
+                toSlot.amount += amountToMove;
+                fromSlot.amount -= amountToMove;
+
+                if (fromSlot.amount <= 0)
+                {
+                    fromSlot.itemData = null;
+                    fromSlot.amount = 0;
+                }
+
+                OnInventoryChanged?.Invoke();
+                return true;
+            }
+        }
+
+        ItemData tempItem = toSlot.itemData;
+        int tempAmount = toSlot.amount;
+
+        toSlot.itemData = fromSlot.itemData;
+        toSlot.amount = fromSlot.amount;
+
+        fromSlot.itemData = tempItem;
+        fromSlot.amount = tempAmount;
+
+        OnInventoryChanged?.Invoke();
         return true;
     }
 
@@ -332,7 +374,11 @@ public class InventoryManager : MonoBehaviour
 
         if (WorldItemDropper.Instance != null)
         {
-            WorldItemDropper.Instance.DropItem(item);
+            WorldItemDropper.Instance.DropItem(item, 1);
+        }
+        else
+        {
+            Debug.LogWarning("[InventoryManager] No WorldItemDropper found. Item removed but not spawned.");
         }
 
         Debug.Log($"[InventoryManager] Dropped item: {item.itemName}");
@@ -345,10 +391,10 @@ public class InventoryManager : MonoBehaviour
 
     public void ClearInventory()
     {
-        for (int i = 0; i < slots.Count; i++)
+        foreach (InventorySlot slot in slots)
         {
-            slots[i].itemData = null;
-            slots[i].amount = 0;
+            slot.itemData = null;
+            slot.amount = 0;
         }
 
         OnInventoryChanged?.Invoke();

@@ -7,9 +7,12 @@ public class WorldItemDropper : MonoBehaviour
     [Header("Drop")]
     public GameObject defaultWorldItemPrefab;
     public Transform dropPoint;
-    public float forwardOffset = 1.2f;
-    public float upwardOffset = 0.4f;
-    public float throwForce = 2.5f;
+    public float forwardOffset = 1.5f;
+    public float upwardOffset = 1.0f;
+    public float throwForce = 2.0f;
+
+    [Header("Debug")]
+    public bool showDebugLogs = true;
 
     private void Awake()
     {
@@ -18,9 +21,20 @@ public class WorldItemDropper : MonoBehaviour
 
     public void DropItem(ItemData itemData)
     {
+        DropItem(itemData, 1);
+    }
+
+    public void DropItem(ItemData itemData, int amount)
+    {
         if (itemData == null)
         {
+            Debug.LogWarning("[WorldItemDropper] Cannot drop null item.");
             return;
+        }
+
+        if (amount <= 0)
+        {
+            amount = 1;
         }
 
         if (defaultWorldItemPrefab == null)
@@ -29,16 +43,9 @@ public class WorldItemDropper : MonoBehaviour
             return;
         }
 
-        Vector3 spawnPosition;
-
-        if (dropPoint != null)
-        {
-            spawnPosition = dropPoint.position;
-        }
-        else
-        {
-            spawnPosition = transform.position + transform.forward * forwardOffset + Vector3.up * upwardOffset;
-        }
+        Vector3 spawnPosition = dropPoint != null
+            ? dropPoint.position
+            : transform.position + transform.forward * forwardOffset + Vector3.up * upwardOffset;
 
         GameObject spawned = Instantiate(defaultWorldItemPrefab, spawnPosition, Quaternion.identity);
 
@@ -46,16 +53,25 @@ public class WorldItemDropper : MonoBehaviour
 
         if (droppedItem != null)
         {
-            droppedItem.SetItem(itemData, 1);
+            droppedItem.SetItem(itemData, amount);
+        }
+        else
+        {
+            Debug.LogWarning("[WorldItemDropper] Spawned prefab has no WorldDroppedItem component.");
         }
 
         Rigidbody rb = spawned.GetComponent<Rigidbody>();
 
         if (rb != null)
         {
-            rb.AddForce(transform.forward * throwForce + Vector3.up * 1.2f, ForceMode.Impulse);
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.AddForce(transform.forward * throwForce + Vector3.up * 1.0f, ForceMode.Impulse);
         }
 
-        Debug.Log($"[WorldItemDropper] Dropped world item: {itemData.itemName}");
+        if (showDebugLogs)
+        {
+            Debug.Log($"[WorldItemDropper] Dropped {itemData.itemName} x{amount} at {spawnPosition}");
+        }
     }
 }
