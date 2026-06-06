@@ -10,6 +10,9 @@ public class DialogueConversation : ScriptableObject
     [TextArea(2, 5)]
     public string description;
 
+    [Header("Legacy Simple Dialogue Support")]
+    public string[] lines;
+
     [Header("Start")]
     public string startNodeID = "start";
 
@@ -64,5 +67,15 @@ public class DialogueConversation : ScriptableObject
         }
 
         return null;
+    }
+
+    public bool HasNodeDialogue()
+    {
+        return nodes != null && nodes.Length > 0;
+    }
+
+    public bool HasLegacyLines()
+    {
+        return lines != null && lines.Length > 0;
     }
 }

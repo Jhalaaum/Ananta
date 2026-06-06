@@ -124,7 +124,29 @@ public class DialogueUI : MonoBehaviour
 
         ClearChoices();
     }
+    public void ShowLine(DialogueActor speaker, string line)
+    {
+        ShowLine(speaker, line, DialogueLineType.Spoken);
+    }
+    public void ShowLine(string speakerName, string line)
+    {
+        ShowDialoguePanel();
 
+        if (speakerNameText != null)
+        {
+            speakerNameText.text = speakerName;
+        }
+
+        if (lineTypeText != null)
+        {
+            lineTypeText.text = "";
+        }
+
+        currentFullLine = line;
+
+        StopTyping();
+        typingCoroutine = StartCoroutine(TypeLine(line));
+    }
     public void ShowLine(DialogueActor speaker, string line, DialogueLineType lineType)
     {
         ShowDialoguePanel();

@@ -2,48 +2,52 @@ using UnityEngine;
 
 public class SimpleNPCDialogue : MonoBehaviour
 {
-    [Header("Civilian Settings")]
-    public string speakerName = "Civilian";
+    [Header("Actor")]
+    public DialogueActor npcActor;
 
-    [Header("Random Dialogue Lines")]
-    [TextArea(2, 4)]
-    public string[] lines;
+    [Header("Simple Lines")]
+    [TextArea(2, 5)]
+    public string[] randomLines;
 
-    public string GetRandomLine()
-    {
-        if (lines == null || lines.Length == 0)
-        {
-            return "";
-        }
-
-        int randomIndex = Random.Range(0, lines.Length);
-        return lines[randomIndex];
-    }
+    [Header("Conversation Settings")]
+    public string conversationIDPrefix = "simple_npc_";
+    public bool canRepeat = true;
 
     public DialogueConversation CreateRandomConversation()
     {
-        string randomLine = GetRandomLine();
-
-        if (string.IsNullOrWhiteSpace(randomLine))
+        if (randomLines == null || randomLines.Length == 0)
         {
+            Debug.LogWarning("[SimpleNPCDialogue] No random lines assigned.");
             return null;
         }
 
-        DialogueConversation tempConversation = ScriptableObject.CreateInstance<DialogueConversation>();
-        tempConversation.conversationID = "temporary_civilian_dialogue";
+        string selectedLine = randomLines[Random.Range(0, randomLines.Length)];
 
-        DialogueLine dialogueLine = new DialogueLine
+        DialogueConversation conversation = ScriptableObject.CreateInstance<DialogueConversation>();
+
+        conversation.conversationID = conversationIDPrefix + gameObject.name;
+        conversation.conversationName = gameObject.name + " Simple Dialogue";
+        conversation.description = "Runtime-generated simple NPC dialogue.";
+        conversation.startNodeID = "start";
+        conversation.canRepeat = canRepeat;
+        conversation.markCompletedOnEnd = false;
+
+        DialogueNode node = new DialogueNode
         {
-            speakerName = speakerName,
-            lineText = randomLine,
-            playerChoices = null
+            nodeID = "start",
+            speaker = npcActor,
+            line = selectedLine,
+            lineType = DialogueLineType.Spoken,
+            nextNodeID = "",
+            choices = null,
+            autoContinue = false
         };
 
-        tempConversation.lines = new DialogueLine[]
-        {
-            dialogueLine
-        };
+        conversation.nodes = new DialogueNode[] { node };
 
-        return tempConversation;
+        // Legacy support, harmless.
+        conversation.lines = new string[] { selectedLine };
+
+        return conversation;
     }
 }

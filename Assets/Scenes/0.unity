@@ -545,12 +545,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44178183be5db4b1db6be94831efd9d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimpleNPCDialogue
-  speakerName: Civilian
-  lines:
-  - Today feels peaceful.
-  - The market is crowded today.
-  - I heard the palace guards are restless.
-  - The forest path feels strange lately.
+  npcActor: {fileID: 0}
+  randomLines: []
+  conversationIDPrefix: simple_npc_
+  canRepeat: 1
 --- !u!114 &19990497
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -564,8 +562,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCDialogueInteractable
   promptText: Press E to talk
-  storyNPC: {fileID: 0}
-  simpleNPC: {fileID: 0}
+  conversation: {fileID: 0}
   dialogueManager: {fileID: 0}
   canInteract: 1
 --- !u!65 &26616311
@@ -10526,6 +10523,8 @@ GameObject:
   - component: {fileID: 463113615}
   - component: {fileID: 463113614}
   - component: {fileID: 463113616}
+  - component: {fileID: 463113618}
+  - component: {fileID: 463113617}
   m_Layer: 0
   m_Name: Game Systems
   m_TagString: Untagged
@@ -10627,7 +10626,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DialogueManager
   dialogueUI: {fileID: 581266290}
-  playerMovementScript: {fileID: 493262995}
 --- !u!4 &463113610
 Transform:
   m_ObjectHideFlags: 0
@@ -10733,6 +10731,34 @@ MonoBehaviour:
   useKey: 32
   useMouseWheel: 1
   dialogueManager: {fileID: 463113609}
+--- !u!114 &463113617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d939f3985cfd544de8b5a95a6166d866, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FactionTrustManager
+  factionTrust: []
+  showDebugLogs: 1
+--- !u!114 &463113618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d09463dfe8b34c949841d9b60830e42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueFlagManager
+  flags: []
+  showDebugLogs: 1
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0
@@ -13445,11 +13471,14 @@ MonoBehaviour:
   dialoguePanel: {fileID: 169858657}
   interactPromptText: {fileID: 1304588947}
   speakerNameText: {fileID: 504902373}
+  lineTypeText: {fileID: 0}
   dialogueText: {fileID: 79502701}
   continuePromptText: {fileID: 516419530}
   choiceContainer: {fileID: 859863489}
   choiceButtonPrefab: {fileID: 1000912795}
   typewriterSpeed: 0.025
+  availableChoiceTextColor: {r: 1, g: 1, b: 1, a: 1}
+  unavailableChoiceTextColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!65 &581384163
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -29701,8 +29730,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCDialogueInteractable
   promptText: Press E to talk
-  storyNPC: {fileID: 1341440553}
-  simpleNPC: {fileID: 0}
+  conversation: {fileID: 0}
   dialogueManager: {fileID: 463113609}
   canInteract: 1
 --- !u!65 &1343966560
@@ -36337,10 +36365,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68dd7b8d81da340bbbee4d2855aa1076, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DialogueActor
-  actorID: guard_01
-  displayName: Guard
-  faceTargetDuringDialogue: 1
-  turnSpeed: 8
+  actorID: 
+  displayName: 
+  speakerRole: 0
+  portrait: {fileID: 0}
+  dialogueStyleNote: 
 --- !u!114 &1759365808
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36354,9 +36383,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCConversationInteractable
   conversation: {fileID: 11400000, guid: 1dc3505759e784532ad5193ceabe6169, type: 2}
-  actors:
-  - {fileID: 1759365803}
-  - {fileID: 2091586311}
   dialogueManager: {fileID: 463113609}
   dialogueUI: {fileID: 581266290}
   promptText: Press E to listen
@@ -40747,10 +40773,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68dd7b8d81da340bbbee4d2855aa1076, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DialogueActor
-  actorID: merchant
-  displayName: Merchant
-  faceTargetDuringDialogue: 1
-  turnSpeed: 8
+  actorID: 
+  displayName: 
+  speakerRole: 0
+  portrait: {fileID: 0}
+  dialogueStyleNote: 
 --- !u!114 &2091586316
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -40764,9 +40791,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCConversationInteractable
   conversation: {fileID: 11400000, guid: 1dc3505759e784532ad5193ceabe6169, type: 2}
-  actors:
-  - {fileID: 1759365803}
-  - {fileID: 2091586311}
   dialogueManager: {fileID: 463113609}
   dialogueUI: {fileID: 581266290}
   promptText: Press E to listen

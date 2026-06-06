@@ -178,7 +178,25 @@ public class DialogueManager : MonoBehaviour
             waitingForContinue = true;
         }
     }
+    public void ResetDialogueManagerForCheckpoint()
+    {
+        IsDialogueActive = false;
+        waitingForContinue = false;
+        endingDialogue = false;
 
+        currentConversation = null;
+        currentNode = null;
+        currentInteractor = null;
+
+        StopAllCoroutines();
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.ResetDialogueUIForCheckpoint();
+        }
+
+        Debug.Log("[DialogueManager] Reset for checkpoint.");
+    }
     private List<DialogueChoice> GetAvailableChoiceList(DialogueNode node)
     {
         List<DialogueChoice> result = new List<DialogueChoice>();
