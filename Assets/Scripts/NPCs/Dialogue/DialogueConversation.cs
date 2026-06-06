@@ -1,15 +1,68 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Dialogue/Conversation")]
+[CreateAssetMenu(fileName = "New Dialogue Conversation", menuName = "Dialogue/Conversation")]
 public class DialogueConversation : ScriptableObject
 {
+    [Header("Identity")]
     public string conversationID;
+    public string conversationName;
 
-    [Header("Repeat Settings")]
+    [TextArea(2, 5)]
+    public string description;
+
+    [Header("Start")]
+    public string startNodeID = "start";
+
+    [Header("Nodes")]
+    public DialogueNode[] nodes;
+
+    [Header("Conversation Settings")]
     public bool canRepeat = true;
+    public bool markCompletedOnEnd = true;
 
-    [Tooltip("Optional: dialogue to use after this conversation has been completed once.")]
-    public DialogueConversation repeatConversation;
+    [Header("GDD Purpose")]
+    public bool isEavesdroppingConversation;
+    public bool canRevealInformation;
+    public bool canStartQuest;
+    public bool canChangeTrust;
 
-    public DialogueLine[] lines;
+    public DialogueNode GetNode(string nodeID)
+    {
+        if (nodes == null || nodes.Length == 0)
+        {
+            return null;
+        }
+
+        foreach (DialogueNode node in nodes)
+        {
+            if (node == null)
+            {
+                continue;
+            }
+
+            if (node.nodeID == nodeID)
+            {
+                return node;
+            }
+        }
+
+        return null;
+    }
+
+    public DialogueNode GetStartNode()
+    {
+        DialogueNode start = GetNode(startNodeID);
+
+        if (start != null)
+        {
+            return start;
+        }
+
+        if (nodes != null && nodes.Length > 0)
+        {
+            return nodes[0];
+        }
+
+        return null;
+    }
 }

@@ -11046,6 +11046,24 @@ MonoBehaviour:
   mantleMask:
     serializedVersion: 2
     m_Bits: 0
+  enableGddParkourAssist: 1
+  rooftopGapAssistDistance: 3.15
+  rooftopGapAssistHeightTolerance: 1.25
+  sprintJumpMomentumMultiplier: 1.1
+  climbDownCheckDistance: 0.95
+  climbDownStartDrop: 0.85
+  climbDownWallProbeHeight: 1.25
+  enableLadders: 1
+  ladderMask:
+    serializedVersion: 2
+    m_Bits: 0
+  ladderCheckDistance: 1.05
+  ladderSnapOffset: 0.55
+  ladderClimbSpeed: 3.1
+  ladderSideSpeed: 1.2
+  ladderTopProbeHeight: 2.75
+  ladderTopForwardOffset: 0.75
+  ladderExitDuration: 0.28
   enableWallClimb: 0
   climbableWallMask:
     serializedVersion: 2

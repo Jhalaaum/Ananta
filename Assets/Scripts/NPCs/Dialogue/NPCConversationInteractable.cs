@@ -5,7 +5,6 @@ public class NPCConversationInteractable : MonoBehaviour
 {
     [Header("Conversation")]
     public DialogueConversation conversation;
-    public DialogueActor[] actors;
 
     [Header("References")]
     public DialogueManager dialogueManager;
@@ -15,10 +14,22 @@ public class NPCConversationInteractable : MonoBehaviour
     public string promptText = "Press E to listen";
 
     [Header("Settings")]
-    public bool canOnlyListenOnce = false;
+    public bool canOnlyListenOnce = true;
 
     private bool playerInRange;
-    private bool hasListened;
+
+    private void Awake()
+    {
+        if (dialogueManager == null)
+        {
+            dialogueManager = FindObjectOfType<DialogueManager>();
+        }
+
+        if (dialogueUI == null)
+        {
+            dialogueUI = FindObjectOfType<DialogueUI>();
+        }
+    }
 
     private void Update()
     {
@@ -40,32 +51,27 @@ public class NPCConversationInteractable : MonoBehaviour
             return;
         }
 
+        if (conversation == null)
+        {
+            dialogueUI?.HidePrompt(this);
+            return;
+        }
+
+        if (canOnlyListenOnce &&
+            DialogueFlagManager.Instance != null &&
+            DialogueFlagManager.Instance.HasFlag("dialogue_completed_" + conversation.conversationID))
+        {
+            dialogueUI?.HidePrompt(this);
+            return;
+        }
+
         dialogueUI?.ShowPrompt(promptText, this);
 
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
-            StartListening();
+            dialogueUI?.HidePrompt(this);
+            dialogueManager.StartDialogue(conversation, this, null);
         }
-    }
-    private void StartListening()
-    {
-        dialogueUI?.HidePrompt(this);
-
-        if (conversation == null)
-        {
-            Debug.LogWarning($"{name} has no conversation assigned.");
-            return;
-        }
-
-        if (dialogueManager == null)
-        {
-            Debug.LogWarning($"{name} has no DialogueManager assigned.");
-            return;
-        }
-
-        hasListened = true;
-
-        dialogueManager.StartNPCConversation(conversation, actors);
     }
 
     private void OnTriggerEnter(Collider other)

@@ -1,7 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class DialogueUI : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class DialogueUI : MonoBehaviour
 
     [Header("Dialogue Text")]
     public TMP_Text speakerNameText;
+    public TMP_Text lineTypeText;
     public TMP_Text dialogueText;
     public TMP_Text continuePromptText;
 
@@ -21,41 +23,27 @@ public class DialogueUI : MonoBehaviour
     [Header("Typewriter")]
     public float typewriterSpeed = 0.025f;
 
+    [Header("Choice Colors")]
+    public Color availableChoiceTextColor = Color.white;
+    public Color unavailableChoiceTextColor = Color.gray;
+
     private Coroutine typingCoroutine;
     private string currentFullLine;
     private bool isTyping;
     private object promptOwner;
+
+    private readonly List<Button> spawnedChoiceButtons = new List<Button>();
 
     public bool IsTyping => isTyping;
 
     private void Start()
     {
         HideDialogue();
-        HidePrompt();
-    }
-
-    public void ResetDialogueUIForCheckpoint()
-    {
-        if (typingCoroutine != null)
-        {
-            StopCoroutine(typingCoroutine);
-            typingCoroutine = null;
-        }
-
-        isTyping = false;
-        currentFullLine = "";
-
         ForceHidePrompt();
-        HideDialogue();
-        ClearChoices();
     }
+
     public void ShowPrompt(string prompt = "Press E to talk", object owner = null)
     {
-        if (interactPromptText == null)
-        {
-            return;
-        }
-
         if (promptOwner != null && owner != null && promptOwner != owner)
         {
             return;
@@ -63,25 +51,27 @@ public class DialogueUI : MonoBehaviour
 
         promptOwner = owner;
 
-        interactPromptText.text = prompt;
-        interactPromptText.gameObject.SetActive(true);
+        if (interactPromptText != null)
+        {
+            interactPromptText.gameObject.SetActive(true);
+            interactPromptText.text = prompt;
+        }
     }
 
     public void HidePrompt(object owner = null)
     {
-        if (interactPromptText == null)
-        {
-            return;
-        }
-
         if (promptOwner != null && owner != null && promptOwner != owner)
         {
             return;
         }
 
         promptOwner = null;
-        interactPromptText.text = "";
-        interactPromptText.gameObject.SetActive(false);
+
+        if (interactPromptText != null)
+        {
+            interactPromptText.gameObject.SetActive(false);
+            interactPromptText.text = "";
+        }
     }
 
     public void ForceHidePrompt()
@@ -90,10 +80,11 @@ public class DialogueUI : MonoBehaviour
 
         if (interactPromptText != null)
         {
-            interactPromptText.text = "";
             interactPromptText.gameObject.SetActive(false);
+            interactPromptText.text = "";
         }
     }
+
     public void ShowDialoguePanel()
     {
         if (dialoguePanel != null)
@@ -104,19 +95,7 @@ public class DialogueUI : MonoBehaviour
 
     public void HideDialogue()
     {
-        if (typingCoroutine != null)
-        {
-            StopCoroutine(typingCoroutine);
-            typingCoroutine = null;
-        }
-
-        isTyping = false;
-        currentFullLine = "";
-
-        if (choiceContainer != null)
-        {
-            choiceContainer.gameObject.SetActive(false);
-        }
+        StopTyping();
 
         if (dialoguePanel != null)
         {
@@ -126,6 +105,11 @@ public class DialogueUI : MonoBehaviour
         if (speakerNameText != null)
         {
             speakerNameText.text = "";
+        }
+
+        if (lineTypeText != null)
+        {
+            lineTypeText.text = "";
         }
 
         if (dialogueText != null)
@@ -140,23 +124,46 @@ public class DialogueUI : MonoBehaviour
 
         ClearChoices();
     }
-    public void ShowLine(string speakerName, string line)
+
+    public void ShowLine(DialogueActor speaker, string line, DialogueLineType lineType)
     {
         ShowDialoguePanel();
 
         if (speakerNameText != null)
         {
-            speakerNameText.text = speakerName;
+            speakerNameText.text = speaker != null ? speaker.displayName : "";
+        }
+
+        if (lineTypeText != null)
+        {
+            lineTypeText.text = GetLineTypeLabel(lineType);
         }
 
         currentFullLine = line;
 
-        if (typingCoroutine != null)
-        {
-            StopCoroutine(typingCoroutine);
-        }
-
+        StopTyping();
         typingCoroutine = StartCoroutine(TypeLine(line));
+    }
+
+    private string GetLineTypeLabel(DialogueLineType lineType)
+    {
+        switch (lineType)
+        {
+            case DialogueLineType.Whisper:
+                return "WHISPER";
+
+            case DialogueLineType.Thought:
+                return "THOUGHT";
+
+            case DialogueLineType.Overheard:
+                return "OVERHEARD";
+
+            case DialogueLineType.System:
+                return "NOTE";
+
+            default:
+                return "";
+        }
     }
 
     private IEnumerator TypeLine(string line)
@@ -182,7 +189,7 @@ public class DialogueUI : MonoBehaviour
                 dialogueText.text += letter;
             }
 
-            yield return new WaitForSeconds(typewriterSpeed);
+            yield return new WaitForSecondsRealtime(typewriterSpeed);
         }
 
         isTyping = false;
@@ -195,14 +202,22 @@ public class DialogueUI : MonoBehaviour
             return;
         }
 
-        if (typingCoroutine != null)
-        {
-            StopCoroutine(typingCoroutine);
-        }
+        StopTyping();
 
         if (dialogueText != null)
         {
             dialogueText.text = currentFullLine;
+        }
+
+        isTyping = false;
+    }
+
+    private void StopTyping()
+    {
+        if (typingCoroutine != null)
+        {
+            StopCoroutine(typingCoroutine);
+            typingCoroutine = null;
         }
 
         isTyping = false;
@@ -217,25 +232,9 @@ public class DialogueUI : MonoBehaviour
         }
     }
 
-    public void ShowChoices(DialogueChoice[] choices, System.Action<int> onChoiceSelected)
+    public void ShowChoices(List<DialogueChoice> choices, System.Action<int> onChoiceSelected)
     {
         ClearChoices();
-
-        if (choiceContainer != null)
-        {
-            choiceContainer.gameObject.SetActive(false);
-        }
-
-        if (choiceButtonPrefab != null)
-        {
-            choiceButtonPrefab.gameObject.SetActive(false);
-        }
-
-        if (choices == null || choices.Length == 0)
-        {
-            ShowContinuePrompt();
-            return;
-        }
 
         if (continuePromptText != null)
         {
@@ -247,46 +246,113 @@ public class DialogueUI : MonoBehaviour
             choiceContainer.gameObject.SetActive(true);
         }
 
-        for (int i = 0; i < choices.Length; i++)
+        if (choiceButtonPrefab != null)
         {
+            choiceButtonPrefab.gameObject.SetActive(false);
+        }
+
+        if (choices == null || choices.Count == 0)
+        {
+            ShowContinuePrompt();
+            return;
+        }
+
+        for (int i = 0; i < choices.Count; i++)
+        {
+            DialogueChoice choice = choices[i];
+
+            if (choice == null)
+            {
+                continue;
+            }
+
+            bool available = choice.IsAvailable();
+
+            if (!available && choice.hideIfUnavailable)
+            {
+                continue;
+            }
+
             int choiceIndex = i;
 
             Button button = Instantiate(choiceButtonPrefab, choiceContainer);
             button.gameObject.SetActive(true);
+            button.interactable = available;
 
-            TMP_Text buttonText = button.GetComponentInChildren<TMP_Text>();
+            TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
 
-            if (buttonText != null)
+            if (text != null)
             {
-                buttonText.text = choices[i].responseText;
+                text.gameObject.SetActive(true);
+
+                if (available)
+                {
+                    text.text = choice.responseText;
+                    text.color = availableChoiceTextColor;
+                }
+                else
+                {
+                    text.text = $"{choice.responseText} ({choice.unavailableReason})";
+                    text.color = unavailableChoiceTextColor;
+                }
             }
 
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() =>
-            {
-                ClearChoices();
-                onChoiceSelected?.Invoke(choiceIndex);
-            });
-        }
-    }
-    public void ClearChoices()
-    {
-        if (choiceContainer == null)
-        {
-            return;
-        }
 
-        for (int i = choiceContainer.childCount - 1; i >= 0; i--)
-        {
-            Transform child = choiceContainer.GetChild(i);
-
-            if (choiceButtonPrefab != null && child.gameObject == choiceButtonPrefab.gameObject)
+            if (available)
             {
-                child.gameObject.SetActive(false);
-                continue;
+                button.onClick.AddListener(() =>
+                {
+                    ClearChoices();
+                    onChoiceSelected?.Invoke(choiceIndex);
+                });
             }
 
-            Destroy(child.gameObject);
+            spawnedChoiceButtons.Add(button);
         }
+
+        if (spawnedChoiceButtons.Count == 0)
+        {
+            ShowContinuePrompt();
+        }
+    }
+
+    public void ClearChoices()
+    {
+        foreach (Button button in spawnedChoiceButtons)
+        {
+            if (button != null)
+            {
+                Destroy(button.gameObject);
+            }
+        }
+
+        spawnedChoiceButtons.Clear();
+
+        if (choiceContainer != null)
+        {
+            for (int i = choiceContainer.childCount - 1; i >= 0; i--)
+            {
+                Transform child = choiceContainer.GetChild(i);
+
+                if (choiceButtonPrefab != null && child.gameObject == choiceButtonPrefab.gameObject)
+                {
+                    child.gameObject.SetActive(false);
+                    continue;
+                }
+
+                Destroy(child.gameObject);
+            }
+
+            choiceContainer.gameObject.SetActive(false);
+        }
+    }
+
+    public void ResetDialogueUIForCheckpoint()
+    {
+        StopTyping();
+        ForceHidePrompt();
+        HideDialogue();
+        ClearChoices();
     }
 }

@@ -71,6 +71,27 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float mantleDuration = 0.35f;
     [SerializeField] private LayerMask mantleMask;
 
+    [Header("GDD Parkour / Rooftop Routes")]
+    [Tooltip("Keeps traversal grounded in the GDD: short 2m and 3m rooftop gaps, climb points, ladders, and safe climb-downs rather than superhero free-running.")]
+    [SerializeField] private bool enableGddParkourAssist = true;
+    [SerializeField] private float rooftopGapAssistDistance = 3.15f;
+    [SerializeField] private float rooftopGapAssistHeightTolerance = 1.25f;
+    [SerializeField] private float sprintJumpMomentumMultiplier = 1.10f;
+    [SerializeField] private float climbDownCheckDistance = 0.95f;
+    [SerializeField] private float climbDownStartDrop = 0.85f;
+    [SerializeField] private float climbDownWallProbeHeight = 1.25f;
+
+    [Header("Ladders / Fixed Climb Points")]
+    [SerializeField] private bool enableLadders = true;
+    [SerializeField] private LayerMask ladderMask;
+    [SerializeField] private float ladderCheckDistance = 1.05f;
+    [SerializeField] private float ladderSnapOffset = 0.55f;
+    [SerializeField] private float ladderClimbSpeed = 3.1f;
+    [SerializeField] private float ladderSideSpeed = 1.2f;
+    [SerializeField] private float ladderTopProbeHeight = 2.75f;
+    [SerializeField] private float ladderTopForwardOffset = 0.75f;
+    [SerializeField] private float ladderExitDuration = 0.28f;
+
     [Header("Wall Climbing")]
     [SerializeField] private bool enableWallClimb = true;
     [SerializeField] private LayerMask climbableWallMask;
@@ -135,6 +156,7 @@ public class PlayerMovement : MonoBehaviour
         Falling,
         ClimbMantle,
         WallClimb,
+        LadderClimb,
         Interact,
         Hide
     }
@@ -152,7 +174,8 @@ public class PlayerMovement : MonoBehaviour
     public bool IsCrawling => currentStance == Stance.Crawling;
     public bool IsMantling => isMantling;
     public bool IsWallClimbing => isWallClimbing;
-    public bool IsMovementLocked => isInteracting || isHidden || isMantling || isWallClimbing;
+    public bool IsLadderClimbing => isLadderClimbing;
+    public bool IsMovementLocked => isInteracting || isHidden || isMantling || isWallClimbing || isLadderClimbing;
 
     private Stance currentStance = Stance.Standing;
 
@@ -186,10 +209,14 @@ public class PlayerMovement : MonoBehaviour
     private bool isHidden;
     private bool isMantling;
     private bool isWallClimbing;
+    private bool isLadderClimbing;
 
     private Vector3 climbWallNormal;
     private Vector3 climbWallPoint;
     private float climbStartY;
+
+    private Vector3 ladderNormal;
+    private Vector3 ladderPoint;
 
     private readonly Collider[] standCheckResults = new Collider[12];
     private readonly Collider[] mantleCheckResults = new Collider[12];
@@ -234,6 +261,9 @@ public class PlayerMovement : MonoBehaviour
         if (climbableWallMask.value == 0)
             climbableWallMask = mantleMask;
 
+        if (ladderMask.value == 0)
+            ladderMask = climbableWallMask;
+
         controller.stepOffset = standingStepOffset;
     }
 
@@ -242,7 +272,11 @@ public class PlayerMovement : MonoBehaviour
         ReadInput();
         UpdateGroundedTimers();
 
-        if (isWallClimbing)
+        if (isLadderClimbing)
+        {
+            HandleLadderClimb();
+        }
+        else if (isWallClimbing)
         {
             HandleWallClimb();
         }
@@ -298,6 +332,9 @@ public class PlayerMovement : MonoBehaviour
         if (Keyboard.current == null)
             return;
 
+        if (Keyboard.current.xKey.wasPressedThisFrame && TryStartClimbDown())
+            return;
+
         if (Keyboard.current.cKey.wasPressedThisFrame)
         {
             if (currentStance == Stance.Crouching)
@@ -337,6 +374,9 @@ public class PlayerMovement : MonoBehaviour
 
         if (spacePressedThisFrame)
         {
+            if (TryStartLadderClimb())
+                return;
+
             if (TryStartWallClimb())
                 return;
 
@@ -363,6 +403,9 @@ public class PlayerMovement : MonoBehaviour
         if (coyoteTimer > 0f)
         {
             verticalVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+
+            if (enableGddParkourAssist && sprintBlend > 0.25f && rawInput.y > 0.1f)
+                horizontalVelocity *= sprintJumpMomentumMultiplier;
 
             jumpBufferTimer = 0f;
             coyoteTimer = 0f;
@@ -588,6 +631,298 @@ public class PlayerMovement : MonoBehaviour
 
         verticalVelocity.y += gravityToApply * Time.deltaTime;
     }
+    private bool TryStartLadderClimb()
+    {
+        if (!enableLadders)
+            return false;
+
+        if (isLadderClimbing || isWallClimbing || isMantling || isInteracting || isHidden)
+            return false;
+
+        if (currentStance != Stance.Standing)
+            return false;
+
+        if (!TryFindLadder(out RaycastHit ladderHit))
+            return false;
+
+        isLadderClimbing = true;
+        ladderNormal = ladderHit.normal;
+        ladderPoint = ladderHit.point;
+
+        sprintBlend = 0f;
+        horizontalVelocity = Vector3.zero;
+        verticalVelocity = Vector3.zero;
+        jumpBufferTimer = 0f;
+        coyoteTimer = 0f;
+        controller.stepOffset = 0f;
+
+        AlignToClimbSurface(ladderNormal);
+        SnapToLadder();
+        return true;
+    }
+
+    private bool TryFindLadder(out RaycastHit ladderHit)
+    {
+        Vector3 origin = transform.position + Vector3.up * Mathf.Max(0.9f, controller.height * 0.5f);
+
+        return Physics.SphereCast(
+            origin,
+            Mathf.Max(0.1f, controller.radius * 0.75f),
+            transform.forward,
+            out ladderHit,
+            ladderCheckDistance,
+            ladderMask,
+            QueryTriggerInteraction.Ignore
+        );
+    }
+
+    private void HandleLadderClimb()
+    {
+        if (Keyboard.current == null)
+        {
+            StopLadderClimb(false);
+            return;
+        }
+
+        bool wantsDrop =
+            Keyboard.current.xKey.wasPressedThisFrame ||
+            Keyboard.current.leftCtrlKey.wasPressedThisFrame ||
+            Keyboard.current.rightCtrlKey.wasPressedThisFrame;
+
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            StopLadderClimb(true);
+            return;
+        }
+
+        if (wantsDrop)
+        {
+            StopLadderClimb(false);
+            return;
+        }
+
+        if (rawInput.y > 0.1f && TryExitLadderAtTop())
+            return;
+
+        bool foundLadder = TryFindLadderInDirection(-ladderNormal, out RaycastHit ladderHit);
+
+        if (!foundLadder)
+        {
+            if (rawInput.y > 0.1f && TryExitLadderAtTop())
+                return;
+
+            StopLadderClimb(false);
+            return;
+        }
+
+        ladderNormal = ladderHit.normal;
+        ladderPoint = ladderHit.point;
+        AlignToClimbSurface(ladderNormal);
+
+        Vector3 right = Vector3.Cross(Vector3.up, ladderNormal).normalized;
+        Vector3 ladderMovement =
+            Vector3.up * rawInput.y * ladderClimbSpeed +
+            right * rawInput.x * ladderSideSpeed;
+
+        controller.Move(ladderMovement * Time.deltaTime);
+        SnapToLadder();
+
+        verticalVelocity = Vector3.zero;
+        horizontalVelocity = Vector3.zero;
+        sprintBlend = 0f;
+    }
+
+    private bool TryFindLadderInDirection(Vector3 direction, out RaycastHit ladderHit)
+    {
+        Vector3 flatDirection = direction;
+        flatDirection.y = 0f;
+
+        if (flatDirection.sqrMagnitude < 0.01f)
+        {
+            ladderHit = default;
+            return false;
+        }
+
+        flatDirection.Normalize();
+        Vector3 origin = transform.position + Vector3.up * Mathf.Max(0.9f, controller.height * 0.5f);
+
+        return Physics.SphereCast(
+            origin,
+            Mathf.Max(0.1f, controller.radius * 0.75f),
+            flatDirection,
+            out ladderHit,
+            ladderCheckDistance,
+            ladderMask,
+            QueryTriggerInteraction.Ignore
+        );
+    }
+
+    private void SnapToLadder()
+    {
+        Vector3 desiredPosition = ladderPoint + ladderNormal * ladderSnapOffset;
+        Vector3 flatCorrection = desiredPosition - transform.position;
+        flatCorrection.y = 0f;
+
+        if (flatCorrection.magnitude > 0.015f)
+            controller.Move(flatCorrection * 0.45f);
+    }
+
+    private bool TryExitLadderAtTop()
+    {
+        Vector3 overLadderDirection = -ladderNormal;
+        overLadderDirection.y = 0f;
+
+        if (overLadderDirection.sqrMagnitude < 0.01f)
+            return false;
+
+        overLadderDirection.Normalize();
+
+        Vector3 probeStart =
+            transform.position +
+            Vector3.up * ladderTopProbeHeight +
+            overLadderDirection * ladderTopForwardOffset;
+
+        bool foundTop = Physics.Raycast(
+            probeStart,
+            Vector3.down,
+            out RaycastHit topHit,
+            ladderTopProbeHeight + 1.5f,
+            obstructionMask,
+            QueryTriggerInteraction.Ignore
+        );
+
+        if (!foundTop || Vector3.Dot(topHit.normal, Vector3.up) < 0.7f)
+            return false;
+
+        Vector3 targetPosition = topHit.point + overLadderDirection * (controller.radius + 0.08f) + Vector3.up * 0.05f;
+
+        if (!HasRoomAtPositionIgnoringCollider(targetPosition, standingHeight, topHit.collider))
+            return false;
+
+        StartCoroutine(LadderTopExitRoutine(targetPosition));
+        return true;
+    }
+
+    private IEnumerator LadderTopExitRoutine(Vector3 targetPosition)
+    {
+        isLadderClimbing = false;
+        isMantling = true;
+        CurrentMovementState = MovementState.ClimbMantle;
+
+        rawInput = Vector2.zero;
+        horizontalVelocity = Vector3.zero;
+        verticalVelocity = Vector3.zero;
+        sprintBlend = 0f;
+
+        Vector3 startPosition = transform.position;
+        float timer = 0f;
+
+        controller.enabled = false;
+
+        while (timer < ladderExitDuration)
+        {
+            timer += Time.deltaTime;
+            float t = Mathf.Clamp01(timer / ladderExitDuration);
+            float smoothT = t * t * (3f - 2f * t);
+            transform.position = Vector3.Lerp(startPosition, targetPosition, smoothT);
+            yield return null;
+        }
+
+        transform.position = targetPosition;
+        controller.height = standingHeight;
+        controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
+        controller.stepOffset = standingStepOffset;
+        currentStance = Stance.Standing;
+        controller.enabled = true;
+        controller.Move(Vector3.down * 0.05f);
+
+        verticalVelocity = Vector3.zero;
+        verticalVelocity.y = groundedStickForce;
+        horizontalVelocity = Vector3.zero;
+        coyoteTimer = coyoteTime;
+        jumpBufferTimer = 0f;
+        climbExitGroundedGraceTimer = climbExitGroundedGraceTime;
+
+        isMantling = false;
+        isLadderClimbing = false;
+    }
+
+    private void StopLadderClimb(bool jumpAway)
+    {
+        isLadderClimbing = false;
+        controller.stepOffset = standingStepOffset;
+        verticalVelocity.y = 0f;
+
+        if (jumpAway)
+        {
+            horizontalVelocity = ladderNormal * climbDetachPush;
+            verticalVelocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity) * 0.65f;
+        }
+        else
+        {
+            horizontalVelocity = Vector3.zero;
+        }
+    }
+
+    private bool TryStartClimbDown()
+    {
+        if (!enableGddParkourAssist || !enableWallClimb)
+            return false;
+
+        if (isWallClimbing || isLadderClimbing || isMantling || isInteracting || isHidden)
+            return false;
+
+        if (currentStance != Stance.Standing || !IsGrounded)
+            return false;
+
+        Vector3 forward = transform.forward;
+        Vector3 ledgeProbe = transform.position + Vector3.up * 0.2f + forward * climbDownCheckDistance;
+
+        bool groundAhead = Physics.Raycast(
+            ledgeProbe + Vector3.up * 0.25f,
+            Vector3.down,
+            climbDownStartDrop,
+            obstructionMask,
+            QueryTriggerInteraction.Ignore
+        );
+
+        if (groundAhead)
+            return false;
+
+        Vector3 wallProbeOrigin =
+            transform.position +
+            Vector3.up * climbDownWallProbeHeight +
+            forward * climbDownCheckDistance +
+            Vector3.down * climbDownStartDrop;
+
+        bool foundWall = Physics.SphereCast(
+            wallProbeOrigin,
+            wallCheckRadius,
+            -forward,
+            out RaycastHit wallHit,
+            climbDownCheckDistance + 0.45f,
+            climbableWallMask,
+            QueryTriggerInteraction.Ignore
+        );
+
+        if (!foundWall)
+            return false;
+
+        isWallClimbing = true;
+        climbWallNormal = wallHit.normal;
+        climbWallPoint = wallHit.point;
+        climbStartY = transform.position.y;
+
+        sprintBlend = 0f;
+        horizontalVelocity = Vector3.zero;
+        verticalVelocity = Vector3.zero;
+        controller.stepOffset = 0f;
+
+        AlignToClimbSurface(climbWallNormal);
+        SnapToClimbWall();
+        return true;
+    }
+
     private bool TryStartWallClimb()
     {
         if (!enableWallClimb)
@@ -620,6 +955,7 @@ public class PlayerMovement : MonoBehaviour
         currentStance = Stance.Standing;
         controller.stepOffset = 0f;
 
+        AlignToClimbSurface(climbWallNormal);
         SnapToClimbWall();
 
         return true;
@@ -627,12 +963,27 @@ public class PlayerMovement : MonoBehaviour
 
     private bool TryFindClimbableWall(out RaycastHit wallHit)
     {
+        return TryFindClimbableWall(transform.forward, out wallHit);
+    }
+
+    private bool TryFindClimbableWall(Vector3 direction, out RaycastHit wallHit)
+    {
+        Vector3 flatDirection = direction;
+        flatDirection.y = 0f;
+
+        if (flatDirection.sqrMagnitude < 0.01f)
+        {
+            wallHit = default;
+            return false;
+        }
+
+        flatDirection.Normalize();
         Vector3 origin = transform.position + Vector3.up * Mathf.Max(1f, controller.height * 0.55f);
 
         return Physics.SphereCast(
             origin,
             wallCheckRadius,
-            transform.forward,
+            flatDirection,
             out wallHit,
             wallCheckDistance,
             climbableWallMask,
@@ -662,7 +1013,7 @@ public class PlayerMovement : MonoBehaviour
         if (rawInput.y > 0.1f && TryExitClimbAtTop())
             return;
 
-        bool foundWall = TryFindClimbableWall(out RaycastHit wallHit);
+        bool foundWall = TryFindClimbableWall(-climbWallNormal, out RaycastHit wallHit);
 
         if (!foundWall)
         {
@@ -699,6 +1050,17 @@ public class PlayerMovement : MonoBehaviour
         horizontalVelocity = Vector3.zero;
         sprintBlend = 0f;
     }
+    private void AlignToClimbSurface(Vector3 surfaceNormal)
+    {
+        Vector3 lookDirection = -surfaceNormal;
+        lookDirection.y = 0f;
+
+        if (lookDirection.sqrMagnitude < 0.01f)
+            return;
+
+        transform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
+    }
+
     private void SnapToClimbWall()
     {
         Vector3 desiredPosition = climbWallPoint + climbWallNormal * climbWallOffset;
@@ -769,7 +1131,7 @@ public class PlayerMovement : MonoBehaviour
 
             Vector3 candidate = topHit.point;
 
-            candidate += overWallDirection * climbTopEdgeInset;
+            candidate += overWallDirection * (controller.radius + climbTopEdgeInset);
             candidate += Vector3.up * climbTopStandUpOffset;
 
             float support = GetLandingSupportAmount(candidate, overWallDirection, right);
@@ -1071,7 +1433,7 @@ public class PlayerMovement : MonoBehaviour
         if (mantleHeight < mantleMinHeight || mantleHeight > mantleMaxHeight)
             return false;
 
-        Vector3 targetPosition = topHit.point + forward * (controller.radius + 0.05f);
+        Vector3 targetPosition = topHit.point + forward * Mathf.Max(mantleForwardOffset, controller.radius + 0.05f);
         targetPosition.y += 0.05f;
 
         if (!HasRoomAtPosition(targetPosition, standingHeight))
@@ -1149,7 +1511,7 @@ public class PlayerMovement : MonoBehaviour
     }
     private void HandleLeanPosition()
     {
-        if (Keyboard.current == null || playerCamera == null || isInteracting || isHidden || isMantling || isWallClimbing)
+        if (Keyboard.current == null || playerCamera == null || isInteracting || isHidden || isMantling || isWallClimbing || isLadderClimbing)
         {
             targetLeanOffset = 0f;
             currentLeanOffset = Mathf.Lerp(currentLeanOffset, 0f, Time.deltaTime * leanSpeed);
@@ -1293,7 +1655,7 @@ public class PlayerMovement : MonoBehaviour
 
         float bobOffset = 0f;
         bool isMoving = rawInput.sqrMagnitude > 0.01f;
-        bool shouldBob = enableHeadBob && IsGrounded && isMoving && !isMantling && !isWallClimbing;
+        bool shouldBob = enableHeadBob && IsGrounded && isMoving && !isMantling && !isWallClimbing && !isLadderClimbing;
 
         if (shouldBob)
         {
@@ -1314,7 +1676,7 @@ public class PlayerMovement : MonoBehaviour
             bobTimer += Time.deltaTime * frequency;
             bobOffset = Mathf.Sin(bobTimer) * bobAmount;
         }
-        else if (isWallClimbing && enableHeadBob && isMoving)
+        else if ((isWallClimbing || isLadderClimbing) && enableHeadBob && isMoving)
         {
             bobTimer += Time.deltaTime * climbCameraBobFrequency;
             bobOffset = Mathf.Sin(bobTimer) * climbCameraBobAmount;
@@ -1347,7 +1709,7 @@ public class PlayerMovement : MonoBehaviour
         if (!enableFovKick || cameraComponent == null)
             return;
 
-        float targetFov = isWallClimbing ? normalFov : Mathf.Lerp(normalFov, sprintFov, sprintBlend);
+        float targetFov = (isWallClimbing || isLadderClimbing) ? normalFov : Mathf.Lerp(normalFov, sprintFov, sprintBlend);
 
         cameraComponent.fieldOfView = Mathf.Lerp(
             cameraComponent.fieldOfView,
@@ -1373,6 +1735,12 @@ public class PlayerMovement : MonoBehaviour
         if (isMantling)
         {
             CurrentMovementState = MovementState.ClimbMantle;
+            return;
+        }
+
+        if (isLadderClimbing)
+        {
+            CurrentMovementState = MovementState.LadderClimb;
             return;
         }
 
@@ -1436,6 +1804,9 @@ public class PlayerMovement : MonoBehaviour
 
             if (isWallClimbing)
                 StopWallClimb(false);
+
+            if (isLadderClimbing)
+                StopLadderClimb(false);
         }
     }
 
@@ -1454,6 +1825,9 @@ public class PlayerMovement : MonoBehaviour
 
             if (isWallClimbing)
                 StopWallClimb(false);
+
+            if (isLadderClimbing)
+                StopLadderClimb(false);
         }
     }
 
