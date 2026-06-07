@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CONV_Devika_FirstMeeting
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
   conversationID: devika_first_meeting
-  conversationName: "Devika \u2014 First Meeting "
+  conversationName: "Devika \u2014 First Meeting"
   description: 
   lines: []
   startNodeID: start
@@ -32,19 +32,48 @@ MonoBehaviour:
     autoContinueDelay: 0
   - nodeID: player_response
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
-    line: You are early. That is either discipline or fear. In this city, both are
-      useful.
+    line: I was told useful men survive longer here.
     lineType: 0
-    nextNodeID: player_response
+    nextNodeID: 
+    choices:
+    - choiceText: Then make yourself useful.
+      nextNodeID: offer_job
+      conditions: []
+      effects: []
+    - choiceText: You sound like you know the rules too well.
+      nextNodeID: cautious_reply
+      conditions: []
+      effects: []
+    conditions: []
+    onEnterEffects: []
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 0
+  - nodeID: offer_job
+    speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
+    line: Ledger House needs a clerk. Not a clever one. A quiet one.
+    lineType: 0
+    nextNodeID: 
     choices: []
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 0
-  canRepeat: 1
+  - nodeID: cautious_reply
+    speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
+    line: Rules are just traps with better names. Learn where they are, or bleed on them.
+    lineType: 0
+    nextNodeID: 
+    choices: []
+    conditions: []
+    onEnterEffects: []
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 0
+  canRepeat: 0
   markCompletedOnEnd: 1
   isEavesdroppingConversation: 0
   canRevealInformation: 0
-  canStartQuest: 0
-  canChangeTrust: 0
+  canStartQuest: 1
+  canChangeTrust: 1
