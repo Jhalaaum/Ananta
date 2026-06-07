@@ -12,68 +12,259 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f59e241b5fd947c4af0c2b498b27e72, type: 3}
   m_Name: CONV_Devika_FirstMeeting
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
+
   conversationID: devika_first_meeting
   conversationName: "Devika \u2014 First Meeting"
-  description: 
+  description: "First meeting with Devika. Establishes Ledger House access, merchant trust, and Howe's first plausible cover story."
+
   lines: []
+
   startNodeID: start
+
   nodes:
   - nodeID: start
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: You are early. That is either discipline or fear. In this city, both are
-      useful.
+    line: You are early. That is either discipline or fear. In this city, both are useful.
     lineType: 0
     nextNodeID: player_response
     choices: []
     conditions: []
-    onEnterEffects: []
+    onEnterEffects:
+    - effectType: 1
+      flagID: met_devika
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
     onExitEffects: []
     autoContinue: 0
-    autoContinueDelay: 0
+    autoContinueDelay: 1.5
+
   - nodeID: player_response
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
     line: I was told useful men survive longer here.
     lineType: 0
     nextNodeID: 
     choices:
-    - choiceText: Then make yourself useful.
+    - responseText: Then make yourself useful.
       nextNodeID: offer_job
       conditions: []
-      effects: []
-    - choiceText: You sound like you know the rules too well.
+      effects:
+      - effectType: 3
+        flagID: 
+        factionID: merchant_guild
+        itemID: 
+        infoID: 
+        coverStoryID: 
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: 
+        amount: 1
+      - effectType: 1
+        flagID: devika_respects_pragmatism
+        factionID: 
+        itemID: 
+        infoID: 
+        coverStoryID: 
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: 
+        amount: 1
+      hideIfUnavailable: 1
+      unavailableReason: Unavailable
+
+    - responseText: You sound like you know the rules too well.
       nextNodeID: cautious_reply
       conditions: []
-      effects: []
+      effects:
+      - effectType: 1
+        flagID: devika_suspects_howe
+        factionID: 
+        itemID: 
+        infoID: 
+        coverStoryID: 
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: 
+        amount: 1
+      - effectType: 9
+        flagID: 
+        factionID: 
+        itemID: 
+        infoID: devika_understands_city_rules
+        coverStoryID: 
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: 
+        amount: 1
+      hideIfUnavailable: 1
+      unavailableReason: Unavailable
+
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
-    autoContinueDelay: 0
+    autoContinueDelay: 1.5
+
   - nodeID: offer_job
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
     line: Ledger House needs a clerk. Not a clever one. A quiet one.
     lineType: 0
-    nextNodeID: 
+    nextNodeID: offer_job_player_reply
+    choices: []
+    conditions: []
+    onEnterEffects:
+    - effectType: 9
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: ledger_house_needs_quiet_clerk
+      coverStoryID: 
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    - effectType: 10
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: ledger_clerk
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: offer_job_player_reply
+    speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
+    line: Quiet is easier than loyal.
+    lineType: 0
+    nextNodeID: devika_warning
     choices: []
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
-    autoContinueDelay: 0
-  - nodeID: cautious_reply
+    autoContinueDelay: 1.5
+
+  - nodeID: devika_warning
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: Rules are just traps with better names. Learn where they are, or bleed on them.
+    line: Good. Loyalty is expensive. Silence is affordable.
     lineType: 0
     nextNodeID: 
     choices: []
     conditions: []
+    onEnterEffects:
+    - effectType: 1
+      flagID: ledger_clerk_cover_available
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    - effectType: 5
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: cautious_reply
+    speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
+    line: Rules are just traps with better names. Learn where they are, or bleed on them.
+    lineType: 0
+    nextNodeID: cautious_choice
+    choices: []
+    conditions: []
+    onEnterEffects:
+    - effectType: 1
+      flagID: devika_warned_about_rules
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: cautious_choice
+    speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
+    line: Then I should learn quickly.
+    lineType: 0
+    nextNodeID: cautious_offer_job
+    choices: []
+    conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
-    autoContinueDelay: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: cautious_offer_job
+    speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
+    line: Ledger House will teach you. Count what they ask you to count. Notice what they hope you miss.
+    lineType: 0
+    nextNodeID: 
+    choices: []
+    conditions: []
+    onEnterEffects:
+    - effectType: 9
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: ledger_house_has_hidden_discrepancies
+      coverStoryID: 
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    - effectType: 10
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: ledger_clerk
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    - effectType: 5
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
   canRepeat: 0
   markCompletedOnEnd: 1
   isEavesdroppingConversation: 0
-  canRevealInformation: 0
+  canRevealInformation: 1
   canStartQuest: 1
   canChangeTrust: 1
