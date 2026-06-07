@@ -12,36 +12,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f59e241b5fd947c4af0c2b498b27e72, type: 3}
   m_Name: CONV_Devika_FirstMeeting
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
-  conversationID: devika_first_meeting
-  conversationName: "Devika — First Meeting"
-  description: "Devika tests Howe's usefulness and decides whether to offer Ledger House access."
-  startNodeID: start
+  conversationID: "devika_first_meeting"
+  conversationName: "Devika \u2014 First Meeting"
+  description: "Devika tests Howe's usefulness and either offers him Ledger House access or becomes cautious of him."
+  startNodeID: "start"
   nodes:
-  - nodeID: start
+  - nodeID: "start"
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
     line: "You are early. That is either discipline or fear. In this city, both are useful."
     lineType: 0
-    nextNodeID: player_response
+    nextNodeID: "player_response"
     choices: []
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
-  - nodeID: player_response
+  - nodeID: "player_response"
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
     line: "I was told useful men survive longer here."
     lineType: 0
     nextNodeID: ""
     choices:
     - responseText: "Then make yourself useful."
-      nextNodeID: offer_job
+      nextNodeID: "offer_job"
       conditions: []
       effects:
       - effectType: 3
         flagID: ""
-        factionID: merchant_guild
+        factionID: "merchant_guild"
         itemID: ""
         infoID: ""
         coverStoryID: ""
@@ -54,13 +53,13 @@ MonoBehaviour:
         factionID: ""
         itemID: ""
         infoID: ""
-        coverStoryID: ledger_clerk
+        coverStoryID: "ledger_clerk"
         questToStart: {fileID: 0}
         questObjectiveType: 0
         questTargetID: ""
         amount: 1
       - effectType: 1
-        flagID: devika_offer_accepted
+        flagID: "devika_offer_accepted"
         factionID: ""
         itemID: ""
         infoID: ""
@@ -71,13 +70,12 @@ MonoBehaviour:
         amount: 1
       hideIfUnavailable: 1
       unavailableReason: "Unavailable"
-
     - responseText: "You sound like you know the rules too well."
-      nextNodeID: cautious_reply
+      nextNodeID: "cautious_reply"
       conditions: []
       effects:
       - effectType: 1
-        flagID: devika_suspects_howe
+        flagID: "devika_suspects_howe"
         factionID: ""
         itemID: ""
         infoID: ""
@@ -90,7 +88,7 @@ MonoBehaviour:
         flagID: ""
         factionID: ""
         itemID: ""
-        infoID: devika_knows_city_rules
+        infoID: "devika_knows_city_rules"
         coverStoryID: ""
         questToStart: {fileID: 0}
         questObjectiveType: 0
@@ -103,17 +101,16 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
-  - nodeID: offer_job
+  - nodeID: "offer_job"
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
     line: "Ledger House needs a clerk. Not a clever one. A quiet one."
     lineType: 0
-    nextNodeID: offer_job_confirm
+    nextNodeID: "offer_job_confirm"
     choices: []
     conditions: []
     onEnterEffects:
     - effectType: 1
-      flagID: devika_offered_ledger_job
+      flagID: "devika_offered_ledger_job"
       factionID: ""
       itemID: ""
       infoID: ""
@@ -125,20 +122,18 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
-  - nodeID: offer_job_confirm
+  - nodeID: "offer_job_confirm"
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
     line: "Quiet I can do. Cleverness I will keep unpaid."
     lineType: 0
-    nextNodeID: devika_final_instruction
+    nextNodeID: "devika_final_instruction"
     choices: []
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
-  - nodeID: devika_final_instruction
+  - nodeID: "devika_final_instruction"
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
     line: "Good. Report to Ledger House before the second bell. If anyone asks, you were recommended because you count faster than you speak."
     lineType: 0
@@ -160,7 +155,7 @@ MonoBehaviour:
       flagID: ""
       factionID: ""
       itemID: ""
-      infoID: ledger_house_access
+      infoID: "ledger_house_access"
       coverStoryID: ""
       questToStart: {fileID: 0}
       questObjectiveType: 0
@@ -169,30 +164,28 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
-  - nodeID: cautious_reply
+  - nodeID: "cautious_reply"
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
     line: "Rules are just traps with better names. Learn where they are, or bleed on them."
     lineType: 0
-    nextNodeID: cautious_choice
+    nextNodeID: "cautious_choice"
     choices: []
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
-  - nodeID: cautious_choice
+  - nodeID: "cautious_choice"
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
     line: "Then I should start by learning who sets them."
     lineType: 0
-    nextNodeID: cautious_end
+    nextNodeID: "cautious_end"
     choices: []
     conditions: []
     onEnterEffects:
     - effectType: 3
       flagID: ""
-      factionID: merchant_guild
+      factionID: "merchant_guild"
       itemID: ""
       infoID: ""
       coverStoryID: ""
@@ -203,8 +196,7 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
-  - nodeID: cautious_end
+  - nodeID: "cautious_end"
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
     line: "Careful. Men who ask that question too loudly become examples. Ledger House first. Answers later."
     lineType: 0
@@ -213,7 +205,7 @@ MonoBehaviour:
     conditions: []
     onEnterEffects:
     - effectType: 1
-      flagID: devika_warning_given
+      flagID: "devika_warning_given"
       factionID: ""
       itemID: ""
       infoID: ""
@@ -235,7 +227,6 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
   canRepeat: 0
   markCompletedOnEnd: 1
   isEavesdroppingConversation: 0
