@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8595926626907029831}
   - component: {fileID: 2880646992670803612}
   - component: {fileID: 1319756395721820808}
+  - component: {fileID: -4719844779371729348}
   m_Layer: 0
   m_Name: Civilian
   m_TagString: Untagged
@@ -136,3 +137,23 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &-4719844779371729348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5362006542756640345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7a7e3421b2b149e2a32d360a5b0836c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CivilianDialogueInteractable
+  lineSet: {fileID: 0}
+  overrideActor: {fileID: 0}
+  dialogueManager: {fileID: 0}
+  canInteract: 1
+  useSpecificCategory: 0
+  forcedCategory: 0
+  avoidRepeatingSameLine: 1
+  showDebugLogs: 1

@@ -26,6 +26,8 @@ public class DialogueUI : MonoBehaviour
     [Header("Choice Colors")]
     public Color availableChoiceTextColor = Color.white;
     public Color unavailableChoiceTextColor = Color.gray;
+    public Color choiceButtonColor = new Color(0.18f, 0.14f, 0.09f, 1f);
+    public Color choiceButtonHoverColor = new Color(0.30f, 0.24f, 0.15f, 1f);
 
     private Coroutine typingCoroutine;
     private string currentFullLine;
@@ -35,6 +37,7 @@ public class DialogueUI : MonoBehaviour
     private readonly List<Button> spawnedChoiceButtons = new List<Button>();
 
     public bool IsTyping => isTyping;
+    public bool HasChoicesVisible => spawnedChoiceButtons.Count > 0;
 
     private void Start()
     {
@@ -124,29 +127,7 @@ public class DialogueUI : MonoBehaviour
 
         ClearChoices();
     }
-    public void ShowLine(DialogueActor speaker, string line)
-    {
-        ShowLine(speaker, line, DialogueLineType.Spoken);
-    }
-    public void ShowLine(string speakerName, string line)
-    {
-        ShowDialoguePanel();
 
-        if (speakerNameText != null)
-        {
-            speakerNameText.text = speakerName;
-        }
-
-        if (lineTypeText != null)
-        {
-            lineTypeText.text = "";
-        }
-
-        currentFullLine = line;
-
-        StopTyping();
-        typingCoroutine = StartCoroutine(TypeLine(line));
-    }
     public void ShowLine(DialogueActor speaker, string line, DialogueLineType lineType)
     {
         ShowDialoguePanel();
@@ -164,6 +145,8 @@ public class DialogueUI : MonoBehaviour
         currentFullLine = line;
 
         StopTyping();
+        ClearChoices();
+
         typingCoroutine = StartCoroutine(TypeLine(line));
     }
 
@@ -201,8 +184,6 @@ public class DialogueUI : MonoBehaviour
         {
             continuePromptText.gameObject.SetActive(false);
         }
-
-        ClearChoices();
 
         foreach (char letter in line)
         {
@@ -247,6 +228,8 @@ public class DialogueUI : MonoBehaviour
 
     public void ShowContinuePrompt()
     {
+        ClearChoices();
+
         if (continuePromptText != null)
         {
             continuePromptText.gameObject.SetActive(true);
@@ -301,11 +284,16 @@ public class DialogueUI : MonoBehaviour
             button.gameObject.SetActive(true);
             button.interactable = available;
 
+            ForceChoiceButtonVisibleAndClickable(button);
+
             TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
 
             if (text != null)
             {
                 text.gameObject.SetActive(true);
+                text.enabled = true;
+                text.alpha = 1f;
+                text.raycastTarget = false;
 
                 if (available)
                 {
@@ -337,6 +325,52 @@ public class DialogueUI : MonoBehaviour
         {
             ShowContinuePrompt();
         }
+    }
+
+    private void ForceChoiceButtonVisibleAndClickable(Button button)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        RectTransform rect = button.GetComponent<RectTransform>();
+
+        if (rect != null)
+        {
+            rect.localScale = Vector3.one;
+            rect.localRotation = Quaternion.identity;
+        }
+
+        Image image = button.GetComponent<Image>();
+
+        if (image != null)
+        {
+            image.enabled = true;
+            image.color = choiceButtonColor;
+            image.raycastTarget = true;
+        }
+
+        CanvasGroup canvasGroup = button.GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null)
+        {
+            canvasGroup = button.gameObject.AddComponent<CanvasGroup>();
+        }
+
+        canvasGroup.alpha = 1f;
+        canvasGroup.interactable = true;
+        canvasGroup.blocksRaycasts = true;
+
+        ColorBlock colors = button.colors;
+        colors.normalColor = choiceButtonColor;
+        colors.highlightedColor = choiceButtonHoverColor;
+        colors.pressedColor = choiceButtonHoverColor;
+        colors.selectedColor = choiceButtonHoverColor;
+        colors.disabledColor = Color.gray;
+        button.colors = colors;
+
+        button.targetGraphic = image;
     }
 
     public void ClearChoices()
@@ -376,5 +410,36 @@ public class DialogueUI : MonoBehaviour
         ForceHidePrompt();
         HideDialogue();
         ClearChoices();
+    }
+    public void ShowLine(DialogueActor speaker, string line)
+    {
+        ShowLine(speaker, line, DialogueLineType.Spoken);
+    }
+
+    public void ShowLine(string speakerName, string line)
+    {
+        ShowDialoguePanel();
+
+        if (speakerNameText != null)
+        {
+            speakerNameText.text = speakerName;
+        }
+
+        if (lineTypeText != null)
+        {
+            lineTypeText.text = "";
+        }
+
+        currentFullLine = line;
+
+        StopTyping();
+        ClearChoices();
+
+        typingCoroutine = StartCoroutine(TypeLine(line));
+    }
+
+    public void ShowLine(string line)
+    {
+        ShowLine("", line);
     }
 }

@@ -13,12 +13,21 @@ public class DialogueManager : MonoBehaviour
     [Header("State")]
     public bool IsDialogueActive { get; private set; }
 
+    [Header("Cursor")]
+    public bool unlockCursorDuringDialogue = true;
+    public bool restoreCursorAfterDialogue = true;
+
     private DialogueConversation currentConversation;
     private DialogueNode currentNode;
     private Transform currentInteractor;
 
     private bool waitingForContinue;
     private bool endingDialogue;
+
+    private CursorLockMode previousCursorLockMode;
+    private bool previousCursorVisible;
+
+    private List<DialogueChoice> currentVisibleChoices = new List<DialogueChoice>();
 
     private void Awake()
     {
@@ -36,6 +45,8 @@ public class DialogueManager : MonoBehaviour
         {
             return;
         }
+
+        HandleChoiceNumberKeys();
 
         if (Keyboard.current == null)
         {
@@ -86,6 +97,15 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
+        previousCursorLockMode = Cursor.lockState;
+        previousCursorVisible = Cursor.visible;
+
+        if (unlockCursorDuringDialogue)
+        {
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
+
         IsDialogueActive = true;
         endingDialogue = false;
 
@@ -124,6 +144,7 @@ public class DialogueManager : MonoBehaviour
 
         currentNode = node;
         waitingForContinue = false;
+        currentVisibleChoices.Clear();
 
         currentNode.ApplyEnterEffects();
 
@@ -165,12 +186,18 @@ public class DialogueManager : MonoBehaviour
             yield break;
         }
 
-        List<DialogueChoice> visibleChoices = GetAvailableChoiceList(currentNode);
+        currentVisibleChoices = GetVisibleChoiceList(currentNode);
 
-        if (visibleChoices.Count > 0)
+        if (currentVisibleChoices.Count > 0)
         {
-            dialogueUI.ShowChoices(visibleChoices, SelectChoiceFromVisibleList);
+            dialogueUI.ShowChoices(currentVisibleChoices, SelectChoiceFromVisibleList);
             waitingForContinue = false;
+
+            if (unlockCursorDuringDialogue)
+            {
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+            }
         }
         else
         {
@@ -178,26 +205,8 @@ public class DialogueManager : MonoBehaviour
             waitingForContinue = true;
         }
     }
-    public void ResetDialogueManagerForCheckpoint()
-    {
-        IsDialogueActive = false;
-        waitingForContinue = false;
-        endingDialogue = false;
 
-        currentConversation = null;
-        currentNode = null;
-        currentInteractor = null;
-
-        StopAllCoroutines();
-
-        if (dialogueUI != null)
-        {
-            dialogueUI.ResetDialogueUIForCheckpoint();
-        }
-
-        Debug.Log("[DialogueManager] Reset for checkpoint.");
-    }
-    private List<DialogueChoice> GetAvailableChoiceList(DialogueNode node)
+    private List<DialogueChoice> GetVisibleChoiceList(DialogueNode node)
     {
         List<DialogueChoice> result = new List<DialogueChoice>();
 
@@ -224,19 +233,17 @@ public class DialogueManager : MonoBehaviour
 
     private void SelectChoiceFromVisibleList(int visibleChoiceIndex)
     {
-        if (currentNode == null)
+        if (currentVisibleChoices == null)
         {
             return;
         }
 
-        List<DialogueChoice> visibleChoices = GetAvailableChoiceList(currentNode);
-
-        if (visibleChoiceIndex < 0 || visibleChoiceIndex >= visibleChoices.Count)
+        if (visibleChoiceIndex < 0 || visibleChoiceIndex >= currentVisibleChoices.Count)
         {
             return;
         }
 
-        DialogueChoice selectedChoice = visibleChoices[visibleChoiceIndex];
+        DialogueChoice selectedChoice = currentVisibleChoices[visibleChoiceIndex];
 
         if (selectedChoice == null || !selectedChoice.IsAvailable())
         {
@@ -245,7 +252,12 @@ public class DialogueManager : MonoBehaviour
 
         selectedChoice.ApplyEffects();
 
-        currentNode.ApplyExitEffects();
+        if (currentNode != null)
+        {
+            currentNode.ApplyExitEffects();
+        }
+
+        currentVisibleChoices.Clear();
 
         if (string.IsNullOrWhiteSpace(selectedChoice.nextNodeID))
         {
@@ -266,10 +278,34 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
+        if (dialogueUI != null && dialogueUI.HasChoicesVisible)
+        {
+            return;
+        }
+
         if (waitingForContinue)
         {
             MoveToNextNode();
         }
+    }
+
+    private void HandleChoiceNumberKeys()
+    {
+        if (currentVisibleChoices == null || currentVisibleChoices.Count == 0)
+        {
+            return;
+        }
+
+        if (Keyboard.current == null)
+        {
+            return;
+        }
+
+        if (Keyboard.current.digit1Key.wasPressedThisFrame) SelectChoiceFromVisibleList(0);
+        if (Keyboard.current.digit2Key.wasPressedThisFrame) SelectChoiceFromVisibleList(1);
+        if (Keyboard.current.digit3Key.wasPressedThisFrame) SelectChoiceFromVisibleList(2);
+        if (Keyboard.current.digit4Key.wasPressedThisFrame) SelectChoiceFromVisibleList(3);
+        if (Keyboard.current.digit5Key.wasPressedThisFrame) SelectChoiceFromVisibleList(4);
     }
 
     private void MoveToNextNode()
@@ -314,6 +350,7 @@ public class DialogueManager : MonoBehaviour
         currentConversation = null;
         currentNode = null;
         currentInteractor = null;
+        currentVisibleChoices.Clear();
 
         if (dialogueUI != null)
         {
@@ -321,6 +358,42 @@ public class DialogueManager : MonoBehaviour
             dialogueUI.ForceHidePrompt();
         }
 
+        if (restoreCursorAfterDialogue)
+        {
+            Cursor.visible = previousCursorVisible;
+            Cursor.lockState = previousCursorLockMode;
+        }
+
         endingDialogue = false;
+    }
+    public void ResetDialogueManagerForCheckpoint()
+    {
+        StopAllCoroutines();
+
+        IsDialogueActive = false;
+        waitingForContinue = false;
+        endingDialogue = false;
+
+        currentConversation = null;
+        currentNode = null;
+        currentInteractor = null;
+
+        if (currentVisibleChoices != null)
+        {
+            currentVisibleChoices.Clear();
+        }
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.ResetDialogueUIForCheckpoint();
+        }
+
+        if (restoreCursorAfterDialogue)
+        {
+            Cursor.visible = previousCursorVisible;
+            Cursor.lockState = previousCursorLockMode;
+        }
+
+        Debug.Log("[DialogueManager] Reset for checkpoint.");
     }
 }
