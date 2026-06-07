@@ -9322,6 +9322,8 @@ MonoBehaviour:
   itemDescriptionText: {fileID: 698785763}
   selectedItemActionButton: {fileID: 1447176737}
   selectedItemActionButtonText: {fileID: 1988516221}
+  disguiseStatusText: {fileID: 0}
+  characterPreviewImage: {fileID: 0}
   headSlot: {fileID: 228707124}
   bodySlot: {fileID: 753832276}
   legsSlot: {fileID: 28942622}
@@ -10378,6 +10380,82 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 451037705}
   m_CullTransparentMesh: 1
+--- !u!1 &457302655
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 457302658}
+  - component: {fileID: 457302657}
+  - component: {fileID: 457302656}
+  m_Layer: 10
+  m_Name: Palace zone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &457302656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 457302655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f475ac37c6f54af68cddf05cdd2f8a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestrictedZone
+  zoneID: palace_outer
+  zoneDisplayName: palace outer court
+  accessType: 2
+  allowedDisguiseSetIDs:
+  - guard
+  suspiciousIfUnauthorized: 1
+  unauthorizedSuspicionPerSecond: 22
+  unauthorizedVisionMultiplier: 1.75
+  requireCompleteDisguise: 0
+  minimumDisguiseCompleteness: 0.234
+--- !u!65 &457302657
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 457302655}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 50, y: 50, z: 50}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &457302658
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 457302655}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &459520353
 GameObject:
   m_ObjectHideFlags: 0
@@ -10537,6 +10615,8 @@ GameObject:
   - component: {fileID: 463113616}
   - component: {fileID: 463113618}
   - component: {fileID: 463113617}
+  - component: {fileID: 463113619}
+  - component: {fileID: 463113620}
   m_Layer: 0
   m_Name: Game Systems
   m_TagString: Untagged
@@ -10773,6 +10853,51 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DialogueFlagManager
   flags: []
   showDebugLogs: 1
+--- !u!114 &463113619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c1c693ea03ae492aac921d849f6381d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentManager
+  headItem: {fileID: 0}
+  bodyItem: {fileID: 0}
+  legsItem: {fileID: 0}
+  feetItem: {fileID: 0}
+  accessoryItems:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  expectedMainPieces: 4
+  showDebugLogs: 1
+--- !u!114 &463113620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e031e06951f7a4441919cd5671304d07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardDebugHUD
+  showHUD: 0
+  printToConsole: 0
+  consolePrintInterval: 1
+  guards: []
+  playerCoverIdentity: {fileID: 0}
+  playerZoneTracker: {fileID: 0}
+  x: 20
+  y: 20
+  width: 520
+  lineHeight: 22
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0
@@ -10925,6 +11050,8 @@ GameObject:
   - component: {fileID: 493262997}
   - component: {fileID: 493262998}
   - component: {fileID: 493262999}
+  - component: {fileID: 493263002}
+  - component: {fileID: 493263001}
   m_Layer: 0
   m_Name: First Person Player
   m_TagString: Player
@@ -11220,6 +11347,31 @@ MonoBehaviour:
   upwardOffset: 0.4
   throwForce: 2.5
   showDebugLogs: 1
+--- !u!114 &493263001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 493262990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 292622ec895c542b38c51d276c25f9c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerZoneTracker
+  currentZone: {fileID: 0}
+--- !u!114 &493263002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 493262990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85654a4c67bf84c798c24e70883d6c88, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCoverIdentity
 --- !u!1 &504164631
 GameObject:
   m_ObjectHideFlags: 0
@@ -13780,11 +13932,15 @@ MonoBehaviour:
   loreTabText: {fileID: 2022431876}
   settingsTabText: {fileID: 766253612}
   openCloseKey: 24
+  inventoryKey: 23
   closeKey: 60
   dialogueManager: {fileID: 463113609}
   playerInteractor: {fileID: 493262996}
-  unlockCursorWhenOpen: 1
+  playerLookController: {fileID: 330585548}
+  playerMovementController: {fileID: 493262995}
+  confineCursorWhenOpen: 1
   lockCursorWhenClosed: 1
+  hideCursorWhenClosed: 1
   pauseGameWhenOpen: 1
   isOpen: 0
   currentPage: 0
@@ -32716,6 +32872,18 @@ MonoBehaviour:
   alertStateVisionMultiplier: 1.25
   suspicionStateVisionMultiplier: 1.1
   minimumVisionIncrease: 4
+  useCoverIdentitySystem: 1
+  playerCoverIdentity: {fileID: 493263002}
+  playerZoneTracker: {fileID: 493263001}
+  unauthorizedZoneMinimumSuspicion: 20
+  unauthorizedZoneSuspicionPerSecond: 18
+  allowedDisguiseSuspicionMultiplier: 0.35
+  partialDisguiseSuspicionMultiplier: 0.65
+  noDisguiseRestrictedMultiplier: 1.4
+  wrongDisguiseRestrictedMultiplier: 1.8
+  warnBeforeChaseInRestrictedZone: 1
+  warningSuspicionThreshold: 55
+  warningDuration: 2
 --- !u!114 &1500860561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -48583,5 +48751,6 @@ SceneRoots:
   - {fileID: 798225519}
   - {fileID: 134613172}
   - {fileID: 1900954691}
+  - {fileID: 457302658}
   - {fileID: 1790789922}
   - {fileID: 391746211}

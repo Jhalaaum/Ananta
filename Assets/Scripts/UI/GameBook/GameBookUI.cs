@@ -33,15 +33,19 @@ public class GameBookUI : MonoBehaviour
 
     [Header("Input")]
     public Key openCloseKey = Key.J;
+    public Key inventoryKey = Key.I;
     public Key closeKey = Key.Escape;
 
     [Header("References")]
     public DialogueManager dialogueManager;
-    public PlayerInteractor playerInteractor;
+    public MonoBehaviour playerInteractor;
+    public MonoBehaviour playerLookController;
+    public MonoBehaviour playerMovementController;
 
     [Header("Cursor")]
-    public bool unlockCursorWhenOpen = true;
+    public bool confineCursorWhenOpen = true;
     public bool lockCursorWhenClosed = true;
+    public bool hideCursorWhenClosed = true;
 
     [Header("Pause")]
     public bool pauseGameWhenOpen = true;
@@ -64,11 +68,12 @@ public class GameBookUI : MonoBehaviour
     private Image loreTabImage;
     private Image settingsTabImage;
 
+    private CursorLockMode previousCursorLockMode;
+    private bool previousCursorVisible;
+
     private void Awake()
     {
         Instance = this;
-
-        // Selected gold color: #C9A45D
         ColorUtility.TryParseHtmlString("#C9A45D", out selectedTabBackgroundColor);
     }
 
@@ -77,6 +82,7 @@ public class GameBookUI : MonoBehaviour
         AutoFindReferences();
         CacheTabImages();
         HookButtons();
+
         CloseBookInstant();
         ShowPage(currentPage);
     }
@@ -91,6 +97,11 @@ public class GameBookUI : MonoBehaviour
         if (Keyboard.current[openCloseKey].wasPressedThisFrame)
         {
             ToggleBook();
+        }
+
+        if (Keyboard.current[inventoryKey].wasPressedThisFrame)
+        {
+            OpenBookToPage(GameBookPageType.Inventory);
         }
 
         if (isOpen && Keyboard.current[closeKey].wasPressedThisFrame)
@@ -108,7 +119,12 @@ public class GameBookUI : MonoBehaviour
 
         if (playerInteractor == null)
         {
-            playerInteractor = FindObjectOfType<PlayerInteractor>();
+            PlayerInteractor interactor = FindObjectOfType<PlayerInteractor>();
+
+            if (interactor != null)
+            {
+                playerInteractor = interactor;
+            }
         }
     }
 
@@ -168,9 +184,22 @@ public class GameBookUI : MonoBehaviour
 
     public void OpenBook()
     {
+        OpenBookToPage(currentPage);
+    }
+
+    public void OpenBookToPage(GameBookPageType page)
+    {
         if (dialogueManager != null && dialogueManager.IsDialogueActive)
         {
             return;
+        }
+
+        currentPage = page;
+
+        if (!isOpen)
+        {
+            previousCursorLockMode = Cursor.lockState;
+            previousCursorVisible = Cursor.visible;
         }
 
         isOpen = true;
@@ -187,18 +216,9 @@ public class GameBookUI : MonoBehaviour
             dialogueUI.ForceHidePrompt();
         }
 
-        if (playerInteractor != null)
-        {
-            playerInteractor.enabled = false;
-        }
-
+        SetGameplayScriptsEnabled(false);
+        ApplyOpenCursorState();
         ShowPage(currentPage);
-
-        if (unlockCursorWhenOpen)
-        {
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
-        }
 
         if (pauseGameWhenOpen)
         {
@@ -215,16 +235,8 @@ public class GameBookUI : MonoBehaviour
             bookPanel.SetActive(false);
         }
 
-        if (playerInteractor != null)
-        {
-            playerInteractor.enabled = true;
-        }
-
-        if (lockCursorWhenClosed)
-        {
-            Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
-        }
+        SetGameplayScriptsEnabled(true);
+        ApplyClosedCursorState();
 
         if (pauseGameWhenOpen)
         {
@@ -244,6 +256,59 @@ public class GameBookUI : MonoBehaviour
         if (pauseGameWhenOpen)
         {
             Time.timeScale = 1f;
+        }
+    }
+
+    private void SetGameplayScriptsEnabled(bool enabled)
+    {
+        if (playerInteractor != null)
+        {
+            playerInteractor.enabled = enabled;
+        }
+
+        if (playerLookController != null)
+        {
+            playerLookController.enabled = enabled;
+        }
+
+        if (playerMovementController != null)
+        {
+            playerMovementController.enabled = enabled;
+        }
+    }
+
+    private void ApplyOpenCursorState()
+    {
+        Cursor.visible = true;
+
+        if (confineCursorWhenOpen)
+        {
+            Cursor.lockState = CursorLockMode.Confined;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.None;
+        }
+    }
+
+    private void ApplyClosedCursorState()
+    {
+        if (lockCursorWhenClosed)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+        else
+        {
+            Cursor.lockState = previousCursorLockMode;
+        }
+
+        if (hideCursorWhenClosed)
+        {
+            Cursor.visible = false;
+        }
+        else
+        {
+            Cursor.visible = previousCursorVisible;
         }
     }
 
@@ -270,41 +335,11 @@ public class GameBookUI : MonoBehaviour
 
     private void UpdateTabVisuals()
     {
-        bool questsSelected = currentPage == GameBookPageType.Quests;
-        bool hintsSelected = currentPage == GameBookPageType.Hints;
-        bool inventorySelected = currentPage == GameBookPageType.Inventory;
-        bool loreSelected = currentPage == GameBookPageType.Lore;
-        bool settingsSelected = currentPage == GameBookPageType.Settings;
-
-        SetTabVisual(
-            questsTabImage,
-            questsTabText,
-            questsSelected
-        );
-
-        SetTabVisual(
-            hintsTabImage,
-            hintsTabText,
-            hintsSelected
-        );
-
-        SetTabVisual(
-            inventoryTabImage,
-            inventoryTabText,
-            inventorySelected
-        );
-
-        SetTabVisual(
-            loreTabImage,
-            loreTabText,
-            loreSelected
-        );
-
-        SetTabVisual(
-            settingsTabImage,
-            settingsTabText,
-            settingsSelected
-        );
+        SetTabVisual(questsTabImage, questsTabText, currentPage == GameBookPageType.Quests);
+        SetTabVisual(hintsTabImage, hintsTabText, currentPage == GameBookPageType.Hints);
+        SetTabVisual(inventoryTabImage, inventoryTabText, currentPage == GameBookPageType.Inventory);
+        SetTabVisual(loreTabImage, loreTabText, currentPage == GameBookPageType.Lore);
+        SetTabVisual(settingsTabImage, settingsTabText, currentPage == GameBookPageType.Settings);
     }
 
     private void SetTabVisual(Image tabImage, TMP_Text tabText, bool selected)

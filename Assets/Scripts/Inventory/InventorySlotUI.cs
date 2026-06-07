@@ -26,7 +26,6 @@ public class InventorySlotUI : MonoBehaviour,
     private InventoryUI inventoryUI;
     private InventorySlot slot;
     private int slotIndex;
-
     private bool isDragging;
 
     private void Awake()
@@ -119,28 +118,15 @@ public class InventorySlotUI : MonoBehaviour,
 
         if (backgroundImage != null)
         {
-            if (selected)
-            {
-                backgroundImage.color = selectedColor;
-            }
-            else
-            {
-                backgroundImage.color = isHotbar ? hotbarColor : normalColor;
-            }
+            backgroundImage.color = selected
+                ? selectedColor
+                : isHotbar ? hotbarColor : normalColor;
         }
 
         if (slotNumberText != null)
         {
-            slotNumberText.gameObject.SetActive(true);
-
-            if (isHotbar)
-            {
-                slotNumberText.text = (slotIndex + 1).ToString();
-            }
-            else
-            {
-                slotNumberText.text = "";
-            }
+            slotNumberText.gameObject.SetActive(isHotbar);
+            slotNumberText.text = isHotbar ? (slotIndex + 1).ToString() : "";
         }
 
         if (slot == null || slot.IsEmpty())
@@ -161,10 +147,10 @@ public class InventorySlotUI : MonoBehaviour,
 
         if (amountText != null)
         {
-            bool shouldShowAmount = slot.amount > 1;
-            amountText.gameObject.SetActive(shouldShowAmount);
-            amountText.enabled = shouldShowAmount;
-            amountText.text = shouldShowAmount ? slot.amount.ToString() : "";
+            bool showAmount = slot.amount > 1;
+            amountText.gameObject.SetActive(showAmount);
+            amountText.enabled = showAmount;
+            amountText.text = showAmount ? slot.amount.ToString() : "";
         }
     }
 

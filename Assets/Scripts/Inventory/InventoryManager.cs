@@ -93,6 +93,7 @@ public class InventoryManager : MonoBehaviour
     public void SelectNextHotbarSlot()
     {
         int next = selectedHotbarIndex + 1;
+
         if (next >= hotbarSlotCount)
         {
             next = 0;
@@ -104,6 +105,7 @@ public class InventoryManager : MonoBehaviour
     public void SelectPreviousHotbarSlot()
     {
         int previous = selectedHotbarIndex - 1;
+
         if (previous < 0)
         {
             previous = hotbarSlotCount - 1;
@@ -138,6 +140,7 @@ public class InventoryManager : MonoBehaviour
                 }
 
                 int amountToAdd = Mathf.Min(slot.GetSpaceRemaining(), remainingAmount);
+
                 slot.amount += amountToAdd;
                 remainingAmount -= amountToAdd;
 
@@ -282,8 +285,7 @@ public class InventoryManager : MonoBehaviour
             fromSlot.itemData.itemID == toSlot.itemData.itemID &&
             fromSlot.itemData.isStackable)
         {
-            int space = toSlot.GetSpaceRemaining();
-            int amountToMove = Mathf.Min(space, fromSlot.amount);
+            int amountToMove = Mathf.Min(toSlot.GetSpaceRemaining(), fromSlot.amount);
 
             if (amountToMove > 0)
             {
@@ -340,7 +342,7 @@ public class InventoryManager : MonoBehaviour
 
         OnItemUsed?.Invoke(item);
 
-        if (item.itemType == ItemType.Consumable)
+        if (item.itemType == ItemType.Consumable || item.itemRole == InventoryItemRole.Consumable)
         {
             RemoveFromSlot(slotIndex, 1);
         }
@@ -395,6 +397,27 @@ public class InventoryManager : MonoBehaviour
         {
             slot.itemData = null;
             slot.amount = 0;
+        }
+
+        OnInventoryChanged?.Invoke();
+    }
+
+    public void RemoveSoftItemsForArrest()
+    {
+        for (int i = 0; i < slots.Count; i++)
+        {
+            InventorySlot slot = slots[i];
+
+            if (slot == null || slot.IsEmpty() || slot.itemData == null)
+            {
+                continue;
+            }
+
+            if (slot.itemData.securityType == ItemSecurityType.SoftItem)
+            {
+                slot.itemData = null;
+                slot.amount = 0;
+            }
         }
 
         OnInventoryChanged?.Invoke();

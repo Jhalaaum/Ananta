@@ -114,7 +114,26 @@ public class AdvancedGuardAIController : MonoBehaviour
     public float alertStateVisionMultiplier = 1.25f;
     public float suspicionStateVisionMultiplier = 1.1f;
     public float minimumVisionIncrease = 4f;
+    [Header("GDD Cover Identity / Zone Logic")]
+    public bool useCoverIdentitySystem = true;
+    public PlayerCoverIdentity playerCoverIdentity;
+    public PlayerZoneTracker playerZoneTracker;
 
+    [Header("GDD Behavioral Suspicion")]
+    public float unauthorizedZoneMinimumSuspicion = 20f;
+    public float unauthorizedZoneSuspicionPerSecond = 18f;
+    public float allowedDisguiseSuspicionMultiplier = 0.35f;
+    public float partialDisguiseSuspicionMultiplier = 0.65f;
+    public float noDisguiseRestrictedMultiplier = 1.4f;
+    public float wrongDisguiseRestrictedMultiplier = 1.8f;
+
+    [Header("GDD Guard Response")]
+    public bool warnBeforeChaseInRestrictedZone = true;
+    public float warningSuspicionThreshold = 55f;
+    public float warningDuration = 2f;
+
+    private bool hasGivenZoneWarning;
+    private float warningTimer;    
     private float recentlySawPlayerTimer;
 
     private NavMeshAgent agent;
@@ -262,6 +281,9 @@ public class AdvancedGuardAIController : MonoBehaviour
         searchPointsVisited = 0;
         hasEstimatedMoveDirection = false;
 
+        hasGivenZoneWarning = false;
+        warningTimer = 0f;
+
         if (agent != null)
         {
             agent.isStopped = false;
@@ -324,18 +346,24 @@ public class AdvancedGuardAIController : MonoBehaviour
             float angleMultiplier = GetVisionAngleMultiplier();
             float stateMultiplier = GetStateVisionMultiplier();
 
-            float increaseAmount =
-                suspicionIncreasePerSecond *
-                distanceMultiplier *
-                movementMultiplier *
-                angleMultiplier *
-                stateMultiplier *
-                Time.deltaTime;
+        float coverIdentityMultiplier = GetCoverIdentitySuspicionMultiplier();
+        float zoneLegalityMultiplier = GetZoneLegalitySuspicionMultiplier();
+
+        float increaseAmount =
+            suspicionIncreasePerSecond *
+            distanceMultiplier *
+            movementMultiplier *
+            angleMultiplier *
+            stateMultiplier *
+            coverIdentityMultiplier *
+            zoneLegalityMultiplier *
+            Time.deltaTime;
 
             increaseAmount = Mathf.Max(increaseAmount, minimumVisionIncrease * Time.deltaTime);
 
             suspicion += increaseAmount;
             suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+            ApplyUnauthorizedZoneSuspicion(canSeePlayer);
 
             FaceTarget(player.position);
 
@@ -581,6 +609,41 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void UpdateSuspicious()
     {
+        if (hasGivenZoneWarning && warningTimer > 0f)
+        {
+            warningTimer -= Time.deltaTime;
+
+            if (player != null)
+            {
+                FaceTarget(player.position);
+            }
+
+            if (suspicion >= chaseThreshold)
+            {
+                EnterChase();
+                return;
+            }
+
+            if (warningTimer <= 0f)
+            {
+                RestrictedZone zone = GetCurrentPlayerZone();
+
+                bool stillUnauthorized =
+                    zone != null &&
+                    !zone.IsPublicZone() &&
+                    (playerCoverIdentity == null || !playerCoverIdentity.IsAllowedInZone(zone));
+
+                if (stillUnauthorized)
+                {
+                    suspicion = Mathf.Max(suspicion, chaseThreshold);
+                    EnterChase();
+                    return;
+                }
+            }
+
+            return;
+        }
+
         lookAroundTimer -= Time.deltaTime;
 
         if (player != null)
@@ -599,7 +662,6 @@ public class AdvancedGuardAIController : MonoBehaviour
             EnterInvestigateLastKnownPosition();
         }
     }
-
     private void EnterInvestigateSound()
     {
         currentState = GuardState.InvestigateSound;
@@ -775,6 +837,8 @@ public class AdvancedGuardAIController : MonoBehaviour
         agent.isStopped = false;
 
         suspicion = 0f;
+        hasGivenZoneWarning = false;
+        warningTimer = 0f;
 
         SetVisualState(returnColor, false);
 
@@ -788,7 +852,6 @@ public class AdvancedGuardAIController : MonoBehaviour
             EnterPatrol();
         }
     }
-
     private void UpdateReturnToPatrol()
     {
         FaceTarget(agent.steeringTarget);
@@ -1066,5 +1129,143 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         return distance;
+    }
+    private float GetCoverIdentitySuspicionMultiplier()
+    {
+        if (!useCoverIdentitySystem)
+        {
+            return 1f;
+        }
+
+        if (playerCoverIdentity == null)
+        {
+            return 1f;
+        }
+
+        RestrictedZone zone = GetCurrentPlayerZone();
+
+        if (zone == null)
+        {
+            return 1f;
+        }
+
+        if (zone.IsPublicZone())
+        {
+            return 1f;
+        }
+
+        string disguiseSet = playerCoverIdentity.GetBestDisguiseSetID();
+        float completeness = playerCoverIdentity.GetBestDisguiseCompleteness();
+
+        bool allowed = zone.IsDisguiseAllowed(disguiseSet, completeness);
+
+        if (allowed)
+        {
+            if (completeness >= 1f)
+            {
+                return allowedDisguiseSuspicionMultiplier;
+            }
+
+            return partialDisguiseSuspicionMultiplier;
+        }
+
+        if (!string.IsNullOrWhiteSpace(disguiseSet))
+        {
+            return wrongDisguiseRestrictedMultiplier;
+        }
+
+        return noDisguiseRestrictedMultiplier;
+    }
+
+    private float GetZoneLegalitySuspicionMultiplier()
+    {
+        RestrictedZone zone = GetCurrentPlayerZone();
+
+        if (zone == null || zone.IsPublicZone())
+        {
+            return 1f;
+        }
+
+        if (playerCoverIdentity == null)
+        {
+            return noDisguiseRestrictedMultiplier;
+        }
+
+        bool allowed = playerCoverIdentity.IsAllowedInZone(zone);
+
+        if (allowed)
+        {
+            return 0.55f;
+        }
+
+        return zone.unauthorizedVisionMultiplier;
+    }
+
+    private void ApplyUnauthorizedZoneSuspicion(bool canSeePlayer)
+    {
+        if (!canSeePlayer)
+        {
+            return;
+        }
+
+        RestrictedZone zone = GetCurrentPlayerZone();
+
+        if (zone == null || zone.IsPublicZone())
+        {
+            return;
+        }
+
+        if (playerCoverIdentity != null && playerCoverIdentity.IsAllowedInZone(zone))
+        {
+            return;
+        }
+
+        if (suspicion < unauthorizedZoneMinimumSuspicion)
+        {
+            suspicion = unauthorizedZoneMinimumSuspicion;
+        }
+
+        float zoneSuspicionRate = zone.unauthorizedSuspicionPerSecond > 0f
+            ? zone.unauthorizedSuspicionPerSecond
+            : unauthorizedZoneSuspicionPerSecond;
+
+        suspicion += zoneSuspicionRate * Time.deltaTime;
+        suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
+        if (warnBeforeChaseInRestrictedZone &&
+            !hasGivenZoneWarning &&
+            suspicion >= warningSuspicionThreshold &&
+            suspicion < chaseThreshold)
+        {
+            EnterZoneWarning();
+        }
+    }
+
+    private RestrictedZone GetCurrentPlayerZone()
+    {
+        if (playerZoneTracker != null)
+        {
+            return playerZoneTracker.GetCurrentZone();
+        }
+
+        if (PlayerZoneTracker.Instance != null)
+        {
+            return PlayerZoneTracker.Instance.GetCurrentZone();
+        }
+
+        return null;
+    }
+
+    private void EnterZoneWarning()
+    {
+        hasGivenZoneWarning = true;
+        warningTimer = warningDuration;
+
+        currentState = GuardState.Suspicious;
+        agent.isStopped = true;
+
+        SetVisualState(suspiciousColor, true);
+
+        Debug.Log($"{gameObject.name}: You are not meant to be here.");
     }
 }

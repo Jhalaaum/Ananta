@@ -1,5 +1,25 @@
 using UnityEngine;
 
+public enum InventoryItemRole
+{
+    General,
+    Evidence,
+    Disguise,
+    Tool,
+    Consumable,
+    QuestItem,
+    Key,
+    Valuable,
+    Document
+}
+
+public enum ItemSecurityType
+{
+    HardEvidence,     // usually not confiscated
+    SoftItem,         // disguise/tools can be confiscated
+    Normal
+}
+
 [CreateAssetMenu(fileName = "New Item", menuName = "Inventory/Item Data")]
 public class ItemData : ScriptableObject
 {
@@ -12,6 +32,8 @@ public class ItemData : ScriptableObject
 
     [Header("Classification")]
     public ItemType itemType = ItemType.Misc;
+    public InventoryItemRole itemRole = InventoryItemRole.General;
+    public ItemSecurityType securityType = ItemSecurityType.Normal;
 
     [Header("Icon")]
     public Sprite itemIcon;
@@ -34,5 +56,14 @@ public class ItemData : ScriptableObject
     public bool canEquip;
     public EquipmentSlotType equipmentSlotType;
     public bool countsAsDisguisePiece;
+
+    [Tooltip("Examples: guard, merchant, servant, monk, noble")]
     public string disguiseSetID;
+
+    [Header("Disguise Quality")]
+    [Range(0f, 1f)]
+    public float disguiseQuality = 1f;
+
+    [Tooltip("For guards later: suspicious if worn in wrong zone/faction.")]
+    public string factionOrRoleID;
 }

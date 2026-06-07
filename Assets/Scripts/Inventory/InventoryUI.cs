@@ -17,6 +17,10 @@ public class InventoryUI : MonoBehaviour
     public Button selectedItemActionButton;
     public TMP_Text selectedItemActionButtonText;
 
+    [Header("Disguise UI")]
+    public TMP_Text disguiseStatusText;
+    public Image characterPreviewImage;
+
     [Header("Equipment Slots")]
     public EquipmentSlotUI headSlot;
     public EquipmentSlotUI bodySlot;
@@ -56,6 +60,7 @@ public class InventoryUI : MonoBehaviour
     {
         BuildOrRefreshGrid();
         RefreshEquipmentSlots();
+        RefreshDisguiseStatus();
     }
 
     private void Start()
@@ -63,6 +68,11 @@ public class InventoryUI : MonoBehaviour
         if (InventoryManager.Instance != null)
         {
             InventoryManager.Instance.OnInventoryChanged += BuildOrRefreshGrid;
+        }
+
+        if (EquipmentManager.Instance != null)
+        {
+            EquipmentManager.Instance.OnEquipmentChanged += HandleEquipmentChanged;
         }
 
         if (selectedItemActionButton != null)
@@ -75,6 +85,7 @@ public class InventoryUI : MonoBehaviour
         SetupEquipmentSlots();
         BuildOrRefreshGrid();
         RefreshEquipmentSlots();
+        RefreshDisguiseStatus();
         ClearDetails();
     }
 
@@ -94,6 +105,17 @@ public class InventoryUI : MonoBehaviour
         {
             InventoryManager.Instance.OnInventoryChanged -= BuildOrRefreshGrid;
         }
+
+        if (EquipmentManager.Instance != null)
+        {
+            EquipmentManager.Instance.OnEquipmentChanged -= HandleEquipmentChanged;
+        }
+    }
+
+    private void HandleEquipmentChanged()
+    {
+        RefreshEquipmentSlots();
+        RefreshDisguiseStatus();
     }
 
     private void CreateDragIconIfMissing()
@@ -125,44 +147,30 @@ public class InventoryUI : MonoBehaviour
 
     private void SetupEquipmentSlots()
     {
-        if (headSlot != null)
-        {
-            headSlot.slotType = EquipmentSlotType.Head;
-            headSlot.Setup(this);
-        }
-
-        if (bodySlot != null)
-        {
-            bodySlot.slotType = EquipmentSlotType.Body;
-            bodySlot.Setup(this);
-        }
-
-        if (legsSlot != null)
-        {
-            legsSlot.slotType = EquipmentSlotType.Legs;
-            legsSlot.Setup(this);
-        }
-
-        if (feetSlot != null)
-        {
-            feetSlot.slotType = EquipmentSlotType.Feet;
-            feetSlot.Setup(this);
-        }
+        SetupEquipmentSlot(headSlot, EquipmentSlotType.Head, -1);
+        SetupEquipmentSlot(bodySlot, EquipmentSlotType.Body, -1);
+        SetupEquipmentSlot(legsSlot, EquipmentSlotType.Legs, -1);
+        SetupEquipmentSlot(feetSlot, EquipmentSlotType.Feet, -1);
 
         if (accessorySlots != null)
         {
             for (int i = 0; i < accessorySlots.Length; i++)
             {
-                if (accessorySlots[i] == null)
-                {
-                    continue;
-                }
-
-                accessorySlots[i].slotType = EquipmentSlotType.Accessory;
-                accessorySlots[i].accessoryIndex = i;
-                accessorySlots[i].Setup(this);
+                SetupEquipmentSlot(accessorySlots[i], EquipmentSlotType.Accessory, i);
             }
         }
+    }
+
+    private void SetupEquipmentSlot(EquipmentSlotUI slot, EquipmentSlotType type, int accessoryIndex)
+    {
+        if (slot == null)
+        {
+            return;
+        }
+
+        slot.slotType = type;
+        slot.accessoryIndex = accessoryIndex;
+        slot.Setup(this);
     }
 
     private void HandleNumberHotkeys()
@@ -313,9 +321,11 @@ public class InventoryUI : MonoBehaviour
         {
             itemDescriptionText.text =
                 $"{item.itemDescription}\n\n" +
-                $"Type: {item.itemType}\n" +
+                $"Role: {item.itemRole}\n" +
+                $"Security: {item.securityType}\n" +
                 $"Amount: {slot.amount}\n" +
-                $"Location: {(InventoryManager.Instance.IsHotbarSlot(slotIndex) ? "Hotbar" : "Backpack")}";
+                $"Location: {(InventoryManager.Instance.IsHotbarSlot(slotIndex) ? "Hotbar" : "Backpack")}\n" +
+                GetDisguiseText(item);
         }
 
         if (selectedItemActionButton != null)
@@ -327,21 +337,34 @@ public class InventoryUI : MonoBehaviour
         {
             if (item.canEquip)
             {
-                selectedItemActionButtonText.text = "Equip Item";
+                selectedItemActionButtonText.text = "Equip";
             }
             else if (item.canUse)
             {
-                selectedItemActionButtonText.text = "Use Item";
+                selectedItemActionButtonText.text = "Use";
             }
             else if (item.canDrop && !item.isImportant)
             {
-                selectedItemActionButtonText.text = "Drop Item";
+                selectedItemActionButtonText.text = "Drop";
             }
             else
             {
-                selectedItemActionButtonText.text = "Select Item";
+                selectedItemActionButtonText.text = "Inspect";
             }
         }
+    }
+
+    private string GetDisguiseText(ItemData item)
+    {
+        if (item == null || !item.canEquip)
+        {
+            return "";
+        }
+
+        return
+            $"\nEquip Slot: {item.equipmentSlotType}\n" +
+            $"Disguise Set: {(string.IsNullOrWhiteSpace(item.disguiseSetID) ? "None" : item.disguiseSetID)}\n" +
+            $"Disguise Quality: {Mathf.RoundToInt(item.disguiseQuality * 100f)}%";
     }
 
     private void ClearDetails()
@@ -478,52 +501,27 @@ public class InventoryUI : MonoBehaviour
 
     private bool TryEquipFromInventorySlot(int inventorySlotIndex, EquipmentSlotUI targetSlot)
     {
-        if (InventoryManager.Instance == null)
+        if (EquipmentManager.Instance == null || targetSlot == null)
         {
             return false;
         }
 
-        InventorySlot inventorySlot = InventoryManager.Instance.GetSlot(inventorySlotIndex);
+        bool equipped = EquipmentManager.Instance.EquipFromInventorySlot(
+            inventorySlotIndex,
+            targetSlot.slotType,
+            targetSlot.accessoryIndex
+        );
 
-        if (inventorySlot == null || inventorySlot.IsEmpty())
+        if (!equipped)
         {
             return false;
         }
-
-        ItemData itemToEquip = inventorySlot.itemData;
-
-        if (targetSlot == null || !targetSlot.CanAccept(itemToEquip))
-        {
-            Debug.LogWarning($"[InventoryUI] {itemToEquip.itemName} cannot be equipped there.");
-            return false;
-        }
-
-        ItemData oldEquippedItem = targetSlot.GetItem();
-
-        if (oldEquippedItem != null)
-        {
-            if (!InventoryManager.Instance.CanAddItem(oldEquippedItem, 1))
-            {
-                Debug.LogWarning("[InventoryUI] Cannot unequip old item because inventory is full.");
-                return false;
-            }
-
-            InventoryManager.Instance.AddItem(oldEquippedItem, 1);
-        }
-
-        bool removed = InventoryManager.Instance.RemoveFromSlot(inventorySlotIndex, 1);
-
-        if (!removed)
-        {
-            return false;
-        }
-
-        targetSlot.SetItem(itemToEquip);
 
         selectedSlotIndex = -1;
         selectedEquipmentSlot = targetSlot;
 
         RefreshEquipmentSlots();
+        RefreshDisguiseStatus();
         BuildOrRefreshGrid();
         ShowEquipmentSlotDetails(targetSlot);
 
@@ -541,14 +539,19 @@ public class InventoryUI : MonoBehaviour
         {
             case EquipmentSlotType.Head:
                 return headSlot;
+
             case EquipmentSlotType.Body:
                 return bodySlot;
+
             case EquipmentSlotType.Legs:
                 return legsSlot;
+
             case EquipmentSlotType.Feet:
                 return feetSlot;
+
             case EquipmentSlotType.Accessory:
                 return GetFirstAvailableAccessorySlot();
+
             default:
                 return null;
         }
@@ -635,7 +638,9 @@ public class InventoryUI : MonoBehaviour
             itemDescriptionText.text =
                 $"{item.itemDescription}\n\n" +
                 $"Equipped Slot: {equipmentSlot.slotType}\n" +
-                $"Right-click equipment slot to unequip.";
+                $"Disguise Set: {(string.IsNullOrWhiteSpace(item.disguiseSetID) ? "None" : item.disguiseSetID)}\n" +
+                $"Quality: {Mathf.RoundToInt(item.disguiseQuality * 100f)}%\n\n" +
+                $"Right-click this slot to unequip.";
         }
 
         if (selectedItemActionButton != null)
@@ -646,28 +651,15 @@ public class InventoryUI : MonoBehaviour
 
     public void UnequipSlot(EquipmentSlotUI equipmentSlot)
     {
-        if (equipmentSlot == null || equipmentSlot.IsEmpty())
+        if (equipmentSlot == null || equipmentSlot.IsEmpty() || EquipmentManager.Instance == null)
         {
             return;
         }
 
-        if (InventoryManager.Instance == null)
-        {
-            return;
-        }
-
-        ItemData item = equipmentSlot.GetItem();
-
-        if (!InventoryManager.Instance.CanAddItem(item, 1))
-        {
-            Debug.LogWarning("[InventoryUI] Cannot unequip. Inventory is full.");
-            return;
-        }
-
-        equipmentSlot.SetItem(null);
-        InventoryManager.Instance.AddItem(item, 1);
+        EquipmentManager.Instance.UnequipToInventory(equipmentSlot.slotType, equipmentSlot.accessoryIndex);
 
         RefreshEquipmentSlots();
+        RefreshDisguiseStatus();
         BuildOrRefreshGrid();
         ClearDetails();
     }
@@ -689,6 +681,33 @@ public class InventoryUI : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void RefreshDisguiseStatus()
+    {
+        if (disguiseStatusText == null)
+        {
+            return;
+        }
+
+        if (EquipmentManager.Instance == null)
+        {
+            disguiseStatusText.text = "Disguise: None";
+            return;
+        }
+
+        string setID = EquipmentManager.Instance.GetBestDisguiseSetID();
+        float completeness = EquipmentManager.Instance.GetBestDisguiseCompleteness();
+
+        if (string.IsNullOrWhiteSpace(setID))
+        {
+            disguiseStatusText.text = "Disguise: None";
+            return;
+        }
+
+        disguiseStatusText.text =
+            $"Disguise: {setID}\n" +
+            $"Completeness: {Mathf.RoundToInt(completeness * 100f)}%";
     }
 
     public void QuickUseOrDrop(int slotIndex)

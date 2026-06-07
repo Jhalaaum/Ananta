@@ -26,4 +26,4 @@ MonoBehaviour:
   canEquip: 1
   equipmentSlotType: 0
   countsAsDisguisePiece: 1
-  disguiseSetID: Guard Turban
+  disguiseSetID: guard

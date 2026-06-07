@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class EquipmentSlotUI : MonoBehaviour, 
+public class EquipmentSlotUI : MonoBehaviour,
     IPointerClickHandler,
     IDropHandler
 {
@@ -21,16 +21,10 @@ public class EquipmentSlotUI : MonoBehaviour,
     public Color occupiedColor;
     public Color selectedColor;
 
-    private ItemData equippedItem;
     private InventoryUI inventoryUI;
 
     private void Awake()
     {
-        if (backgroundImage == null)
-        {
-            backgroundImage = GetComponent<Image>();
-        }
-
         AutoFindReferences();
 
         ColorUtility.TryParseHtmlString("#2E2417", out normalColor);
@@ -40,26 +34,31 @@ public class EquipmentSlotUI : MonoBehaviour,
         ForceVisualDefaults();
     }
 
+    public void Setup(InventoryUI ui)
+    {
+        inventoryUI = ui;
+        AutoFindReferences();
+        ForceVisualDefaults();
+        Refresh();
+    }
+
     private void AutoFindReferences()
     {
+        if (backgroundImage == null)
+        {
+            backgroundImage = GetComponent<Image>();
+        }
+
         if (itemIconImage == null)
         {
             Transform icon = transform.Find("EquipmentIconImage");
-
-            if (icon != null)
-            {
-                itemIconImage = icon.GetComponent<Image>();
-            }
+            if (icon != null) itemIconImage = icon.GetComponent<Image>();
         }
 
         if (slotLabelText == null)
         {
             Transform label = transform.Find("SlotLabelText");
-
-            if (label != null)
-            {
-                slotLabelText = label.GetComponent<TMP_Text>();
-            }
+            if (label != null) slotLabelText = label.GetComponent<TMP_Text>();
         }
     }
 
@@ -86,49 +85,37 @@ public class EquipmentSlotUI : MonoBehaviour,
         }
     }
 
-    public void Setup(InventoryUI ui)
-    {
-        inventoryUI = ui;
-        AutoFindReferences();
-        ForceVisualDefaults();
-        Refresh();
-    }
-
-    public void SetItem(ItemData item)
-    {
-        equippedItem = item;
-        Refresh();
-    }
-
     public ItemData GetItem()
     {
-        return equippedItem;
+        if (EquipmentManager.Instance == null)
+        {
+            return null;
+        }
+
+        return EquipmentManager.Instance.GetEquippedItem(slotType, accessoryIndex);
     }
 
     public bool IsEmpty()
     {
-        return equippedItem == null;
+        return GetItem() == null;
     }
 
     public bool CanAccept(ItemData item)
     {
-        if (item == null || !item.canEquip)
+        if (EquipmentManager.Instance == null)
         {
             return false;
         }
 
-        if (slotType == EquipmentSlotType.Accessory)
-        {
-            return item.equipmentSlotType == EquipmentSlotType.Accessory;
-        }
-
-        return item.equipmentSlotType == slotType;
+        return EquipmentManager.Instance.CanAccept(item, slotType);
     }
 
     public void Refresh()
     {
         AutoFindReferences();
         ForceVisualDefaults();
+
+        ItemData equippedItem = GetItem();
 
         if (backgroundImage != null)
         {
@@ -154,16 +141,9 @@ public class EquipmentSlotUI : MonoBehaviour,
 
         if (slotLabelText != null)
         {
-            if (equippedItem == null)
-            {
-                slotLabelText.gameObject.SetActive(true);
-                slotLabelText.text = GetShortLabel();
-            }
-            else
-            {
-                slotLabelText.text = "";
-                slotLabelText.gameObject.SetActive(false);
-            }
+            bool empty = equippedItem == null;
+            slotLabelText.gameObject.SetActive(empty);
+            slotLabelText.text = empty ? GetShortLabel() : "";
         }
     }
 
@@ -173,19 +153,14 @@ public class EquipmentSlotUI : MonoBehaviour,
         {
             case EquipmentSlotType.Head:
                 return "Head";
-
             case EquipmentSlotType.Body:
                 return "Body";
-
             case EquipmentSlotType.Legs:
                 return "Legs";
-
             case EquipmentSlotType.Feet:
                 return "Feet";
-
             case EquipmentSlotType.Accessory:
                 return "Acc";
-
             default:
                 return "";
         }
