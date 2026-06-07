@@ -12,15 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f59e241b5fd947c4af0c2b498b27e72, type: 3}
   m_Name: CONV_Devika_FirstMeeting
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
-
   conversationID: devika_first_meeting
   conversationName: "Devika \u2014 First Meeting"
-  description: "First meeting with Devika. Establishes Ledger House access, merchant trust, and Howe's first plausible cover story."
-
-  lines: []
-
+  description: "Devika tests Howe's usefulness and either offers him Ledger House access or becomes cautious of him."
   startNodeID: start
-
   nodes:
   - nodeID: start
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
@@ -29,17 +24,7 @@ MonoBehaviour:
     nextNodeID: player_response
     choices: []
     conditions: []
-    onEnterEffects:
-    - effectType: 1
-      flagID: met_devika
-      factionID: 
-      itemID: 
-      infoID: 
-      coverStoryID: 
-      questToStart: {fileID: 0}
-      questObjectiveType: 0
-      questTargetID: 
-      amount: 1
+    onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
@@ -64,8 +49,18 @@ MonoBehaviour:
         questObjectiveType: 0
         questTargetID: 
         amount: 1
+      - effectType: 10
+        flagID: 
+        factionID: 
+        itemID: 
+        infoID: 
+        coverStoryID: ledger_clerk
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: 
+        amount: 1
       - effectType: 1
-        flagID: devika_respects_pragmatism
+        flagID: devika_offer_accepted
         factionID: 
         itemID: 
         infoID: 
@@ -95,7 +90,7 @@ MonoBehaviour:
         flagID: 
         factionID: 
         itemID: 
-        infoID: devika_understands_city_rules
+        infoID: devika_knows_city_rules
         coverStoryID: 
         questToStart: {fileID: 0}
         questObjectiveType: 0
@@ -114,26 +109,16 @@ MonoBehaviour:
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
     line: Ledger House needs a clerk. Not a clever one. A quiet one.
     lineType: 0
-    nextNodeID: offer_job_player_reply
+    nextNodeID: offer_job_confirm
     choices: []
     conditions: []
     onEnterEffects:
-    - effectType: 9
-      flagID: 
-      factionID: 
-      itemID: 
-      infoID: ledger_house_needs_quiet_clerk
-      coverStoryID: 
-      questToStart: {fileID: 0}
-      questObjectiveType: 0
-      questTargetID: 
-      amount: 1
-    - effectType: 10
-      flagID: 
+    - effectType: 1
+      flagID: devika_offered_ledger_job
       factionID: 
       itemID: 
       infoID: 
-      coverStoryID: ledger_clerk
+      coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
       questTargetID: 
@@ -142,11 +127,11 @@ MonoBehaviour:
     autoContinue: 0
     autoContinueDelay: 1.5
 
-  - nodeID: offer_job_player_reply
+  - nodeID: offer_job_confirm
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
-    line: Quiet is easier than loyal.
+    line: Quiet I can do. Cleverness I will keep unpaid.
     lineType: 0
-    nextNodeID: devika_warning
+    nextNodeID: devika_final_instruction
     choices: []
     conditions: []
     onEnterEffects: []
@@ -154,16 +139,16 @@ MonoBehaviour:
     autoContinue: 0
     autoContinueDelay: 1.5
 
-  - nodeID: devika_warning
+  - nodeID: devika_final_instruction
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: Good. Loyalty is expensive. Silence is affordable.
+    line: Good. Report to Ledger House before the second bell. If anyone asks, you were recommended because you count faster than you speak.
     lineType: 0
     nextNodeID: 
     choices: []
     conditions: []
     onEnterEffects:
-    - effectType: 1
-      flagID: ledger_clerk_cover_available
+    - effectType: 5
+      flagID: 
       factionID: 
       itemID: 
       infoID: 
@@ -172,11 +157,11 @@ MonoBehaviour:
       questObjectiveType: 0
       questTargetID: 
       amount: 1
-    - effectType: 5
+    - effectType: 9
       flagID: 
       factionID: 
       itemID: 
-      infoID: 
+      infoID: ledger_house_access
       coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
@@ -193,57 +178,47 @@ MonoBehaviour:
     nextNodeID: cautious_choice
     choices: []
     conditions: []
-    onEnterEffects:
-    - effectType: 1
-      flagID: devika_warned_about_rules
-      factionID: 
-      itemID: 
-      infoID: 
-      coverStoryID: 
-      questToStart: {fileID: 0}
-      questObjectiveType: 0
-      questTargetID: 
-      amount: 1
+    onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
 
   - nodeID: cautious_choice
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
-    line: Then I should learn quickly.
+    line: Then I should start by learning who sets them.
     lineType: 0
-    nextNodeID: cautious_offer_job
-    choices: []
-    conditions: []
-    onEnterEffects: []
-    onExitEffects: []
-    autoContinue: 0
-    autoContinueDelay: 1.5
-
-  - nodeID: cautious_offer_job
-    speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: Ledger House will teach you. Count what they ask you to count. Notice what they hope you miss.
-    lineType: 0
-    nextNodeID: 
+    nextNodeID: cautious_end
     choices: []
     conditions: []
     onEnterEffects:
-    - effectType: 9
+    - effectType: 3
       flagID: 
-      factionID: 
+      factionID: merchant_guild
       itemID: 
-      infoID: ledger_house_has_hidden_discrepancies
+      infoID: 
       coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
       questTargetID: 
       amount: 1
-    - effectType: 10
-      flagID: 
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: cautious_end
+    speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
+    line: Careful. Men who ask that question too loudly become examples. Ledger House first. Answers later.
+    lineType: 0
+    nextNodeID: 
+    choices: []
+    conditions: []
+    onEnterEffects:
+    - effectType: 1
+      flagID: devika_warning_given
       factionID: 
       itemID: 
       infoID: 
-      coverStoryID: ledger_clerk
+      coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
       questTargetID: 
