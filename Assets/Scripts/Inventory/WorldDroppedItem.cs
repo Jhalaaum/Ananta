@@ -13,13 +13,29 @@ public class WorldDroppedItem : MonoBehaviour, IInteractable
     public SpriteRenderer spriteRenderer;
     public GameObject fallbackVisual;
 
+    [Header("Physics Stop")]
+    public bool stopAfterSettling = true;
+    public float settleDelay = 0.4f;
+    public float stopSpeedThreshold = 0.15f;
+
     [Header("Scale")]
     public float visualScale = 0.6f;
 
+    private Rigidbody rb;
+    private float settleTimer;
+
     private void Awake()
     {
+        rb = GetComponent<Rigidbody>();
         AutoFindVisuals();
         RefreshVisual();
+
+        settleTimer = settleDelay;
+    }
+
+    private void Update()
+    {
+        StopSlidingIfSettled();
     }
 
     private void AutoFindVisuals()
@@ -52,6 +68,28 @@ public class WorldDroppedItem : MonoBehaviour, IInteractable
         {
             bool useFallback = itemData == null || itemData.itemIcon == null || spriteRenderer == null;
             fallbackVisual.SetActive(useFallback);
+        }
+    }
+
+    private void StopSlidingIfSettled()
+    {
+        if (!stopAfterSettling || rb == null)
+        {
+            return;
+        }
+
+        settleTimer -= Time.deltaTime;
+
+        if (settleTimer > 0f)
+        {
+            return;
+        }
+
+        if (rb.linearVelocity.magnitude <= stopSpeedThreshold)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.Sleep();
         }
     }
 

@@ -37,6 +37,7 @@ public class InventorySlotUI : MonoBehaviour,
         ColorUtility.TryParseHtmlString("#C9A45D", out selectedColor);
 
         ForceVisualDefaults();
+        SetEmpty();
     }
 
     private void AutoFindReferences()
@@ -49,19 +50,28 @@ public class InventorySlotUI : MonoBehaviour,
         if (itemIconImage == null)
         {
             Transform icon = transform.Find("ItemIconImage");
-            if (icon != null) itemIconImage = icon.GetComponent<Image>();
+            if (icon != null)
+            {
+                itemIconImage = icon.GetComponent<Image>();
+            }
         }
 
         if (amountText == null)
         {
             Transform amount = transform.Find("ItemAmountText");
-            if (amount != null) amountText = amount.GetComponent<TMP_Text>();
+            if (amount != null)
+            {
+                amountText = amount.GetComponent<TMP_Text>();
+            }
         }
 
         if (slotNumberText == null)
         {
             Transform number = transform.Find("SlotNumberText");
-            if (number != null) slotNumberText = number.GetComponent<TMP_Text>();
+            if (number != null)
+            {
+                slotNumberText = number.GetComponent<TMP_Text>();
+            }
         }
     }
 
@@ -145,13 +155,21 @@ public class InventorySlotUI : MonoBehaviour,
             itemIconImage.color = Color.white;
         }
 
-        if (amountText != null)
+        RefreshAmountText(item, slot.amount);
+    }
+
+    private void RefreshAmountText(ItemData item, int amount)
+    {
+        if (amountText == null)
         {
-            bool showAmount = slot.amount > 1;
-            amountText.gameObject.SetActive(showAmount);
-            amountText.enabled = showAmount;
-            amountText.text = showAmount ? slot.amount.ToString() : "";
+            return;
         }
+
+        bool shouldShowAmount = item != null && item.isStackable && amount > 1;
+
+        amountText.gameObject.SetActive(shouldShowAmount);
+        amountText.enabled = shouldShowAmount;
+        amountText.text = shouldShowAmount ? $"x{amount}" : "";
     }
 
     private void SetEmpty()

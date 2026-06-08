@@ -207,6 +207,16 @@ public class SaveManager : MonoBehaviour
             saveData.questProgress = QuestManager.Instance.CaptureQuestProgress();
         }
 
+        if (InventoryManager.Instance != null)
+        {
+            saveData.inventorySaveData = InventoryManager.Instance.CaptureInventory();
+        }
+
+        if (WorldItemStateManager.Instance != null)
+        {
+            saveData.worldItemStateSaveData = WorldItemStateManager.Instance.CaptureWorldItemStates();
+        }
+
         currentCheckpointData = saveData;
 
         string json = JsonUtility.ToJson(saveData, true);
@@ -301,6 +311,18 @@ public class SaveManager : MonoBehaviour
 
         ResetRuntimeUI();
 
+        RuntimeDroppedItemCleaner.Instance?.ClearRuntimeDroppedItems();
+
+        if (InventoryManager.Instance != null)
+        {
+            InventoryManager.Instance.RestoreInventory(saveData.inventorySaveData);
+        }
+
+        if (WorldItemStateManager.Instance != null)
+        {
+            WorldItemStateManager.Instance.RestoreWorldItemStates(saveData.worldItemStateSaveData);
+        }
+
         playerCheckpointState.RestoreTransform(
             saveData.player.GetPosition(),
             saveData.player.GetRotation()
@@ -317,8 +339,8 @@ public class SaveManager : MonoBehaviour
         }
 
         ResetAllGuardsForCheckpoint();
-        ResetRuntimeUI();
-
+        ResetRuntimeUI();        
+        
         currentCheckpointData = saveData;
 
         isApplyingCheckpoint = false;

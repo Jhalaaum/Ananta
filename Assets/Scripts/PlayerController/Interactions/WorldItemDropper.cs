@@ -7,9 +7,21 @@ public class WorldItemDropper : MonoBehaviour
     [Header("Drop")]
     public GameObject defaultWorldItemPrefab;
     public Transform dropPoint;
-    public float forwardOffset = 1.5f;
-    public float upwardOffset = 1.0f;
-    public float throwForce = 2.0f;
+
+    [Header("Position")]
+    public float forwardOffset = 1.0f;
+    public float upwardOffset = 0.7f;
+
+    [Header("Physics")]
+    public bool useThrowForce = false;
+    public float throwForce = 0.75f;
+    public float upwardForce = 0.5f;
+
+    [Header("Ground Placement")]
+    public bool raycastToGround = true;
+    public float groundRaycastHeight = 2.0f;
+    public float groundRaycastDistance = 5.0f;
+    public LayerMask groundLayerMask = ~0;
 
     [Header("Debug")]
     public bool showDebugLogs = true;
@@ -43,9 +55,7 @@ public class WorldItemDropper : MonoBehaviour
             return;
         }
 
-        Vector3 spawnPosition = dropPoint != null
-            ? dropPoint.position
-            : transform.position + transform.forward * forwardOffset + Vector3.up * upwardOffset;
+        Vector3 spawnPosition = GetDropPosition();
 
         GameObject spawned = Instantiate(defaultWorldItemPrefab, spawnPosition, Quaternion.identity);
 
@@ -66,12 +76,47 @@ public class WorldItemDropper : MonoBehaviour
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
-            rb.AddForce(transform.forward * throwForce + Vector3.up * 1.0f, ForceMode.Impulse);
+
+            rb.linearDamping = 8f;
+            rb.angularDamping = 10f;
+
+            if (useThrowForce)
+            {
+                rb.AddForce(transform.forward * throwForce + Vector3.up * upwardForce, ForceMode.Impulse);
+            }
         }
 
         if (showDebugLogs)
         {
             Debug.Log($"[WorldItemDropper] Dropped {itemData.itemName} x{amount} at {spawnPosition}");
         }
+    }
+
+    private Vector3 GetDropPosition()
+    {
+        Vector3 basePosition;
+
+        if (dropPoint != null)
+        {
+            basePosition = dropPoint.position;
+        }
+        else
+        {
+            basePosition = transform.position + transform.forward * forwardOffset + Vector3.up * upwardOffset;
+        }
+
+        if (!raycastToGround)
+        {
+            return basePosition;
+        }
+
+        Vector3 rayStart = basePosition + Vector3.up * groundRaycastHeight;
+
+        if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, groundRaycastDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            return hit.point + Vector3.up * 0.15f;
+        }
+
+        return basePosition;
     }
 }

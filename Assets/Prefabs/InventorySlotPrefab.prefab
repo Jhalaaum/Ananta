@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 48, y: -21}
+  m_AnchoredPosition: {x: 31.7, y: -21}
   m_SizeDelta: {x: 30, y: 30}
   m_Pivot: {x: 1, y: 0}
 --- !u!222 &978819833693050415
@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: x1
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -153,7 +153,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1495656426943235131
 RectTransform:
   m_ObjectHideFlags: 0
@@ -170,7 +170,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 28, y: -31}
+  m_AnchoredPosition: {x: -6.9, y: 8.6}
   m_SizeDelta: {x: 25, y: 30}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &3953824577147879068
@@ -201,7 +201,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: x1
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -483,12 +483,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4716d297e0a274ecab5ba01e91558411, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventorySlotUI
-  backgroundImage: {fileID: 3404497859052760269}
-  itemIconImage: {fileID: 0}
-  amountText: {fileID: 2945079572117210616}
-  slotNumberText: {fileID: 0}
+  backgroundImage: {fileID: 4984089420378834967}
+  itemIconImage: {fileID: 3404497859052760269}
+  amountText: {fileID: 1048400476111125139}
+  slotNumberText: {fileID: 2945079572117210616}
   normalColor: {r: 0.18, g: 0.14, b: 0.09, a: 1}
+  hotbarColor: {r: 0, g: 0, b: 0, a: 0}
   selectedColor: {r: 0, g: 0, b: 0, a: 0}
   amountTextColor: {r: 1, g: 1, b: 1, a: 1}
   slotNumberTextColor: {r: 0.75, g: 0.68, b: 0.55, a: 1}
-  showDebugLogs: 0

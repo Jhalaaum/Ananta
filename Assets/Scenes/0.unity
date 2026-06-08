@@ -5454,6 +5454,7 @@ GameObject:
   - component: {fileID: 232242122}
   - component: {fileID: 232242121}
   - component: {fileID: 232242120}
+  - component: {fileID: 232242123}
   m_Layer: 9
   m_Name: Guard Turban
   m_TagString: Untagged
@@ -5518,6 +5519,29 @@ Transform:
   - {fileID: 833118988}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &232242123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 232242119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0355d547617cc428383a004d41f36794, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldPickupItem
+  worldItemID: 'bazaar_guard_turban_01 '
+  itemData: {fileID: 11400000, guid: a27cf13fba0e44f9dab547d032aee045, type: 2}
+  amount: 1
+  promptText: Press E to pick up
+  visualRoot: {fileID: 232242119}
+  pickupCollider: {fileID: 232242121}
+  progressQuestOnPickup: 0
+  objectiveType: 2
+  questTarget: {fileID: 0}
+  isCollected: 0
+  showDebugLogs: 1
 --- !u!1 &252849655 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -6763858364670572316, guid: 3ff9781f87e49484f9ac015f3fe789f8, type: 3}
@@ -8970,6 +8994,7 @@ GameObject:
   - component: {fileID: 391746211}
   - component: {fileID: 391746212}
   - component: {fileID: 391746213}
+  - component: {fileID: 391746214}
   m_Layer: 9
   m_Name: TornLedgerPage_World
   m_TagString: Untagged
@@ -9034,6 +9059,29 @@ MonoBehaviour:
   questTarget: {fileID: 0}
   destroyOnPickup: 1
   canInteract: 1
+--- !u!114 &391746214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 391746210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0355d547617cc428383a004d41f36794, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldPickupItem
+  worldItemID: 1
+  itemData: {fileID: 11400000, guid: b774bd755a63e41c19c52f0a0e0f0508, type: 2}
+  amount: 1
+  promptText: Press E to pick up
+  visualRoot: {fileID: 0}
+  pickupCollider: {fileID: 0}
+  progressQuestOnPickup: 0
+  objectiveType: 2
+  questTarget: {fileID: 0}
+  isCollected: 0
+  showDebugLogs: 1
 --- !u!1001 &399963380
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10617,6 +10665,8 @@ GameObject:
   - component: {fileID: 463113617}
   - component: {fileID: 463113619}
   - component: {fileID: 463113620}
+  - component: {fileID: 463113622}
+  - component: {fileID: 463113621}
   m_Layer: 0
   m_Name: Game Systems
   m_TagString: Untagged
@@ -10898,6 +10948,32 @@ MonoBehaviour:
   y: 20
   width: 520
   lineHeight: 22
+--- !u!114 &463113621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2081a8b124994555861a583a5e0de5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RuntimeDroppedItemCleaner
+  showDebugLogs: 1
+--- !u!114 &463113622
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0ca179cf7b5f431a8eda654c9f7552d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldItemStateManager
+  showDebugLogs: 1
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0
@@ -11345,7 +11421,15 @@ MonoBehaviour:
   dropPoint: {fileID: 0}
   forwardOffset: 1.2
   upwardOffset: 0.4
+  useThrowForce: 0
   throwForce: 2.5
+  upwardForce: 0.5
+  raycastToGround: 1
+  groundRaycastHeight: 2
+  groundRaycastDistance: 5
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   showDebugLogs: 1
 --- !u!114 &493263001
 MonoBehaviour:
@@ -30735,6 +30819,105 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.019999998, y: 0.009288735, z: 0.007504359}
   m_Center: {x: -0.000000029802322, y: -0.005355619, z: 0.0028821214}
+--- !u!1 &1393977584
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1393977587}
+  - component: {fileID: 1393977586}
+  - component: {fileID: 1393977585}
+  - component: {fileID: 1393977588}
+  m_Layer: 9
+  m_Name: TornLedgerPage_World (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1393977585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1393977584}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2024c84332814439ab7d8fcd02f0fe5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemPickupInteractable
+  promptText: Press E to pick up
+  itemData: {fileID: 11400000, guid: b774bd755a63e41c19c52f0a0e0f0508, type: 2}
+  amount: 1
+  progressQuestOnPickup: 0
+  objectiveType: 2
+  questTarget: {fileID: 0}
+  destroyOnPickup: 1
+  canInteract: 1
+--- !u!65 &1393977586
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1393977584}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &1393977587
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1393977584}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: -0.000000030908623, z: -0.000000030908623, w: 0.7071068}
+  m_LocalPosition: {x: 16.868002, y: 1.16, z: 6.96}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1766536860}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1393977588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1393977584}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0355d547617cc428383a004d41f36794, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldPickupItem
+  worldItemID: 2
+  itemData: {fileID: 11400000, guid: b774bd755a63e41c19c52f0a0e0f0508, type: 2}
+  amount: 1
+  promptText: Press E to pick up
+  visualRoot: {fileID: 0}
+  pickupCollider: {fileID: 0}
+  progressQuestOnPickup: 0
+  objectiveType: 2
+  questTarget: {fileID: 0}
+  isCollected: 0
+  showDebugLogs: 1
 --- !u!1 &1397784046
 GameObject:
   m_ObjectHideFlags: 0
@@ -36548,6 +36731,117 @@ MonoBehaviour:
   dialogueUI: {fileID: 581266290}
   promptText: Press E to listen
   canOnlyListenOnce: 0
+--- !u!1 &1766536859
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1766536860}
+  - component: {fileID: 1766536863}
+  - component: {fileID: 1766536862}
+  - component: {fileID: 1766536861}
+  m_Layer: 9
+  m_Name: Cube
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1766536860
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1766536859}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1393977587}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1766536861
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1766536859}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1766536862
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1766536859}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1766536863
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1766536859}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!65 &1773313952
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -48754,3 +49048,4 @@ SceneRoots:
   - {fileID: 457302658}
   - {fileID: 1790789922}
   - {fileID: 391746211}
+  - {fileID: 1393977587}

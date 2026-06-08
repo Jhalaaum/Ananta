@@ -444,4 +444,77 @@ public class InventoryManager : MonoBehaviour
             Debug.Log($"[InventoryManager] {message}");
         }
     }
+    public InventorySaveData CaptureInventory()
+    {
+        InventorySaveData saveData = new InventorySaveData();
+        saveData.selectedHotbarIndex = selectedHotbarIndex;
+
+        foreach (InventorySlot slot in slots)
+        {
+            InventorySlotSaveData slotSaveData = new InventorySlotSaveData();
+
+            if (slot != null && !slot.IsEmpty() && slot.itemData != null)
+            {
+                slotSaveData.itemID = slot.itemData.itemID;
+                slotSaveData.amount = slot.amount;
+            }
+            else
+            {
+                slotSaveData.itemID = "";
+                slotSaveData.amount = 0;
+            }
+
+            saveData.slots.Add(slotSaveData);
+        }
+
+        return saveData;
+    }
+
+    public void RestoreInventory(InventorySaveData saveData)
+    {
+        if (saveData == null)
+        {
+            ClearInventory();
+            return;
+        }
+
+        for (int i = 0; i < slots.Count; i++)
+        {
+            slots[i].itemData = null;
+            slots[i].amount = 0;
+        }
+
+        for (int i = 0; i < saveData.slots.Count && i < slots.Count; i++)
+        {
+            InventorySlotSaveData slotSave = saveData.slots[i];
+
+            if (slotSave == null)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(slotSave.itemID) || slotSave.amount <= 0)
+            {
+                continue;
+            }
+
+            ItemData item = ItemDatabase.Instance != null
+                ? ItemDatabase.Instance.GetItemByID(slotSave.itemID)
+                : null;
+
+            if (item == null)
+            {
+                Debug.LogWarning($"[InventoryManager] Could not restore item: {slotSave.itemID}");
+                continue;
+            }
+
+            slots[i].itemData = item;
+            slots[i].amount = slotSave.amount;
+        }
+
+        selectedHotbarIndex = Mathf.Clamp(saveData.selectedHotbarIndex, 0, hotbarSlotCount - 1);
+
+        OnSelectedHotbarChanged?.Invoke(selectedHotbarIndex);
+        OnInventoryChanged?.Invoke();
+    }
 }

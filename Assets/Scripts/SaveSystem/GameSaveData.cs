@@ -13,27 +13,16 @@ public class GameSaveData
 
     public QuestSaveCollection questProgress = new QuestSaveCollection();
 
-    public InventorySaveData inventory = new InventorySaveData();
 
     public MoneySaveData money = new MoneySaveData();
     public DisguiseSaveData disguise = new DisguiseSaveData();
     public WorldSuspicionSaveData worldSuspicion = new WorldSuspicionSaveData();
     public ZoneAlertSaveData zoneAlert = new ZoneAlertSaveData();
     public StoryFlagSaveData storyFlags = new StoryFlagSaveData();
+    public InventorySaveData inventorySaveData;
+    public WorldItemStateSaveData worldItemStateSaveData;
 }
 
-[Serializable]
-public class InventorySaveData
-{
-    public List<InventoryItemSaveData> items = new List<InventoryItemSaveData>();
-}
-
-[Serializable]
-public class InventoryItemSaveData
-{
-    public string itemID;
-    public int amount;
-}
 
 [Serializable]
 public class MoneySaveData
