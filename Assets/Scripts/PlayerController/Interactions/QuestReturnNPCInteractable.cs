@@ -3,7 +3,8 @@ using UnityEngine;
 public class QuestReturnNPCInteractable : MonoBehaviour, IInteractable
 {
     [Header("Prompt")]
-    public string promptText = "Press E to talk";
+    public string normalPromptText = "Press E to talk";
+    public string returnPromptText = "Press E to report back";
 
     [Header("Quest Return NPC")]
     public QuestReturnNPC questReturnNPC;
@@ -21,12 +22,27 @@ public class QuestReturnNPCInteractable : MonoBehaviour, IInteractable
 
     public string GetPromptText()
     {
-        return promptText;
+        if (questReturnNPC == null)
+        {
+            return normalPromptText;
+        }
+
+        return questReturnNPC.GetPromptText();
     }
 
     public bool CanInteract(Transform interactor)
     {
-        return canInteract && questReturnNPC != null;
+        if (!canInteract)
+        {
+            return false;
+        }
+
+        if (questReturnNPC == null)
+        {
+            return false;
+        }
+
+        return questReturnNPC.CanInteract(interactor);
     }
 
     public void Interact(Transform interactor)
@@ -36,6 +52,6 @@ public class QuestReturnNPCInteractable : MonoBehaviour, IInteractable
             return;
         }
 
-        questReturnNPC.Interact();
+        questReturnNPC.Interact(interactor);
     }
 }

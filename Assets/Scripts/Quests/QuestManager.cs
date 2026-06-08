@@ -497,7 +497,100 @@ public class QuestManager : MonoBehaviour
             }
         }
     }
+    public QuestState GetActiveQuestWithCurrentObjective(
+        QuestObjectiveType objectiveType,
+        string targetID
+        )
+    {
+        if (activeQuests == null)
+        {
+            return null;
+        }
 
+        string cleanTargetID = targetID != null ? targetID.Trim() : "";
+
+        foreach (QuestState questState in activeQuests)
+        {
+            if (questState == null || questState.isCompleted)
+            {
+                continue;
+            }
+
+            QuestStepData step = questState.GetCurrentStep();
+
+            if (step == null)
+            {
+                continue;
+            }
+
+            string stepTargetID = step.targetID != null ? step.targetID.Trim() : "";
+
+            if (step.objectiveType == objectiveType && stepTargetID == cleanTargetID)
+            {
+                return questState;
+            }
+        }
+
+        return null;
+    }
+
+    public QuestState GetActiveQuestWithCurrentObjective(
+        string questID,
+        QuestObjectiveType objectiveType,
+        string targetID
+    )
+    {
+        if (activeQuests == null)
+        {
+            return null;
+        }
+
+        string cleanQuestID = questID != null ? questID.Trim() : "";
+        string cleanTargetID = targetID != null ? targetID.Trim() : "";
+
+        foreach (QuestState questState in activeQuests)
+        {
+            if (questState == null || questState.isCompleted || questState.questData == null)
+            {
+                continue;
+            }
+
+            string activeQuestID = questState.questData.questID != null
+                ? questState.questData.questID.Trim()
+                : "";
+
+            if (!string.IsNullOrWhiteSpace(cleanQuestID) && activeQuestID != cleanQuestID)
+            {
+                continue;
+            }
+
+            QuestStepData step = questState.GetCurrentStep();
+
+            if (step == null)
+            {
+                continue;
+            }
+
+            string stepTargetID = step.targetID != null ? step.targetID.Trim() : "";
+
+            if (step.objectiveType == objectiveType && stepTargetID == cleanTargetID)
+            {
+                return questState;
+            }
+        }
+
+        return null;
+    }
+
+    public bool HasActiveObjective(QuestObjectiveType objectiveType, string targetID)
+    {
+        return GetActiveQuestWithCurrentObjective(objectiveType, targetID) != null;
+    }
+
+    public bool HasActiveObjective(string questID, QuestObjectiveType objectiveType, string targetID)
+    {
+        return GetActiveQuestWithCurrentObjective(questID, objectiveType, targetID) != null;
+    }
     private void Log(string message)
     {
         if (showDebugLogs)

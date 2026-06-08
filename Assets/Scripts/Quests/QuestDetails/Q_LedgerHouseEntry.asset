@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6625dd72531cf421798bac9111b0e5d8, type: 3}
+  m_Name: Q_LedgerHouseEntry
+  m_EditorClassIdentifier: Assembly-CSharp::QuestData
+  questID: Q_LedgerHouseEntry
+  questName: Enter the Ledger House
+  questDescription: Devika has arranged a temporary cover for Howe as a Ledger House
+    clerk. Enter the building, avoid suspicion, and find the ledger clue.
+  steps:
+  - stepName: ledger_house_entry
+    objectiveDescription: ReachLocation
+    objectiveType: 1
+    targetID: ledger_house_entry
+    requiredAmount: 1
+    showObjectiveMarker: 0
+    stepStartMessage: 
+    stepCompleteMessage: 
+    rewards: []
+  - stepName: ledger_clue
+    objectiveDescription: ledger_clue
+    objectiveType: 2
+    targetID: ledger_clue
+    requiredAmount: 1
+    showObjectiveMarker: 0
+    stepStartMessage: 
+    stepCompleteMessage: 
+    rewards: []
+  - stepName: ReturnToNPC
+    objectiveDescription: ReturnToNPC
+    objectiveType: 3
+    targetID: devika
+    requiredAmount: 1
+    showObjectiveMarker: 0
+    stepStartMessage: 
+    stepCompleteMessage: 
+    rewards: []
+  completionMessage: 
+  completionRewards: []
+  nextQuestToUnlock: {fileID: 0}

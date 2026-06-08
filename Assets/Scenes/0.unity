@@ -10391,6 +10391,7 @@ GameObject:
   - component: {fileID: 457302658}
   - component: {fileID: 457302657}
   - component: {fileID: 457302656}
+  - component: {fileID: 457302659}
   m_Layer: 10
   m_Name: Palace zone
   m_TagString: Untagged
@@ -10439,7 +10440,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 50, y: 50, z: 50}
+  m_Size: {x: 9, y: 9, z: 9}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &457302658
 Transform:
@@ -10450,12 +10451,30 @@ Transform:
   m_GameObject: {fileID: 457302655}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 10.7, y: 4.16, z: -13.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &457302659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 457302655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f63a492b18e941cabd688ce33d41607, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QuestLocationTrigger
+  objectiveType: 1
+  targetID: ledger_house_entry
+  amount: 1
+  triggerOnlyOnce: 1
+  requirePlayerTag: 1
+  showDebugLogs: 1
 --- !u!1 &459520353
 GameObject:
   m_ObjectHideFlags: 0
@@ -10794,6 +10813,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemDatabase
   allItems:
   - {fileID: 11400000, guid: b774bd755a63e41c19c52f0a0e0f0508, type: 2}
+  - {fileID: 11400000, guid: a27cf13fba0e44f9dab547d032aee045, type: 2}
 --- !u!114 &463113615
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20135,13 +20155,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1341440553}
-    - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1341440554}
-    - targetCorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1341440559}
+      addedObject: {fileID: 1341440564}
   m_SourcePrefab: {fileID: 100100000, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
 --- !u!1 &855114928
 GameObject:
@@ -29891,7 +29905,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4482947538011696237, guid: 29243166d42004b8d83cc1986c20e2f9, type: 3}
   m_PrefabInstance: {fileID: 854216007}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1341440553
+--- !u!114 &1341440564
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -29900,44 +29914,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 1341440548}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c5c17627ad0d4b8884f447d6669edc4, type: 3}
+  m_Script: {fileID: 11500000, guid: 90ead339e7e634db39fac7575b634f80, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::StoryNPCDialogue
-  conversation: {fileID: 11400000, guid: fa27961a03eb64f1293dd00be34790ed, type: 2}
-  canRepeatConversation: 1
-  conversationAfterFirstCompletion: {fileID: 0}
-  disableInteractionAfterCompletion: 0
-  facePlayerDuringDialogue: 1
-  facePlayerTurnSpeed: 8
---- !u!114 &1341440554
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1341440548}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a3fd8d2b1bcd74eefbe525019723e6fe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NPCIdentity
-  identityData: {fileID: 11400000, guid: c98411987b2324e4bad1bc578c869564, type: 2}
---- !u!114 &1341440559
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1341440548}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1cf0f6697b9b243bf93fef0442de0298, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NPCDialogueInteractable
-  promptText: Press E to talk
-  conversation: {fileID: 11400000, guid: 3384ff7f92eaf4a0facd6bce97aa3fa3, type: 2}
+  m_EditorClassIdentifier: Assembly-CSharp::QuestAwareNPCDialogue
+  npcID: devika
+  defaultConversation: {fileID: 11400000, guid: 3384ff7f92eaf4a0facd6bce97aa3fa3, type: 2}
+  defaultPrompt: Press E to talk
+  questReturnDialogues:
+  - questID: Q_LedgerHouseEntry
+    returnTargetID: devika
+    returnConversation: {fileID: 11400000, guid: b26fca37a19c241279b57d898b0b821e, type: 2}
+    returnPrompt: Press E to Talk
+    progressQuestOnInteract: 1
+    amount: 1
+    priority: 0
+  conditionalDialogues: []
   dialogueManager: {fileID: 463113609}
   canInteract: 1
+  showDebugLogs: 1
 --- !u!65 &1343966560
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -37188,7 +37182,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2b11b410fa6f4c56b94c4784438cce1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::QuestTarget
-  targetID: test_clue
+  targetID: ledger_clue
 --- !u!135 &1794424469
 SphereCollider:
   m_ObjectHideFlags: 0

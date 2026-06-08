@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68dd7b8d81da340bbbee4d2855aa1076, type: 3}
   m_Name: Devika
   m_EditorClassIdentifier: Assembly-CSharp::DialogueActor
-  actorID: Devika
+  actorID: devika
   displayName: Devika
   speakerRole: 0
   portrait: {fileID: 0}

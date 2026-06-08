@@ -12,217 +12,233 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f59e241b5fd947c4af0c2b498b27e72, type: 3}
   m_Name: CONV_Devika_FirstMeeting
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
-  conversationID: "devika_first_meeting"
+  conversationID: devika_first_meeting
   conversationName: "Devika \u2014 First Meeting"
-  description: "Devika tests Howe's usefulness and either offers him Ledger House access or becomes cautious of him."
-  startNodeID: "start"
+  description: Devika tests Howe's usefulness and either offers him Ledger House
+    access or becomes cautious of him.
+  lines: []
+  startNodeID: start
   nodes:
-  - nodeID: "start"
+  - nodeID: start
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: "You are early. That is either discipline or fear. In this city, both are useful."
+    line: You are early. That is either discipline or fear. In this city, both are
+      useful.
     lineType: 0
-    nextNodeID: "player_response"
+    nextNodeID: player_response
     choices: []
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-  - nodeID: "player_response"
+  - nodeID: player_response
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
-    line: "I was told useful men survive longer here."
+    line: I was told useful men survive longer here.
     lineType: 0
-    nextNodeID: ""
+    nextNodeID: 
     choices:
-    - responseText: "Then make yourself useful."
-      nextNodeID: "offer_job"
+    - responseText: Then make yourself useful.
+      nextNodeID: offer_job
       conditions: []
       effects:
       - effectType: 3
-        flagID: ""
-        factionID: "merchant_guild"
-        itemID: ""
-        infoID: ""
-        coverStoryID: ""
+        flagID: 
+        factionID: merchant_guild
+        itemID: 
+        infoID: 
+        coverStoryID: 
         questToStart: {fileID: 0}
         questObjectiveType: 0
-        questTargetID: ""
+        questTargetID: 
         amount: 1
       - effectType: 10
-        flagID: ""
-        factionID: ""
-        itemID: ""
-        infoID: ""
-        coverStoryID: "ledger_clerk"
+        flagID: 
+        factionID: 
+        itemID: 
+        infoID: 
+        coverStoryID: ledger_clerk
         questToStart: {fileID: 0}
         questObjectiveType: 0
-        questTargetID: ""
+        questTargetID: 
         amount: 1
       - effectType: 1
-        flagID: "devika_offer_accepted"
-        factionID: ""
-        itemID: ""
-        infoID: ""
-        coverStoryID: ""
+        flagID: devika_offer_accepted
+        factionID: 
+        itemID: 
+        infoID: 
+        coverStoryID: 
         questToStart: {fileID: 0}
         questObjectiveType: 0
-        questTargetID: ""
+        questTargetID: 
         amount: 1
       hideIfUnavailable: 1
-      unavailableReason: "Unavailable"
-    - responseText: "You sound like you know the rules too well."
-      nextNodeID: "cautious_reply"
+      unavailableReason: Unavailable
+    - responseText: You sound like you know the rules too well.
+      nextNodeID: cautious_reply
       conditions: []
       effects:
       - effectType: 1
-        flagID: "devika_suspects_howe"
-        factionID: ""
-        itemID: ""
-        infoID: ""
-        coverStoryID: ""
+        flagID: devika_suspects_howe
+        factionID: 
+        itemID: 
+        infoID: 
+        coverStoryID: 
         questToStart: {fileID: 0}
         questObjectiveType: 0
-        questTargetID: ""
+        questTargetID: 
         amount: 1
       - effectType: 9
-        flagID: ""
-        factionID: ""
-        itemID: ""
-        infoID: "devika_knows_city_rules"
-        coverStoryID: ""
+        flagID: 
+        factionID: 
+        itemID: 
+        infoID: devika_knows_city_rules
+        coverStoryID: 
         questToStart: {fileID: 0}
         questObjectiveType: 0
-        questTargetID: ""
+        questTargetID: 
         amount: 1
       hideIfUnavailable: 1
-      unavailableReason: "Unavailable"
+      unavailableReason: Unavailable
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-  - nodeID: "offer_job"
+  - nodeID: offer_job
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: "Ledger House needs a clerk. Not a clever one. A quiet one."
+    line: Ledger House needs a clerk. Not a clever one. A quiet one.
     lineType: 0
-    nextNodeID: "offer_job_confirm"
+    nextNodeID: offer_job_confirm
     choices: []
     conditions: []
     onEnterEffects:
     - effectType: 1
-      flagID: "devika_offered_ledger_job"
-      factionID: ""
-      itemID: ""
-      infoID: ""
-      coverStoryID: ""
+      flagID: devika_offered_ledger_job
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
-      questTargetID: ""
+      questTargetID: 
       amount: 1
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-  - nodeID: "offer_job_confirm"
+  - nodeID: offer_job_confirm
     speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
-    line: "Quiet I can do. Cleverness I will keep unpaid."
+    line: Quiet I can do. Cleverness I will keep unpaid.
     lineType: 0
-    nextNodeID: "devika_final_instruction"
-    choices: []
-    conditions: []
-    onEnterEffects: []
-    onExitEffects: []
-    autoContinue: 0
-    autoContinueDelay: 1.5
-  - nodeID: "devika_final_instruction"
-    speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: "Good. Report to Ledger House before the second bell. If anyone asks, you were recommended because you count faster than you speak."
-    lineType: 0
-    nextNodeID: ""
+    nextNodeID: devika_final_instruction
     choices: []
     conditions: []
     onEnterEffects:
-    - effectType: 5
-      flagID: ""
-      factionID: ""
-      itemID: ""
-      infoID: ""
-      coverStoryID: ""
+    - effectType: 10
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: ledger_clerk
       questToStart: {fileID: 0}
       questObjectiveType: 0
-      questTargetID: ""
+      questTargetID: 
       amount: 1
-    - effectType: 9
-      flagID: ""
-      factionID: ""
-      itemID: ""
-      infoID: "ledger_house_access"
-      coverStoryID: ""
+    - effectType: 5
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
+      questToStart: {fileID: 11400000, guid: b5686502309464ba7a7a6ae67d832c7b, type: 2}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 1
+    - effectType: 7
+      flagID: 
+      factionID: 
+      itemID: guardturban
+      infoID: 
+      coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
-      questTargetID: ""
+      questTargetID: 
       amount: 1
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-  - nodeID: "cautious_reply"
+  - nodeID: devika_final_instruction
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: "Rules are just traps with better names. Learn where they are, or bleed on them."
+    line: Good. Report to Ledger House before the second bell. If anyone asks, you
+      were recommended because you count faster than you speak.
     lineType: 0
-    nextNodeID: "cautious_choice"
+    nextNodeID: 
     choices: []
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-  - nodeID: "cautious_choice"
-    speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
-    line: "Then I should start by learning who sets them."
+  - nodeID: cautious_reply
+    speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
+    line: Rules are just traps with better names. Learn where they are, or bleed
+      on them.
     lineType: 0
-    nextNodeID: "cautious_end"
+    nextNodeID: cautious_choice
+    choices: []
+    conditions: []
+    onEnterEffects: []
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+  - nodeID: cautious_choice
+    speaker: {fileID: 11400000, guid: c13edcd8710b54bde84a52fe9ccbdd7f, type: 2}
+    line: Then I should start by learning who sets them.
+    lineType: 0
+    nextNodeID: cautious_end
     choices: []
     conditions: []
     onEnterEffects:
     - effectType: 3
-      flagID: ""
-      factionID: "merchant_guild"
-      itemID: ""
-      infoID: ""
-      coverStoryID: ""
+      flagID: 
+      factionID: merchant_guild
+      itemID: 
+      infoID: 
+      coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
-      questTargetID: ""
+      questTargetID: 
       amount: 1
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-  - nodeID: "cautious_end"
+  - nodeID: cautious_end
     speaker: {fileID: 11400000, guid: 0c1fdf729adb743008299b21f944029f, type: 2}
-    line: "Careful. Men who ask that question too loudly become examples. Ledger House first. Answers later."
+    line: Careful. Men who ask that question too loudly become examples. Ledger House
+      first. Answers later.
     lineType: 0
-    nextNodeID: ""
+    nextNodeID: 
     choices: []
     conditions: []
     onEnterEffects:
     - effectType: 1
-      flagID: "devika_warning_given"
-      factionID: ""
-      itemID: ""
-      infoID: ""
-      coverStoryID: ""
+      flagID: devika_warning_given
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
-      questTargetID: ""
+      questTargetID: 
       amount: 1
     - effectType: 5
-      flagID: ""
-      factionID: ""
-      itemID: ""
-      infoID: ""
-      coverStoryID: ""
+      flagID: 
+      factionID: 
+      itemID: 
+      infoID: 
+      coverStoryID: 
       questToStart: {fileID: 0}
       questObjectiveType: 0
-      questTargetID: ""
+      questTargetID: 
       amount: 1
     onExitEffects: []
     autoContinue: 0

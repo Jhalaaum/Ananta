@@ -1,101 +1,115 @@
 using UnityEngine;
 
-public class QuestReturnNPC : MonoBehaviour
+public class QuestReturnNPC : MonoBehaviour, IInteractable
 {
-    [Header("Quest")]
-    public QuestData relatedQuest;
+    [Header("Return Objective")]
+    public string targetID = "devika";
+    public QuestObjectiveType objectiveType = QuestObjectiveType.ReturnToNPC;
+    public int amount = 1;
 
-    [Header("NPC Target")]
-    public QuestTarget questTarget;
+    [Header("Prompt")]
+    public string returnPrompt = "Press E to report back";
+    public string normalPrompt = "Press E to talk";
 
-    [Header("NPC Info")]
-    public string speakerName = "NPC";
+    [Header("Optional Dialogue")]
+    public DialogueConversation normalConversation;
+    public DialogueConversation returnConversation;
 
-    [Header("Dialogue")]
-    [TextArea(2, 4)]
-    public string notStartedLine = "I do not have anything for you right now.";
+    [Header("References")]
+    public DialogueManager dialogueManager;
 
-    [TextArea(2, 4)]
-    public string notReadyLine = "You have not finished what I asked.";
+    [Header("Settings")]
+    public bool canInteract = true;
 
-    [TextArea(2, 4)]
-    public string returnLine = "You found what we needed.";
-
-    [TextArea(2, 4)]
-    public string completedLine = "There is nothing more for now.";
-
-    public void Interact()
+    private void Awake()
     {
-        if (relatedQuest == null)
+        if (dialogueManager == null)
         {
-            Debug.LogWarning($"{name} is missing relatedQuest.");
-            return;
-        }
-
-        if (questTarget == null)
-        {
-            Debug.LogWarning($"{name} is missing QuestTarget.");
-            return;
-        }
-
-        if (QuestManager.Instance == null)
-        {
-            Debug.LogWarning("No QuestManager found in scene.");
-            return;
-        }
-
-        if (QuestManager.Instance.IsQuestCompleted(relatedQuest.questID))
-        {
-            ShowLine(completedLine);
-            return;
-        }
-
-        QuestState state = QuestManager.Instance.GetActiveQuest(relatedQuest.questID);
-
-        if (state == null)
-        {
-            ShowLine(notStartedLine);
-            return;
-        }
-
-        QuestStepData step = state.GetCurrentStep();
-
-        if (step == null)
-        {
-            ShowLine(notReadyLine);
-            return;
-        }
-
-        bool isCorrectObjective =
-            step.objectiveType == QuestObjectiveType.ReturnToNPC &&
-            step.targetID == questTarget.targetID;
-
-        if (isCorrectObjective)
-        {
-            ShowLine(returnLine);
-
-            QuestManager.Instance.ProgressObjective(
-                QuestObjectiveType.ReturnToNPC,
-                questTarget.targetID
-            );
-        }
-        else
-        {
-            ShowLine(notReadyLine);
+            dialogueManager = FindObjectOfType<DialogueManager>();
         }
     }
 
-    private void ShowLine(string line)
+    public string GetPromptText()
     {
-        DialogueUI dialogueUI = FindObjectOfType<DialogueUI>();
+        if (HasMatchingReturnObjective())
+        {
+            return returnPrompt;
+        }
 
-        if (dialogueUI != null)
+        return normalPrompt;
+    }
+
+    public bool CanInteract(Transform interactor)
+    {
+        if (!canInteract)
         {
-            dialogueUI.ShowLine(speakerName, line);
+            return false;
         }
-        else
+
+        if (dialogueManager != null && dialogueManager.IsDialogueActive)
         {
-            Debug.Log($"{speakerName}: {line}");
+            return false;
         }
+
+        if (GameBookUI.Instance != null && GameBookUI.Instance.isOpen)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void Interact(Transform interactor)
+    {
+        if (!CanInteract(interactor))
+        {
+            return;
+        }
+
+        if (HasMatchingReturnObjective())
+        {
+            CompleteReturnObjective();
+
+            if (returnConversation != null && dialogueManager != null)
+            {
+                dialogueManager.StartDialogue(returnConversation, this, interactor);
+            }
+
+            return;
+        }
+
+        if (normalConversation != null && dialogueManager != null)
+        {
+            dialogueManager.StartDialogue(normalConversation, this, interactor);
+        }
+    }
+
+    private bool HasMatchingReturnObjective()
+    {
+        if (QuestManager.Instance == null)
+        {
+            return false;
+        }
+
+        return QuestManager.Instance.HasActiveObjective(
+            objectiveType,
+            targetID
+        );
+    }
+
+    private void CompleteReturnObjective()
+    {
+        if (QuestManager.Instance == null)
+        {
+            return;
+        }
+
+        QuestManager.Instance.ProgressObjective(
+            objectiveType,
+            targetID,
+            amount
+        );
+
+        Debug.Log($"[QuestReturnNPC] Returned to NPC: {targetID}");
     }
 }

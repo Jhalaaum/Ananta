@@ -12,19 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdaa15407965a4812baa95cce91e2cdd, type: 3}
   m_Name: Torn Ledger Page
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemID: torn_ledger_page
-  itemName: Torn Ledger Page
+  itemID: ledger_clue
+  itemName: ledger_clue
   itemDescription: 
   itemType: 5
-  itemRole: 0
-  securityType: 2
+  itemRole: 1
+  securityType: 0
   itemIcon: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
-  isStackable: 1
-  maxStackSize: 5
+  isStackable: 0
+  maxStackSize: 0
   canUse: 0
-  canDrop: 1
+  canDrop: 0
   useMessage: Used item.
-  isImportant: 0
+  isImportant: 1
   canEquip: 0
   equipmentSlotType: 0
   countsAsDisguisePiece: 0

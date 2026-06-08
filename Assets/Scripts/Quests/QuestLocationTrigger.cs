@@ -1,53 +1,50 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Collider))]
 public class QuestLocationTrigger : MonoBehaviour
 {
-    [Header("Quest Location")]
-    public QuestTarget questTarget;
-
     [Header("Objective")]
     public QuestObjectiveType objectiveType = QuestObjectiveType.ReachLocation;
+    public string targetID = "ledger_house_entry";
+    public int amount = 1;
 
     [Header("Settings")]
-    public bool onlyTriggerOnce = true;
+    public bool triggerOnlyOnce = true;
     public bool requirePlayerTag = true;
-    public string playerTag = "Player";
+
+    [Header("Debug")]
+    public bool showDebugLogs = true;
 
     private bool hasTriggered;
 
-    private void Reset()
-    {
-        Collider col = GetComponent<Collider>();
-        col.isTrigger = true;
-    }
-
     private void OnTriggerEnter(Collider other)
     {
-        if (hasTriggered && onlyTriggerOnce)
+        if (triggerOnlyOnce && hasTriggered)
         {
             return;
         }
 
-        if (requirePlayerTag && !other.CompareTag(playerTag))
+        if (requirePlayerTag && !other.CompareTag("Player"))
         {
-            return;
-        }
-
-        if (questTarget == null)
-        {
-            Debug.LogWarning($"{name} has no QuestTarget assigned.");
             return;
         }
 
         if (QuestManager.Instance == null)
         {
-            Debug.LogWarning("No QuestManager found in scene.");
+            Debug.LogWarning("[QuestLocationTrigger] No QuestManager found.");
             return;
         }
 
-        QuestManager.Instance.ProgressObjective(objectiveType, questTarget.targetID);
-
         hasTriggered = true;
+
+        QuestManager.Instance.ProgressObjective(
+            objectiveType,
+            targetID,
+            amount
+        );
+
+        if (showDebugLogs)
+        {
+            Debug.Log($"[QuestLocationTrigger] Progressed {objectiveType}: {targetID}");
+        }
     }
 }
