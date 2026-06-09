@@ -9119,6 +9119,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1500860572}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1500860577}
   m_SourcePrefab: {fileID: 100100000, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
 --- !u!195 &399963381 stripped
 NavMeshAgent:
@@ -10649,6 +10652,7 @@ GameObject:
   - component: {fileID: 463113622}
   - component: {fileID: 463113621}
   - component: {fileID: 463113623}
+  - component: {fileID: 463113624}
   m_Layer: 0
   m_Name: Game Systems
   m_TagString: Untagged
@@ -10962,6 +10966,24 @@ MonoBehaviour:
   chaseFlag: guard_question_chase
   caughtFlag: guard_question_caught
   showDebugLogs: 1
+--- !u!114 &463113624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f914b3fb9793c433883ca26e083333c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardMemoryManager
+  memoryDecayPerSecond: 0.35
+  maxMemory: 100
+  rememberedThreshold: 25
+  hostileThreshold: 70
+  records: []
+  showDebugLogs: 1
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0
@@ -11117,6 +11139,7 @@ GameObject:
   - component: {fileID: 493263002}
   - component: {fileID: 493263001}
   - component: {fileID: 493263003}
+  - component: {fileID: 493263004}
   m_Layer: 0
   m_Name: First Person Player
   m_TagString: Player
@@ -11463,6 +11486,38 @@ MonoBehaviour:
   - {fileID: 330585548}
   interactionScripts:
   - {fileID: 493262996}
+--- !u!114 &493263004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 493262990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1667d5cd8e9646369a03429fb18c23e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovementStateTracker
+  characterController: {fileID: 493262991}
+  playerRigidbody: {fileID: 0}
+  crouchIsToggle: 1
+  crawlIsToggle: 1
+  sprintKey: 51
+  crouchKey: 17
+  crawlKey: 38
+  idleSpeedThreshold: 0.08
+  runningSpeedThreshold: 12
+  useCharacterControllerGrounded: 1
+  assumeGroundedIfNoController: 1
+  crouchToggleActive: 0
+  crawlToggleActive: 0
+  currentState: 0
+  currentHorizontalSpeed: 0
+  isGrounded: 0
+  isSprintingInput: 0
+  isCrouchingInput: 0
+  isCrawlingInput: 0
+  showDebugLogs: 0
 --- !u!1 &504164631
 GameObject:
   m_ObjectHideFlags: 0
@@ -32988,11 +33043,7 @@ MonoBehaviour:
   forwardGuessDistance: 4
   sideSearchDistance: 3
   wideningSearchStep: 2.5
-  captureFreezeDelay: 0.15
   disablePlayerOnCapture: 1
-  playerScriptsToDisableOnCapture: []
-  playerRigidbody: {fileID: 0}
-  playerCharacterController: {fileID: 493262991}
   caughtUI: {fileID: 0}
   guardRenderer: {fileID: 0}
   alertIcon: {fileID: 0}
@@ -33002,7 +33053,6 @@ MonoBehaviour:
   chaseColor: {r: 1, g: 0, b: 0, a: 1}
   searchColor: {r: 1, g: 0.35, b: 0, a: 1}
   returnColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  printStateChanges: 1
   centerVisionBonus: 1.35
   edgeVisionPenalty: 0.55
   suspicionMemoryTime: 1.2
@@ -33013,17 +33063,28 @@ MonoBehaviour:
   useCoverIdentitySystem: 1
   playerCoverIdentity: {fileID: 493263002}
   playerZoneTracker: {fileID: 493263001}
+  playerMovementStateTracker: {fileID: 493263004}
   unauthorizedZoneMinimumSuspicion: 20
   unauthorizedZoneSuspicionPerSecond: 18
   allowedDisguiseSuspicionMultiplier: 0.35
   partialDisguiseSuspicionMultiplier: 0.65
   noDisguiseRestrictedMultiplier: 1.4
   wrongDisguiseRestrictedMultiplier: 1.8
+  suspicionReasoner: {fileID: 1500860577}
+  currentSuspicionReason: 0
+  currentSuspicionReasonText: 
+  requireReasonToChase: 1
+  allowGuardQuestioning: 1
+  questioningResponder: {fileID: 1500860573}
+  guardSaysReasonBeforeQuestioning: 1
   warnBeforeChaseInRestrictedZone: 1
   warningSuspicionThreshold: 55
   warningDuration: 2
-  allowGuardQuestioning: 1
-  questioningResponder: {fileID: 1500860573}
+  postWarningGraceDuration: 4
+  postWarningSuspicionMultiplier: 0.15
+  clearPlayerStealthTogglesAfterWarning: 1
+  printStateChanges: 1
+  printSuspicionReasonChanges: 1
 --- !u!114 &1500860561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33093,12 +33154,47 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningResponder
   questioningProfile: {fileID: 11400000, guid: 6277aee0a22e0415d8c06e7edbcb0125, type: 2}
+  showReasonLineBeforeConversation: 1
+  reasonLineDuration: 1.4
+  fallbackReasonLine: Stop. Explain yourself.
   dialogueManager: {fileID: 463113609}
+  dialogueUI: {fileID: 581266290}
   player: {fileID: 493262992}
   agent: {fileID: 399963381}
   guardAI: {fileID: 1500860560}
   ignorePlayerTimer: 0
   showDebugLogs: 1
+--- !u!114 &1500860577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500860558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fee1c09a2bbd84863b988ab4ef6a7aae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardSuspicionReasoner
+  ignoreNormalWalkingInPublic: 1
+  publicIdleMultiplier: 0
+  publicWalkingMultiplier: 0
+  publicRunningMultiplier: 0.2
+  publicCrouchingMultiplier: 0.45
+  publicCrawlingMultiplier: 0.7
+  publicJumpingMultiplier: 0.25
+  noDisguiseMultiplier: 1.4
+  wrongDisguiseMultiplier: 1.8
+  partialDisguiseMultiplier: 0.75
+  validDisguiseMultiplier: 0.25
+  restrictedWalkingMultiplier: 1
+  restrictedRunningMultiplier: 1.45
+  restrictedCrouchingMultiplier: 1.2
+  restrictedCrawlingMultiplier: 1.5
+  useGuardMemory: 1
+  memoryReportInterval: 2
+  memoryReportAmount: 5
+  showDebugLogs: 0
 --- !u!65 &1513970380
 BoxCollider:
   m_ObjectHideFlags: 0
