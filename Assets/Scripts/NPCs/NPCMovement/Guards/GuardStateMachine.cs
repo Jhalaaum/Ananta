@@ -83,7 +83,7 @@ public class AdvancedGuardAIController : MonoBehaviour
     private Vector3 previousKnownPlayerPosition;
     private Vector3 estimatedPlayerMoveDirection;
     private bool hasEstimatedMoveDirection;
-    
+
     [Header("Capture")]
     public float captureFreezeDelay = 0.15f;
     public bool disablePlayerOnCapture = true;
@@ -114,6 +114,7 @@ public class AdvancedGuardAIController : MonoBehaviour
     public float alertStateVisionMultiplier = 1.25f;
     public float suspicionStateVisionMultiplier = 1.1f;
     public float minimumVisionIncrease = 4f;
+
     [Header("GDD Cover Identity / Zone Logic")]
     public bool useCoverIdentitySystem = true;
     public PlayerCoverIdentity playerCoverIdentity;
@@ -132,8 +133,12 @@ public class AdvancedGuardAIController : MonoBehaviour
     public float warningSuspicionThreshold = 55f;
     public float warningDuration = 2f;
 
+    [Header("Guard Questioning / Fast Talk")]
+    public bool allowGuardQuestioning = true;
+    public GuardQuestioningResponder questioningResponder;
+
     private bool hasGivenZoneWarning;
-    private float warningTimer;    
+    private float warningTimer;
     private float recentlySawPlayerTimer;
 
     private NavMeshAgent agent;
@@ -164,12 +169,37 @@ public class AdvancedGuardAIController : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         vision = GetComponent<GuardVision>();
 
+        if (questioningResponder == null)
+        {
+            questioningResponder = GetComponent<GuardQuestioningResponder>();
+        }
+
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
 
         if (playerObject != null)
         {
             player = playerObject.transform;
             playerSoundEmitter = playerObject.GetComponent<PlayerSoundEmitter>();
+
+            if (playerCoverIdentity == null)
+            {
+                playerCoverIdentity = playerObject.GetComponent<PlayerCoverIdentity>();
+            }
+
+            if (playerZoneTracker == null)
+            {
+                playerZoneTracker = playerObject.GetComponent<PlayerZoneTracker>();
+            }
+        }
+
+        if (playerCoverIdentity == null)
+        {
+            playerCoverIdentity = FindObjectOfType<PlayerCoverIdentity>();
+        }
+
+        if (playerZoneTracker == null)
+        {
+            playerZoneTracker = FindObjectOfType<PlayerZoneTracker>();
         }
 
         if (guardRenderer == null)
@@ -196,36 +226,14 @@ public class AdvancedGuardAIController : MonoBehaviour
         EnterPatrol();
     }
 
-    private void ApplyGuardProfile()
+    private void Update()
     {
-        if (guardProfile == null)
+        if (questioningResponder != null && questioningResponder.IsQuestioning)
         {
+            DebugStateChange();
             return;
         }
 
-        patrolSpeed = guardProfile.patrolSpeed;
-        investigateSpeed = guardProfile.investigateSpeed;
-        chaseSpeed = guardProfile.chaseSpeed;
-        returnSpeed = guardProfile.returnSpeed;
-
-        suspiciousThreshold = guardProfile.suspiciousThreshold;
-        chaseThreshold = guardProfile.chaseThreshold;
-        suspicionIncreasePerSecond = guardProfile.suspicionIncreasePerSecond;
-        suspicionDecreasePerSecond = guardProfile.suspicionDecreasePerSecond;
-        soundSuspicionBoost = guardProfile.soundSuspicionBoost;
-        minAudibilityToInvestigate = guardProfile.minAudibilityToInvestigate;
-
-        searchPointCount = guardProfile.searchPointCount;
-        searchRadius = guardProfile.searchRadius;
-
-        if (vision != null)
-        {
-            vision.viewDistance = guardProfile.viewDistance;
-            vision.viewAngle = guardProfile.viewAngle;
-        }
-    }
-    private void Update()
-    {
         UpdateSuspicionFromVision();
 
         switch (currentState)
@@ -265,6 +273,36 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         DebugStateChange();
     }
+
+    private void ApplyGuardProfile()
+    {
+        if (guardProfile == null)
+        {
+            return;
+        }
+
+        patrolSpeed = guardProfile.patrolSpeed;
+        investigateSpeed = guardProfile.investigateSpeed;
+        chaseSpeed = guardProfile.chaseSpeed;
+        returnSpeed = guardProfile.returnSpeed;
+
+        suspiciousThreshold = guardProfile.suspiciousThreshold;
+        chaseThreshold = guardProfile.chaseThreshold;
+        suspicionIncreasePerSecond = guardProfile.suspicionIncreasePerSecond;
+        suspicionDecreasePerSecond = guardProfile.suspicionDecreasePerSecond;
+        soundSuspicionBoost = guardProfile.soundSuspicionBoost;
+        minAudibilityToInvestigate = guardProfile.minAudibilityToInvestigate;
+
+        searchPointCount = guardProfile.searchPointCount;
+        searchRadius = guardProfile.searchRadius;
+
+        if (vision != null)
+        {
+            vision.viewDistance = guardProfile.viewDistance;
+            vision.viewAngle = guardProfile.viewAngle;
+        }
+    }
+
     public void ResetGuardForCheckpoint()
     {
         StopAllCoroutines();
@@ -298,6 +336,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         currentPatrolIndex = GetNearestPatrolPointIndex();
         EnterPatrol();
     }
+
     private void LoadPatrolPoints()
     {
         if (patrolRouteParent == null)
@@ -345,36 +384,41 @@ public class AdvancedGuardAIController : MonoBehaviour
             float movementMultiplier = GetPlayerMovementVisionMultiplier();
             float angleMultiplier = GetVisionAngleMultiplier();
             float stateMultiplier = GetStateVisionMultiplier();
+            float coverIdentityMultiplier = GetCoverIdentitySuspicionMultiplier();
+            float zoneLegalityMultiplier = GetZoneLegalitySuspicionMultiplier();
 
-        float coverIdentityMultiplier = GetCoverIdentitySuspicionMultiplier();
-        float zoneLegalityMultiplier = GetZoneLegalitySuspicionMultiplier();
-
-        float increaseAmount =
-            suspicionIncreasePerSecond *
-            distanceMultiplier *
-            movementMultiplier *
-            angleMultiplier *
-            stateMultiplier *
-            coverIdentityMultiplier *
-            zoneLegalityMultiplier *
-            Time.deltaTime;
+            float increaseAmount =
+                suspicionIncreasePerSecond *
+                distanceMultiplier *
+                movementMultiplier *
+                angleMultiplier *
+                stateMultiplier *
+                coverIdentityMultiplier *
+                zoneLegalityMultiplier *
+                Time.deltaTime;
 
             increaseAmount = Mathf.Max(increaseAmount, minimumVisionIncrease * Time.deltaTime);
 
             suspicion += increaseAmount;
             suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
             ApplyUnauthorizedZoneSuspicion(canSeePlayer);
 
             FaceTarget(player.position);
+
+            if (TryStartQuestioningBeforeChase())
+            {
+                return;
+            }
 
             if (suspicion >= chaseThreshold)
             {
                 EnterChase();
             }
             else if (suspicion >= suspiciousThreshold &&
-                    currentState != GuardState.Suspicious &&
-                    currentState != GuardState.InvestigateSound &&
-                    currentState != GuardState.SearchArea)
+                     currentState != GuardState.Suspicious &&
+                     currentState != GuardState.InvestigateSound &&
+                     currentState != GuardState.SearchArea)
             {
                 EnterSuspicious();
             }
@@ -399,13 +443,52 @@ public class AdvancedGuardAIController : MonoBehaviour
             suspicion = Mathf.Clamp(suspicion, 0f, 100f);
         }
     }
+
+    private bool TryStartQuestioningBeforeChase()
+    {
+        if (!allowGuardQuestioning)
+        {
+            return false;
+        }
+
+        if (questioningResponder == null)
+        {
+            return false;
+        }
+
+        if (!questioningResponder.CanQuestion())
+        {
+            return false;
+        }
+
+        if (questioningResponder.questioningProfile == null)
+        {
+            return false;
+        }
+
+        if (suspicion < questioningResponder.questioningProfile.questioningThreshold)
+        {
+            return false;
+        }
+
+        if (!CanCurrentlySeePlayer())
+        {
+            return false;
+        }
+
+        questioningResponder.StartQuestioning();
+        return true;
+    }
+
     private float GetDistanceSuspicionMultiplier(float distanceToPlayer)
     {
-    float normalizedDistance = Mathf.Clamp01(distanceToPlayer / vision.viewDistance);
+        if (vision == null || vision.viewDistance <= 0.01f)
+        {
+            return 1f;
+        }
 
-    float distanceMultiplier = Mathf.Lerp(closeVisionMultiplier, farVisionMultiplier, normalizedDistance);
-
-    return distanceMultiplier;
+        float normalizedDistance = Mathf.Clamp01(distanceToPlayer / vision.viewDistance);
+        return Mathf.Lerp(closeVisionMultiplier, farVisionMultiplier, normalizedDistance);
     }
 
     private float GetVisionAngleMultiplier()
@@ -424,7 +507,6 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         float angleToPlayer = Vector3.Angle(transform.forward, directionToPlayer.normalized);
-
         float halfVisionAngle = vision.viewAngle * 0.5f;
 
         if (halfVisionAngle <= 0.01f)
@@ -453,6 +535,7 @@ public class AdvancedGuardAIController : MonoBehaviour
                 return 1f;
         }
     }
+
     private float GetPlayerMovementVisionMultiplier()
     {
         if (playerSoundEmitter == null)
@@ -490,7 +573,9 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void HandlePlayerSound(PlayerSoundEmitter.SoundField sound)
     {
-        if (currentState == GuardState.Chase || currentState == GuardState.CapturePlayer)
+        if (currentState == GuardState.Chase ||
+            currentState == GuardState.CapturePlayer ||
+            IsBeingControlledByQuestioning())
         {
             return;
         }
@@ -516,6 +601,11 @@ public class AdvancedGuardAIController : MonoBehaviour
         suspicion += soundSuspicionBoost * finalAudibility;
         suspicion = Mathf.Clamp(suspicion, 0f, 100f);
 
+        if (TryStartQuestioningBeforeChase())
+        {
+            return;
+        }
+
         if (suspicion >= chaseThreshold && vision != null && vision.CanSeePlayer)
         {
             EnterChase();
@@ -524,6 +614,11 @@ public class AdvancedGuardAIController : MonoBehaviour
         {
             EnterInvestigateSound();
         }
+    }
+
+    private bool IsBeingControlledByQuestioning()
+    {
+        return questioningResponder != null && questioningResponder.IsQuestioning;
     }
 
     private void EnterPatrol()
@@ -577,6 +672,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         if (targetDirection.sqrMagnitude > 0.01f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+
             transform.rotation = Quaternion.RotateTowards(
                 transform.rotation,
                 targetRotation,
@@ -609,6 +705,11 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void UpdateSuspicious()
     {
+        if (TryStartQuestioningBeforeChase())
+        {
+            return;
+        }
+
         if (hasGivenZoneWarning && warningTimer > 0f)
         {
             warningTimer -= Time.deltaTime;
@@ -616,6 +717,11 @@ public class AdvancedGuardAIController : MonoBehaviour
             if (player != null)
             {
                 FaceTarget(player.position);
+            }
+
+            if (TryStartQuestioningBeforeChase())
+            {
+                return;
             }
 
             if (suspicion >= chaseThreshold)
@@ -636,6 +742,12 @@ public class AdvancedGuardAIController : MonoBehaviour
                 if (stillUnauthorized)
                 {
                     suspicion = Mathf.Max(suspicion, chaseThreshold);
+
+                    if (TryStartQuestioningBeforeChase())
+                    {
+                        return;
+                    }
+
                     EnterChase();
                     return;
                 }
@@ -651,6 +763,11 @@ public class AdvancedGuardAIController : MonoBehaviour
             FaceTarget(player.position);
         }
 
+        if (TryStartQuestioningBeforeChase())
+        {
+            return;
+        }
+
         if (suspicion >= chaseThreshold)
         {
             EnterChase();
@@ -662,6 +779,7 @@ public class AdvancedGuardAIController : MonoBehaviour
             EnterInvestigateLastKnownPosition();
         }
     }
+
     private void EnterInvestigateSound()
     {
         currentState = GuardState.InvestigateSound;
@@ -675,6 +793,11 @@ public class AdvancedGuardAIController : MonoBehaviour
     private void UpdateInvestigateSound()
     {
         FaceTarget(agent.steeringTarget);
+
+        if (TryStartQuestioningBeforeChase())
+        {
+            return;
+        }
 
         if (ReachedDestination(patrolPointReachDistance))
         {
@@ -733,7 +856,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         if (CanCapturePlayer())
         {
             EnterCapturePlayer();
-        }    
+        }
     }
 
     private void EnterSearchArea()
@@ -749,8 +872,14 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         PickNextSmartSearchPoint();
     }
+
     private void UpdateSearchArea()
     {
+        if (TryStartQuestioningBeforeChase())
+        {
+            return;
+        }
+
         if (isWaitingAtSearchPoint)
         {
             searchWaitTimer -= Time.deltaTime;
@@ -787,6 +916,7 @@ public class AdvancedGuardAIController : MonoBehaviour
                 : waitAtSearchPointTime;
         }
     }
+
     private void PickNextSmartSearchPoint()
     {
         agent.isStopped = false;
@@ -830,6 +960,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         TrySetSearchDestination(GetWideningSearchPoint());
     }
+
     private void EnterReturnToPatrol()
     {
         currentState = GuardState.ReturnToPatrol;
@@ -852,6 +983,7 @@ public class AdvancedGuardAIController : MonoBehaviour
             EnterPatrol();
         }
     }
+
     private void UpdateReturnToPatrol()
     {
         FaceTarget(agent.steeringTarget);
@@ -895,6 +1027,7 @@ public class AdvancedGuardAIController : MonoBehaviour
             FaceTarget(player.position);
         }
     }
+
     private int GetNearestPatrolPointIndex()
     {
         if (patrolPoints == null || patrolPoints.Length == 0)
@@ -918,8 +1051,14 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         return nearestIndex;
     }
+
     private bool ReachedDestination(float reachDistance)
     {
+        if (agent == null)
+        {
+            return false;
+        }
+
         if (agent.pathPending)
         {
             return false;
@@ -984,6 +1123,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         Gizmos.color = Color.magenta;
         Gizmos.DrawWireSphere(lastKnownPlayerPosition, searchRadius);
     }
+
     private Vector3 GetSideSearchPoint(float side)
     {
         Vector3 baseDirection = hasEstimatedMoveDirection
@@ -993,13 +1133,14 @@ public class AdvancedGuardAIController : MonoBehaviour
         Vector3 sideDirection = Vector3.Cross(Vector3.up, baseDirection).normalized * side;
 
         return lastKnownPlayerPosition + sideDirection * sideSearchDistance;
-}
+    }
 
     private Vector3 GetWideningSearchPoint()
     {
         float currentRadius = searchRadius + searchPointsVisited * wideningSearchStep;
 
-        Vector2 randomCircle = Random.insideUnitCircle.normalized * Random.Range(searchRadius * 0.5f, currentRadius);
+        Vector2 randomCircle = Random.insideUnitCircle.normalized *
+                               Random.Range(searchRadius * 0.5f, currentRadius);
 
         Vector3 randomPosition = new Vector3(
             lastKnownPlayerPosition.x + randomCircle.x,
@@ -1029,16 +1170,9 @@ public class AdvancedGuardAIController : MonoBehaviour
         float lookPhase = Mathf.Sin(lookAroundTimer * 3f);
         float targetAngle = lookPhase * lookAroundTurnAngle;
 
-        Vector3 baseDirection;
-
-        if (hasEstimatedMoveDirection)
-        {
-            baseDirection = estimatedPlayerMoveDirection;
-        }
-        else
-        {
-            baseDirection = transform.forward;
-        }
+        Vector3 baseDirection = hasEstimatedMoveDirection
+            ? estimatedPlayerMoveDirection
+            : transform.forward;
 
         if (baseDirection.sqrMagnitude < 0.01f)
         {
@@ -1046,7 +1180,6 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         Vector3 targetDirection = Quaternion.Euler(0f, targetAngle, 0f) * baseDirection;
-
         Quaternion targetRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
 
         transform.rotation = Quaternion.RotateTowards(
@@ -1055,28 +1188,26 @@ public class AdvancedGuardAIController : MonoBehaviour
             lookAroundTurnSpeed * Time.deltaTime
         );
     }
+
     private bool CanCapturePlayer()
-{
-    if (player == null || vision == null)
     {
-        return false;
-    }
+        if (player == null || vision == null)
+        {
+            return false;
+        }
 
-    // Must be visible. This prevents unfair catches through walls/corners.
-    if (!vision.CanSeePlayer)
-    {
-        return false;
-    }
+        if (!vision.CanSeePlayer)
+        {
+            return false;
+        }
 
-    // Must be reachable through the NavMesh.
-    if (!CanReachPlayerByNavMesh(out float pathDistance))
-    {
-        return false;
-    }
+        if (!CanReachPlayerByNavMesh(out float pathDistance))
+        {
+            return false;
+        }
 
-    // Must be close enough by walking path, not just straight-line distance.
-    return pathDistance <= catchDistance + catchPathExtraAllowance;
-}
+        return pathDistance <= catchDistance + catchPathExtraAllowance;
+    }
 
     private bool CanReachPlayerByNavMesh(out float pathDistance)
     {
@@ -1088,10 +1219,10 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         if (!NavMesh.SamplePosition(
-            player.position,
-            out NavMeshHit playerHit,
-            playerNavMeshSampleDistance,
-            NavMesh.AllAreas))
+                player.position,
+                out NavMeshHit playerHit,
+                playerNavMeshSampleDistance,
+                NavMesh.AllAreas))
         {
             return false;
         }
@@ -1130,6 +1261,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         return distance;
     }
+
     private float GetCoverIdentitySuspicionMultiplier()
     {
         if (!useCoverIdentitySystem)
@@ -1144,12 +1276,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         RestrictedZone zone = GetCurrentPlayerZone();
 
-        if (zone == null)
-        {
-            return 1f;
-        }
-
-        if (zone.IsPublicZone())
+        if (zone == null || zone.IsPublicZone())
         {
             return 1f;
         }
@@ -1232,6 +1359,11 @@ public class AdvancedGuardAIController : MonoBehaviour
         suspicion += zoneSuspicionRate * Time.deltaTime;
         suspicion = Mathf.Clamp(suspicion, 0f, 100f);
 
+        if (TryStartQuestioningBeforeChase())
+        {
+            return;
+        }
+
         if (warnBeforeChaseInRestrictedZone &&
             !hasGivenZoneWarning &&
             suspicion >= warningSuspicionThreshold &&
@@ -1267,5 +1399,62 @@ public class AdvancedGuardAIController : MonoBehaviour
         SetVisualState(suspiciousColor, true);
 
         Debug.Log($"{gameObject.name}: You are not meant to be here.");
+    }
+
+    public float GetSuspicion()
+    {
+        return suspicion;
+    }
+
+    public void SetSuspicion(float value)
+    {
+        suspicion = Mathf.Clamp(value, 0f, 100f);
+    }
+
+    public bool CanCurrentlySeePlayer()
+    {
+        return vision != null && vision.CanSeePlayer && player != null;
+    }
+
+    public void ForceReturnToPatrol()
+    {
+        StopAllCoroutines();
+
+        if (agent != null)
+        {
+            agent.isStopped = false;
+            agent.ResetPath();
+        }
+
+        suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
+        EnterReturnToPatrol();
+    }
+
+    public void ForceChasePlayer()
+    {
+        StopAllCoroutines();
+
+        if (agent != null)
+        {
+            agent.isStopped = false;
+            agent.ResetPath();
+        }
+
+        suspicion = 100f;
+        EnterChase();
+    }
+
+    public void ForceCatchPlayer()
+    {
+        StopAllCoroutines();
+
+        if (agent != null)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+
+        EnterCapturePlayer();
     }
 }

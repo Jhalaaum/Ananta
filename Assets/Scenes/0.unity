@@ -10472,7 +10472,7 @@ MonoBehaviour:
   objectiveType: 1
   targetID: ledger_house_entry
   amount: 1
-  triggerOnlyOnce: 1
+  triggerOnlyOnce: 0
   requirePlayerTag: 1
   showDebugLogs: 1
 --- !u!1 &459520353
@@ -10624,7 +10624,6 @@ GameObject:
   - component: {fileID: 463113608}
   - component: {fileID: 463113607}
   - component: {fileID: 463113606}
-  - component: {fileID: 463113605}
   - component: {fileID: 463113604}
   - component: {fileID: 463113613}
   - component: {fileID: 463113612}
@@ -10669,19 +10668,6 @@ MonoBehaviour:
   dialogueUI: {fileID: 581266290}
   dialogueManager: {fileID: 463113609}
   showDebugLogs: 1
---- !u!114 &463113605
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 463113603}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8df6052ee1aae45c98a3910ffca30055, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::QuestTestStarter
-  questToStart: {fileID: 11400000, guid: 3401c63be53ed460d8b9613ad404c12a, type: 2}
 --- !u!114 &463113606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32927,7 +32913,7 @@ MonoBehaviour:
   returnSpeed: 4
   suspicion: 0
   suspiciousThreshold: 35
-  chaseThreshold: 100
+  chaseThreshold: 50
   suspicionIncreasePerSecond: 35
   suspicionDecreasePerSecond: 18
   suspiciousLookTime: 1.3
