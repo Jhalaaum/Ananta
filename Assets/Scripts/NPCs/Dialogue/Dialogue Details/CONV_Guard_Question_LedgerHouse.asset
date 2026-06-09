@@ -12,15 +12,166 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f59e241b5fd947c4af0c2b498b27e72, type: 3}
   m_Name: CONV_Guard_Question_LedgerHouse
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
-  conversationID: 
-  conversationName: 
-  description: 
-  lines: []
-  startNodeID: start
-  nodes: []
+  conversationID: "guard_question_ledger_house"
+  conversationName: "Guard Question — Ledger House"
+  description: "Guard questions Howe inside Ledger House."
+  startNodeID: "start"
+  nodes:
+  - nodeID: "start"
+    speaker: {fileID: 11400000, guid: GUARD_ACTOR_GUID_HERE, type: 2}
+    line: "You. Why are you inside Ledger House after the second bell?"
+    lineType: 0
+    nextNodeID: "player_answers"
+    choices: []
+    conditions: []
+    onEnterEffects: []
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: "player_answers"
+    speaker: {fileID: 11400000, guid: HOWE_ACTOR_GUID_HERE, type: 2}
+    line: "I need an answer before his hand reaches the whistle."
+    lineType: 2
+    nextNodeID: ""
+    choices:
+    - responseText: "Devika sent me. Check the clerk list if you want to delay the accounts."
+      nextNodeID: "guard_pass"
+      conditions:
+      - conditionType: 7
+        flagID: ""
+        factionID: ""
+        itemID: ""
+        questID: ""
+        coverStoryID: "ledger_clerk"
+        requiredValue: 1
+      effects:
+      - effectType: 1
+        flagID: "guard_question_passed"
+        factionID: ""
+        itemID: ""
+        infoID: ""
+        coverStoryID: ""
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: ""
+        amount: 1
+      - effectType: 4
+        flagID: ""
+        factionID: "merchant_guild"
+        itemID: ""
+        infoID: ""
+        coverStoryID: ""
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: ""
+        amount: 1
+      hideIfUnavailable: 1
+      unavailableReason: "Requires Ledger House cover"
+
+    - responseText: "I am posted to the record room. Look at the tunic."
+      nextNodeID: "guard_pass"
+      conditions:
+      - conditionType: 7
+        flagID: ""
+        factionID: ""
+        itemID: ""
+        questID: ""
+        coverStoryID: "ledger_clerk"
+        requiredValue: 1
+      effects:
+      - effectType: 1
+        flagID: "guard_question_passed"
+        factionID: ""
+        itemID: ""
+        infoID: ""
+        coverStoryID: ""
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: ""
+        amount: 1
+      hideIfUnavailable: 1
+      unavailableReason: "Requires clerk cover"
+
+    - responseText: "I was told to bring these records inside. I may have the wrong room."
+      nextNodeID: "guard_warn"
+      conditions: []
+      effects:
+      - effectType: 1
+        flagID: "guard_question_warned"
+        factionID: ""
+        itemID: ""
+        infoID: ""
+        coverStoryID: ""
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: ""
+        amount: 1
+      hideIfUnavailable: 1
+      unavailableReason: "Unavailable"
+
+    - responseText: "That is none of your concern."
+      nextNodeID: "guard_fail"
+      conditions: []
+      effects:
+      - effectType: 1
+        flagID: "guard_question_chase"
+        factionID: ""
+        itemID: ""
+        infoID: ""
+        coverStoryID: ""
+        questToStart: {fileID: 0}
+        questObjectiveType: 0
+        questTargetID: ""
+        amount: 1
+      hideIfUnavailable: 1
+      unavailableReason: "Unavailable"
+
+    conditions: []
+    onEnterEffects: []
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: "guard_pass"
+    speaker: {fileID: 11400000, guid: GUARD_ACTOR_GUID_HERE, type: 2}
+    line: "Hmph. Ledger clerks and their papers. Go on, but do not wander."
+    lineType: 0
+    nextNodeID: ""
+    choices: []
+    conditions: []
+    onEnterEffects: []
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: "guard_warn"
+    speaker: {fileID: 11400000, guid: GUARD_ACTOR_GUID_HERE, type: 2}
+    line: "Wrong room, wrong hour. Leave now. I will not ask twice."
+    lineType: 0
+    nextNodeID: ""
+    choices: []
+    conditions: []
+    onEnterEffects: []
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
+  - nodeID: "guard_fail"
+    speaker: {fileID: 11400000, guid: GUARD_ACTOR_GUID_HERE, type: 2}
+    line: "Then I will make it my concern."
+    lineType: 0
+    nextNodeID: ""
+    choices: []
+    conditions: []
+    onEnterEffects: []
+    onExitEffects: []
+    autoContinue: 0
+    autoContinueDelay: 1.5
+
   canRepeat: 1
-  markCompletedOnEnd: 1
+  markCompletedOnEnd: 0
   isEavesdroppingConversation: 0
   canRevealInformation: 0
   canStartQuest: 0
-  canChangeTrust: 0
+  canChangeTrust: 1
