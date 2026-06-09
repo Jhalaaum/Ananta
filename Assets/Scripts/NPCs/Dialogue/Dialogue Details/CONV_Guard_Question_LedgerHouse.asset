@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: CONV_Guard_Question_LedgerHouse
   m_EditorClassIdentifier: Assembly-CSharp::DialogueConversation
   conversationID: "guard_question_ledger_house"
-  conversationName: "Guard Question — Ledger House"
+  conversationName: "Guard Question - Ledger House"
   description: "Guard questions Howe inside Ledger House."
   startNodeID: "start"
   nodes:
   - nodeID: "start"
-    speaker: {fileID: 11400000, guid: GUARD_ACTOR_GUID_HERE, type: 2}
+    speaker: {fileID: 0}
     line: "You. Why are you inside Ledger House after the second bell?"
     lineType: 0
     nextNodeID: "player_answers"
@@ -30,7 +30,7 @@ MonoBehaviour:
     autoContinueDelay: 1.5
 
   - nodeID: "player_answers"
-    speaker: {fileID: 11400000, guid: HOWE_ACTOR_GUID_HERE, type: 2}
+    speaker: {fileID: 0}
     line: "I need an answer before his hand reaches the whistle."
     lineType: 2
     nextNodeID: ""
@@ -38,7 +38,7 @@ MonoBehaviour:
     - responseText: "Devika sent me. Check the clerk list if you want to delay the accounts."
       nextNodeID: "guard_pass"
       conditions:
-      - conditionType: 7
+      - conditionType: 8
         flagID: ""
         factionID: ""
         itemID: ""
@@ -72,7 +72,7 @@ MonoBehaviour:
     - responseText: "I am posted to the record room. Look at the tunic."
       nextNodeID: "guard_pass"
       conditions:
-      - conditionType: 7
+      - conditionType: 8
         flagID: ""
         factionID: ""
         itemID: ""
@@ -134,7 +134,7 @@ MonoBehaviour:
     autoContinueDelay: 1.5
 
   - nodeID: "guard_pass"
-    speaker: {fileID: 11400000, guid: GUARD_ACTOR_GUID_HERE, type: 2}
+    speaker: {fileID: 0}
     line: "Hmph. Ledger clerks and their papers. Go on, but do not wander."
     lineType: 0
     nextNodeID: ""
@@ -146,7 +146,7 @@ MonoBehaviour:
     autoContinueDelay: 1.5
 
   - nodeID: "guard_warn"
-    speaker: {fileID: 11400000, guid: GUARD_ACTOR_GUID_HERE, type: 2}
+    speaker: {fileID: 0}
     line: "Wrong room, wrong hour. Leave now. I will not ask twice."
     lineType: 0
     nextNodeID: ""
@@ -158,7 +158,7 @@ MonoBehaviour:
     autoContinueDelay: 1.5
 
   - nodeID: "guard_fail"
-    speaker: {fileID: 11400000, guid: GUARD_ACTOR_GUID_HERE, type: 2}
+    speaker: {fileID: 0}
     line: "Then I will make it my concern."
     lineType: 0
     nextNodeID: ""
