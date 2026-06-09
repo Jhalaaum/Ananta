@@ -9118,9 +9118,6 @@ PrefabInstance:
       addedObject: {fileID: 1500860573}
     - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1500860572}
-    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 1500860577}
   m_SourcePrefab: {fileID: 100100000, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
 --- !u!195 &399963381 stripped
@@ -10984,6 +10981,8 @@ MonoBehaviour:
   hostileThreshold: 70
   records: []
   showDebugLogs: 1
+  allowKeyboardDebugPrint: 1
+  printMemoryKey: 109
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0
@@ -33021,7 +33020,6 @@ MonoBehaviour:
   suspiciousLookTime: 1.3
   farVisionMultiplier: 0.8
   closeVisionMultiplier: 1.6
-  closeDistance: 4
   silentVisionMultiplier: 0.75
   walkingVisionMultiplier: 1
   sprintingVisionMultiplier: 3
@@ -33038,13 +33036,10 @@ MonoBehaviour:
   searchPointCount: 3
   searchPointReachDistance: 0.8
   waitAtSearchPointTime: 1.2
-  maxAttemptsToFindSearchPoint: 10
   firstSearchLookTime: 1.5
   forwardGuessDistance: 4
   sideSearchDistance: 3
   wideningSearchStep: 2.5
-  disablePlayerOnCapture: 1
-  caughtUI: {fileID: 0}
   guardRenderer: {fileID: 0}
   alertIcon: {fileID: 0}
   patrolColor: {r: 1, g: 1, b: 1, a: 1}
@@ -33059,7 +33054,6 @@ MonoBehaviour:
   suspicionGraceDecayMultiplier: 0.35
   alertStateVisionMultiplier: 1.25
   suspicionStateVisionMultiplier: 1.1
-  minimumVisionIncrease: 4
   useCoverIdentitySystem: 1
   playerCoverIdentity: {fileID: 493263002}
   playerZoneTracker: {fileID: 493263001}
@@ -33077,12 +33071,12 @@ MonoBehaviour:
   allowGuardQuestioning: 1
   questioningResponder: {fileID: 1500860573}
   guardSaysReasonBeforeQuestioning: 1
-  warnBeforeChaseInRestrictedZone: 1
-  warningSuspicionThreshold: 55
-  warningDuration: 2
-  postWarningGraceDuration: 4
-  postWarningSuspicionMultiplier: 0.15
-  clearPlayerStealthTogglesAfterWarning: 1
+  fastTalkCooldownTimer: 0
+  fastTalkCooldownSuspicionMultiplier: 0.05
+  ignorePlayerDuringFastTalkCooldown: 1
+  blockQuestioningDuringFastTalkCooldown: 1
+  blockChaseDuringFastTalkCooldown: 1
+  showFastTalkCooldownDebug: 1
   printStateChanges: 1
   printSuspicionReasonChanges: 1
 --- !u!114 &1500860561
@@ -33124,23 +33118,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GuardCaughtReporter
   guardID: guard_01
---- !u!114 &1500860572
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1500860558}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a0dce46365c254dfebbba94b1ae3dc68, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningTrigger
-  guardAI: {fileID: 1500860560}
-  responder: {fileID: 1500860573}
-  enableQuestioning: 1
-  onlyQuestionIfPlayerVisible: 1
-  showDebugLogs: 1
 --- !u!114 &1500860573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33155,13 +33132,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningResponder
   questioningProfile: {fileID: 11400000, guid: 6277aee0a22e0415d8c06e7edbcb0125, type: 2}
   showReasonLineBeforeConversation: 1
-  reasonLineDuration: 1.4
+  minimumReasonLineDuration: 2.2
+  allowSkipReasonLineAfterMinimumTime: 1
+  skipReasonLineKey: 1
   fallbackReasonLine: Stop. Explain yourself.
+  passedFastTalkCooldown: 7
+  warnedFastTalkCooldown: 5
+  clearStealthTogglesAfterSuccessfulFastTalk: 1
   dialogueManager: {fileID: 463113609}
   dialogueUI: {fileID: 581266290}
   player: {fileID: 493262992}
   agent: {fileID: 399963381}
   guardAI: {fileID: 1500860560}
+  localQuestionCooldownTimer: 0
   ignorePlayerTimer: 0
   showDebugLogs: 1
 --- !u!114 &1500860577
@@ -33177,23 +33160,90 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GuardSuspicionReasoner
   ignoreNormalWalkingInPublic: 1
-  publicIdleMultiplier: 0
-  publicWalkingMultiplier: 0
-  publicRunningMultiplier: 0.2
-  publicCrouchingMultiplier: 0.45
-  publicCrawlingMultiplier: 0.7
-  publicJumpingMultiplier: 0.25
-  noDisguiseMultiplier: 1.4
-  wrongDisguiseMultiplier: 1.8
-  partialDisguiseMultiplier: 0.75
-  validDisguiseMultiplier: 0.25
+  validDisguiseSuspicionMultiplier: 0.15
+  partialDisguiseSuspicionMultiplier: 0.65
+  noDisguiseSuspicionMultiplier: 1.25
+  wrongDisguiseSuspicionMultiplier: 1.6
+  restrictedIdleMultiplier: 0.8
   restrictedWalkingMultiplier: 1
   restrictedRunningMultiplier: 1.45
   restrictedCrouchingMultiplier: 1.2
   restrictedCrawlingMultiplier: 1.5
+  reasonRules:
+  - reason: 1
+    reasonText: standing here
+    suspicionPerSecond: 0
+    minimumSuspicion: 0
+    canTriggerQuestioning: 0
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 0
+  - reason: 3
+    reasonText: running near the guards
+    suspicionPerSecond: 8
+    minimumSuspicion: 10
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 3
+  - reason: 4
+    reasonText: crouching in public
+    suspicionPerSecond: 18
+    minimumSuspicion: 20
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 6
+  - reason: 5
+    reasonText: crawling through the street
+    suspicionPerSecond: 28
+    minimumSuspicion: 35
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 1
+    memoryAmount: 10
+  - reason: 2
+    reasonText: moving strangely in public
+    suspicionPerSecond: 12
+    minimumSuspicion: 15
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 5
+  - reason: 9
+    reasonText: entering a restricted place without proper clothing
+    suspicionPerSecond: 45
+    minimumSuspicion: 45
+    canTriggerQuestioning: 1
+    canTriggerChase: 1
+    isSerious: 1
+    memoryAmount: 18
+  - reason: 7
+    reasonText: wearing the wrong disguise here
+    suspicionPerSecond: 55
+    minimumSuspicion: 55
+    canTriggerQuestioning: 1
+    canTriggerChase: 1
+    isSerious: 1
+    memoryAmount: 22
+  - reason: 8
+    reasonText: wearing an incomplete disguise
+    suspicionPerSecond: 24
+    minimumSuspicion: 25
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 8
+  - reason: 6
+    reasonText: being somewhere you are not allowed
+    suspicionPerSecond: 50
+    minimumSuspicion: 50
+    canTriggerQuestioning: 1
+    canTriggerChase: 1
+    isSerious: 1
+    memoryAmount: 20
   useGuardMemory: 1
   memoryReportInterval: 2
-  memoryReportAmount: 5
   showDebugLogs: 0
 --- !u!65 &1513970380
 BoxCollider:
