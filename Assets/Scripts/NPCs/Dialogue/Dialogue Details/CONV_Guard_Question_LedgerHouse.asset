@@ -28,7 +28,6 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
   - nodeID: "player_answers"
     speaker: {fileID: 0}
     line: "I need an answer before his hand reaches the whistle."
@@ -68,7 +67,6 @@ MonoBehaviour:
         amount: 1
       hideIfUnavailable: 1
       unavailableReason: "Requires Ledger House cover"
-
     - responseText: "I am posted to the record room. Look at the tunic."
       nextNodeID: "guard_pass"
       conditions:
@@ -92,7 +90,6 @@ MonoBehaviour:
         amount: 1
       hideIfUnavailable: 1
       unavailableReason: "Requires clerk cover"
-
     - responseText: "I was told to bring these records inside. I may have the wrong room."
       nextNodeID: "guard_warn"
       conditions: []
@@ -109,7 +106,6 @@ MonoBehaviour:
         amount: 1
       hideIfUnavailable: 1
       unavailableReason: "Unavailable"
-
     - responseText: "That is none of your concern."
       nextNodeID: "guard_fail"
       conditions: []
@@ -126,13 +122,11 @@ MonoBehaviour:
         amount: 1
       hideIfUnavailable: 1
       unavailableReason: "Unavailable"
-
     conditions: []
     onEnterEffects: []
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
   - nodeID: "guard_pass"
     speaker: {fileID: 0}
     line: "Hmph. Ledger clerks and their papers. Go on, but do not wander."
@@ -144,7 +138,6 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
   - nodeID: "guard_warn"
     speaker: {fileID: 0}
     line: "Wrong room, wrong hour. Leave now. I will not ask twice."
@@ -156,7 +149,6 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
   - nodeID: "guard_fail"
     speaker: {fileID: 0}
     line: "Then I will make it my concern."
@@ -168,7 +160,6 @@ MonoBehaviour:
     onExitEffects: []
     autoContinue: 0
     autoContinueDelay: 1.5
-
   canRepeat: 1
   markCompletedOnEnd: 0
   isEavesdroppingConversation: 0
