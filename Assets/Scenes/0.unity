@@ -9113,7 +9113,18 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1500860571}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1500860573}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1500860572}
   m_SourcePrefab: {fileID: 100100000, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+--- !u!195 &399963381 stripped
+NavMeshAgent:
+  m_CorrespondingSourceObject: {fileID: 5683675199421227678, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+  m_PrefabInstance: {fileID: 399963380}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &403195913
 GameObject:
   m_ObjectHideFlags: 0
@@ -10637,6 +10648,7 @@ GameObject:
   - component: {fileID: 463113620}
   - component: {fileID: 463113622}
   - component: {fileID: 463113621}
+  - component: {fileID: 463113623}
   m_Layer: 0
   m_Name: Game Systems
   m_TagString: Untagged
@@ -10932,6 +10944,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldItemStateManager
   showDebugLogs: 1
+--- !u!114 &463113623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce77b73ba802349dea9151b5d0449702, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningManager
+  passedFlag: guard_question_passed
+  warnedFlag: guard_question_warned
+  failedFlag: guard_question_failed
+  chaseFlag: guard_question_chase
+  caughtFlag: guard_question_caught
+  showDebugLogs: 1
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0
@@ -11086,6 +11116,7 @@ GameObject:
   - component: {fileID: 493262999}
   - component: {fileID: 493263002}
   - component: {fileID: 493263001}
+  - component: {fileID: 493263003}
   m_Layer: 0
   m_Name: First Person Player
   m_TagString: Player
@@ -11414,6 +11445,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85654a4c67bf84c798c24e70883d6c88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCoverIdentity
+--- !u!114 &493263003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 493262990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3903fc83f7d034f34862c3941d9368ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerControlLock
+  movementScripts:
+  - {fileID: 493262995}
+  cameraScripts:
+  - {fileID: 330585548}
+  interactionScripts:
+  - {fileID: 493262996}
 --- !u!1 &504164631
 GameObject:
   m_ObjectHideFlags: 0
@@ -32975,6 +33024,8 @@ MonoBehaviour:
   warnBeforeChaseInRestrictedZone: 1
   warningSuspicionThreshold: 55
   warningDuration: 2
+  allowGuardQuestioning: 1
+  questioningResponder: {fileID: 1500860573}
 --- !u!114 &1500860561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33014,6 +33065,42 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GuardCaughtReporter
   guardID: guard_01
+--- !u!114 &1500860572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500860558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0dce46365c254dfebbba94b1ae3dc68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningTrigger
+  guardAI: {fileID: 1500860560}
+  responder: {fileID: 1500860573}
+  enableQuestioning: 1
+  onlyQuestionIfPlayerVisible: 1
+  showDebugLogs: 1
+--- !u!114 &1500860573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500860558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10009f10ad371496699c6eb5b77f2d6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningResponder
+  questioningProfile: {fileID: 11400000, guid: 6277aee0a22e0415d8c06e7edbcb0125, type: 2}
+  dialogueManager: {fileID: 463113609}
+  player: {fileID: 493262992}
+  agent: {fileID: 399963381}
+  guardAI: {fileID: 1500860560}
+  ignorePlayerTimer: 0
+  showDebugLogs: 1
 --- !u!65 &1513970380
 BoxCollider:
   m_ObjectHideFlags: 0

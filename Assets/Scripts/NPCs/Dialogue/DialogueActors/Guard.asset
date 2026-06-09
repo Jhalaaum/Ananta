@@ -9,11 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68dd7b8d81da340bbbee4d2855aa1076, type: 3}
+  m_Script: {fileID: 11500000, guid: 051f9ea1910b34f1586524b4083c28c4, type: 3}
   m_Name: Guard
-  m_EditorClassIdentifier: Assembly-CSharp::DialogueActor
-  actorID: 
-  displayName: 
-  speakerRole: 0
-  portrait: {fileID: 0}
-  dialogueStyleNote: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningProfile
+  profileID: guard
+  displayName: guard
+  questioningConversation: {fileID: 11400000, guid: f85ac0b8389cd4ca3b1638af013b08f6, type: 2}
+  questioningThreshold: 65
+  minTimeBetweenQuestioning: 8
+  suspicionAfterPassed: 15
+  ignorePlayerDurationAfterPassed: 8
+  suspicionAfterWarning: 45
+  ignorePlayerDurationAfterWarning: 3
+  chaseOnFailed: 1
+  useCaughtSystemOnCaught: 1
