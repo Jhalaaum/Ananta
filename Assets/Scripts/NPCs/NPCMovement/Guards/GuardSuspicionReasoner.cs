@@ -169,9 +169,7 @@ public class GuardSuspicionReasoner : MonoBehaviour
         PlayerMovementStateTracker movementTracker
     )
     {
-        bool inPublicZone = zone == null || zone.IsPublicZone();
-
-        if (inPublicZone)
+        if (zone == null || zone.IsPublicZone())
         {
             return EvaluatePublicVision(movementTracker);
         }

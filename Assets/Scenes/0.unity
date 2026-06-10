@@ -9119,6 +9119,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1500860577}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1500860581}
   m_SourcePrefab: {fileID: 100100000, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
 --- !u!195 &399963381 stripped
 NavMeshAgent:
@@ -10425,13 +10428,15 @@ MonoBehaviour:
   zoneID: palace_outer
   zoneDisplayName: palace outer court
   accessType: 2
+  zonePriority: 0
   allowedDisguiseSetIDs:
   - guard
+  requireCompleteDisguise: 0
+  minimumDisguiseCompleteness: 0.234
   suspiciousIfUnauthorized: 1
   unauthorizedSuspicionPerSecond: 22
   unauthorizedVisionMultiplier: 1.75
-  requireCompleteDisguise: 0
-  minimumDisguiseCompleteness: 0.234
+  showDebugLogs: 1
 --- !u!65 &457302657
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10650,6 +10655,7 @@ GameObject:
   - component: {fileID: 463113621}
   - component: {fileID: 463113623}
   - component: {fileID: 463113624}
+  - component: {fileID: 463113625}
   m_Layer: 0
   m_Name: Game Systems
   m_TagString: Untagged
@@ -10983,6 +10989,58 @@ MonoBehaviour:
   showDebugLogs: 1
   allowKeyboardDebugPrint: 1
   printMemoryKey: 109
+--- !u!114 &463113625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41f8f3a0e551e49e98c9e70735dd6990, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZoneAlertManager
+  suspiciousThreshold: 25
+  alertedThreshold: 55
+  lockdownThreshold: 85
+  decayOverTime: 1
+  calmDecayPerSecond: 0.6
+  suspiciousDecayPerSecond: 0.35
+  alertedDecayPerSecond: 0.18
+  lockdownDecayPerSecond: 0.08
+  calmSuspicionMultiplier: 1
+  suspiciousSuspicionMultiplier: 1.2
+  alertedSuspicionMultiplier: 1.55
+  lockdownSuspicionMultiplier: 2.1
+  calmQuestioningThresholdModifier: 0
+  suspiciousQuestioningThresholdModifier: -5
+  alertedQuestioningThresholdModifier: -12
+  lockdownQuestioningThresholdModifier: -22
+  calmSoundSensitivityMultiplier: 1
+  suspiciousSoundSensitivityMultiplier: 1.15
+  alertedSoundSensitivityMultiplier: 1.35
+  lockdownSoundSensitivityMultiplier: 1.6
+  calmInvestigationSpeedMultiplier: 1
+  suspiciousInvestigationSpeedMultiplier: 1.08
+  alertedInvestigationSpeedMultiplier: 1.18
+  lockdownInvestigationSpeedMultiplier: 1.32
+  calmSearchRadiusMultiplier: 1
+  suspiciousSearchRadiusMultiplier: 1.15
+  alertedSearchRadiusMultiplier: 1.35
+  lockdownSearchRadiusMultiplier: 1.65
+  calmExtraSearchPoints: 0
+  suspiciousExtraSearchPoints: 1
+  alertedExtraSearchPoints: 2
+  lockdownExtraSearchPoints: 3
+  calmSearchWaitMultiplier: 1
+  suspiciousSearchWaitMultiplier: 1.1
+  alertedSearchWaitMultiplier: 1.25
+  lockdownSearchWaitMultiplier: 1.45
+  records: []
+  showDebugLogs: 1
+  enablePrintKey: 1
+  printAlertKey: 28
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0
@@ -11201,6 +11259,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSoundEmitter
   controller: {fileID: 493262991}
+  movementStateTracker: {fileID: 493263004}
+  detectionMode: 0
   minMoveSpeed: 0.15
   sprintSpeedThreshold: 9
   crouchHeightThreshold: 2.1
@@ -11210,35 +11270,49 @@ MonoBehaviour:
     radius: 8
     emitInterval: 0.45
     loudness: 0.45
+    soundOriginUncertainty: 1
   - movementType: 2
     radius: 20
     emitInterval: 0.25
     loudness: 1
+    soundOriginUncertainty: 1
   - movementType: 3
     radius: 5
     emitInterval: 0.7
     loudness: 0.25
+    soundOriginUncertainty: 1
   - movementType: 4
     radius: 3
     emitInterval: 0.9
     loudness: 0.15
+    soundOriginUncertainty: 1
   - movementType: 5
     radius: 7
     emitInterval: 1
     loudness: 0.1
+    soundOriginUncertainty: 1
+  emitLandingSound: 1
+  minimumFallSpeedForLandingSound: -3
+  landingSoundCooldown: 0.25
   groundMask:
     serializedVersion: 2
     m_Bits: 0
   groundCheckDistance: 1.5
   surfaceProfiles: []
+  useApproximateSoundOrigin: 1
+  globalUncertaintyMultiplier: 1
+  minimumUncertainty: 0.15
+  maximumUncertainty: 5
   useOcclusion: 1
   occlusionMask:
     serializedVersion: 2
     m_Bits: 4294967295
   occludedLoudnessMultiplier: 0.35
+  showDebugLogs: 0
   drawDebugCircle: 1
   onlyDrawWhenSprinting: 0
   debugColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  trueOriginDebugColor: {r: 0, g: 1, b: 1, a: 1}
   circleHeightOffset: 0.05
 --- !u!114 &493262995
 MonoBehaviour:
@@ -11455,6 +11529,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerZoneTracker
   currentZone: {fileID: 0}
+  showDebugLogs: 1
 --- !u!114 &493263002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33079,6 +33154,25 @@ MonoBehaviour:
   showFastTalkCooldownDebug: 1
   printStateChanges: 1
   printSuspicionReasonChanges: 1
+  reduceSuspicionWhenDisguiseImproves: 1
+  disguiseCheckInterval: 0.2
+  validDisguiseSuspicionDropPerSecond: 30
+  newlyValidDisguiseInstantDrop: 25
+  validDisguiseSuspicionCap: 25
+  validDisguiseAlertReduction: 8
+  allowDisguiseReliefOnlyBeforeChase: 1
+  printDisguiseReliefDebug: 1
+  useRealisticSoundInvestigation: 1
+  soundReactionDelay: 0.45
+  minimumTimeBetweenSoundReactions: 0.6
+  soundPositionUncertaintyAtLowConfidence: 5
+  soundPositionUncertaintyAtHighConfidence: 0.8
+  strongSoundAudibilityThreshold: 0.55
+  weakSoundSuspicionMultiplier: 0.35
+  strongSoundSuspicionMultiplier: 1
+  onlyQuestionSoundIfPlayerSeen: 1
+  showSoundDebug: 1
+  questioningRepeatLimiter: {fileID: 1500860581}
 --- !u!114 &1500860561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33139,6 +33233,11 @@ MonoBehaviour:
   passedFastTalkCooldown: 7
   warnedFastTalkCooldown: 5
   clearStealthTogglesAfterSuccessfulFastTalk: 1
+  passedAlertIncrease: 3
+  warnedAlertIncrease: 12
+  failedAlertIncrease: 25
+  chaseAlertIncrease: 35
+  caughtAlertIncrease: 45
   dialogueManager: {fileID: 463113609}
   dialogueUI: {fileID: 581266290}
   player: {fileID: 493262992}
@@ -33245,6 +33344,22 @@ MonoBehaviour:
   useGuardMemory: 1
   memoryReportInterval: 2
   showDebugLogs: 0
+--- !u!114 &1500860581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1500860558}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c44c4eabf15244a395ca5b228188bd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningRepeatLimiter
+  preventRepeatedQuestioningForSameAction: 1
+  requireActionToStopBeforeRepeat: 1
+  emergencyResetAfterSeconds: 0
+  showDebugLogs: 1
 --- !u!65 &1513970380
 BoxCollider:
   m_ObjectHideFlags: 0

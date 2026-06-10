@@ -20,6 +20,13 @@ public class GuardQuestioningResponder : MonoBehaviour
     public float warnedFastTalkCooldown = 5f;
     public bool clearStealthTogglesAfterSuccessfulFastTalk = true;
 
+    [Header("Zone Alert Amounts")]
+    public float passedAlertIncrease = 3f;
+    public float warnedAlertIncrease = 12f;
+    public float failedAlertIncrease = 25f;
+    public float chaseAlertIncrease = 35f;
+    public float caughtAlertIncrease = 45f;
+
     [Header("References")]
     public DialogueManager dialogueManager;
     public DialogueUI dialogueUI;
@@ -202,6 +209,7 @@ public class GuardQuestioningResponder : MonoBehaviour
         }
 
         ReportQuestioningOutcomeToMemory(outcome);
+        ReportOutcomeToZoneAlert(outcome);
         ApplyOutcome(outcome);
 
         if (PlayerControlLock.Instance != null)
@@ -374,6 +382,71 @@ public class GuardQuestioningResponder : MonoBehaviour
         ApplyChaseOutcome();
     }
 
+    private string GetCurrentZoneID()
+    {
+        if (PlayerZoneTracker.Instance != null &&
+            PlayerZoneTracker.Instance.GetCurrentZone() != null &&
+            !string.IsNullOrWhiteSpace(PlayerZoneTracker.Instance.GetCurrentZone().zoneID))
+        {
+            return PlayerZoneTracker.Instance.GetCurrentZone().zoneID.Trim();
+        }
+
+        return "public_city";
+    }
+
+    private void ReportOutcomeToZoneAlert(GuardQuestioningOutcome outcome)
+    {
+        if (ZoneAlertManager.Instance == null)
+        {
+            return;
+        }
+
+        string zoneID = GetCurrentZoneID();
+
+        switch (outcome)
+        {
+            case GuardQuestioningOutcome.Passed:
+                ZoneAlertManager.Instance.AddAlert(
+                    zoneID,
+                    passedAlertIncrease,
+                    "Fast Talk passed"
+                );
+                break;
+
+            case GuardQuestioningOutcome.Warned:
+                ZoneAlertManager.Instance.AddAlert(
+                    zoneID,
+                    warnedAlertIncrease,
+                    "Guard issued warning"
+                );
+                break;
+
+            case GuardQuestioningOutcome.Failed:
+                ZoneAlertManager.Instance.AddAlert(
+                    zoneID,
+                    failedAlertIncrease,
+                    "Player failed questioning"
+                );
+                break;
+
+            case GuardQuestioningOutcome.Chase:
+                ZoneAlertManager.Instance.AddAlert(
+                    zoneID,
+                    chaseAlertIncrease,
+                    "Guard began chase"
+                );
+                break;
+
+            case GuardQuestioningOutcome.Caught:
+                ZoneAlertManager.Instance.AddAlert(
+                    zoneID,
+                    caughtAlertIncrease,
+                    "Player was caught"
+                );
+                break;
+        }
+    }
+
     private void ReportQuestioningOutcomeToMemory(GuardQuestioningOutcome outcome)
     {
         if (GuardMemoryManager.Instance == null)
@@ -381,14 +454,7 @@ public class GuardQuestioningResponder : MonoBehaviour
             return;
         }
 
-        string zoneID = "public_city";
-
-        if (PlayerZoneTracker.Instance != null &&
-            PlayerZoneTracker.Instance.GetCurrentZone() != null &&
-            !string.IsNullOrWhiteSpace(PlayerZoneTracker.Instance.GetCurrentZone().zoneID))
-        {
-            zoneID = PlayerZoneTracker.Instance.GetCurrentZone().zoneID.Trim();
-        }
+        string zoneID = GetCurrentZoneID();
 
         switch (outcome)
         {

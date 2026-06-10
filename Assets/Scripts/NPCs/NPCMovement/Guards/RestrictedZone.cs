@@ -10,47 +10,56 @@ public enum ZoneAccessType
     Restricted
 }
 
+[RequireComponent(typeof(Collider))]
 public class RestrictedZone : MonoBehaviour
 {
     [Header("Zone Identity")]
-    public string zoneID;
-    public string zoneDisplayName;
+    public string zoneID = "ledger_house";
+    public string zoneDisplayName = "Ledger House";
+    public ZoneAccessType accessType = ZoneAccessType.Restricted;
 
-    [Header("Access")]
-    public ZoneAccessType accessType = ZoneAccessType.Public;
+    [Tooltip("Higher priority wins if the player is inside multiple zones.")]
+    public int zonePriority = 0;
 
-    [Tooltip("Examples: guard, merchant, servant, noble, monk")]
+    [Header("Allowed Disguises")]
     public string[] allowedDisguiseSetIDs;
+
+    [Header("Disguise Rules")]
+    public bool requireCompleteDisguise = true;
+
+    [Range(0f, 1f)]
+    public float minimumDisguiseCompleteness = 1f;
 
     [Header("Suspicion")]
     public bool suspiciousIfUnauthorized = true;
-    public float unauthorizedSuspicionPerSecond = 22f;
-    public float unauthorizedVisionMultiplier = 1.75f;
+    public float unauthorizedSuspicionPerSecond = 18f;
+    public float unauthorizedVisionMultiplier = 1.5f;
 
-    [Header("Disguise Requirements")]
-    public bool requireCompleteDisguise;
-    [Range(0f, 1f)] public float minimumDisguiseCompleteness = 0.75f;
+    [Header("Debug")]
+    public bool showDebugLogs = true;
+
+    private Collider zoneCollider;
+
+    private void Awake()
+    {
+        zoneCollider = GetComponent<Collider>();
+
+        if (zoneCollider != null)
+        {
+            zoneCollider.isTrigger = true;
+        }
+    }
 
     public bool IsPublicZone()
     {
         return accessType == ZoneAccessType.Public;
     }
 
-    public bool IsDisguiseAllowed(string disguiseSetID, float completeness)
+    public bool IsDisguiseAllowed(string disguiseSetID, float disguiseCompleteness)
     {
         if (IsPublicZone())
         {
             return true;
-        }
-
-        if (string.IsNullOrWhiteSpace(disguiseSetID))
-        {
-            return false;
-        }
-
-        if (requireCompleteDisguise && completeness < minimumDisguiseCompleteness)
-        {
-            return false;
         }
 
         if (allowedDisguiseSetIDs == null || allowedDisguiseSetIDs.Length == 0)
@@ -58,7 +67,14 @@ public class RestrictedZone : MonoBehaviour
             return false;
         }
 
-        string cleanID = disguiseSetID.Trim();
+        if (string.IsNullOrWhiteSpace(disguiseSetID))
+        {
+            return false;
+        }
+
+        string cleanDisguiseID = disguiseSetID.Trim();
+
+        bool disguiseIDAllowed = false;
 
         foreach (string allowedID in allowedDisguiseSetIDs)
         {
@@ -67,12 +83,43 @@ public class RestrictedZone : MonoBehaviour
                 continue;
             }
 
-            if (allowedID.Trim() == cleanID)
+            if (allowedID.Trim() == cleanDisguiseID)
             {
-                return true;
+                disguiseIDAllowed = true;
+                break;
             }
         }
 
-        return false;
+        if (!disguiseIDAllowed)
+        {
+            return false;
+        }
+
+        if (requireCompleteDisguise)
+        {
+            return disguiseCompleteness >= minimumDisguiseCompleteness;
+        }
+
+        return disguiseCompleteness >= minimumDisguiseCompleteness;
+    }
+
+    public string GetZoneDebugName()
+    {
+        if (!string.IsNullOrWhiteSpace(zoneDisplayName))
+        {
+            return $"{zoneDisplayName} ({zoneID})";
+        }
+
+        return zoneID;
+    }
+
+    private void OnValidate()
+    {
+        Collider col = GetComponent<Collider>();
+
+        if (col != null)
+        {
+            col.isTrigger = true;
+        }
     }
 }
