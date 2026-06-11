@@ -32,6 +32,15 @@ public class SaveManager : MonoBehaviour
     public DialogueUI dialogueUI;
     public DialogueManager dialogueManager;
 
+    [Header("Checkpoint Restore")]
+    public bool forceRefreshZoneAfterCheckpoint = true;
+    public bool resetGuardsAfterCheckpoint = true;
+    public bool resetDialogueAfterCheckpoint = true;
+    public bool resetRuntimeDroppedItems = true;
+    public bool restoreWorldItems = true;
+    public bool restoreInventory = true;
+    public bool restoreQuests = true;
+
     [Header("Debug")]
     public bool showDebugLogs = true;
 
@@ -131,7 +140,6 @@ public class SaveManager : MonoBehaviour
         }
 
         SaveCheckpoint("Start");
-
         Log("Start checkpoint created.");
     }
 
@@ -187,6 +195,11 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
+        if (forceRefreshZoneAfterCheckpoint && zoneTracker != null)
+        {
+            zoneTracker.ForceRefreshCurrentZone();
+        }
+
         GameSaveData saveData = new GameSaveData();
 
         saveData.saveName = saveName;
@@ -224,6 +237,7 @@ public class SaveManager : MonoBehaviour
 
         Log($"Checkpoint saved and previous checkpoint overwritten: {saveName}");
         Log($"Saved position: {player.position}");
+        Log($"Saved zone: {zoneID}");
     }
 
     public void LoadCheckpoint()
@@ -311,42 +325,105 @@ public class SaveManager : MonoBehaviour
 
         ResetRuntimeUI();
 
-        RuntimeDroppedItemCleaner.Instance?.ClearRuntimeDroppedItems();
+        if (resetRuntimeDroppedItems)
+        {
+            RuntimeDroppedItemCleaner.Instance?.ClearRuntimeDroppedItems();
+        }
 
-        if (InventoryManager.Instance != null)
+        if (restoreInventory && InventoryManager.Instance != null)
         {
             InventoryManager.Instance.RestoreInventory(saveData.inventorySaveData);
         }
 
-        if (WorldItemStateManager.Instance != null)
+        if (restoreWorldItems && WorldItemStateManager.Instance != null)
         {
             WorldItemStateManager.Instance.RestoreWorldItemStates(saveData.worldItemStateSaveData);
         }
 
-        playerCheckpointState.RestoreTransform(
+        RestorePlayerTransformSafely(
             saveData.player.GetPosition(),
             saveData.player.GetRotation()
         );
 
-        if (zoneTracker != null)
-        {
-            zoneTracker.SetCurrentZone(saveData.player.zoneID);
-        }
+        RefreshZoneAfterCheckpoint(saveData.player.zoneID);
 
-        if (QuestManager.Instance != null)
+        if (restoreQuests && QuestManager.Instance != null)
         {
             QuestManager.Instance.RestoreQuestProgress(saveData.questProgress);
         }
 
-        ResetAllGuardsForCheckpoint();
-        ResetRuntimeUI();        
-        
+        if (resetGuardsAfterCheckpoint)
+        {
+            ResetAllGuardsForCheckpoint();
+        }
+
+        ResetRuntimeUI();
+
         currentCheckpointData = saveData;
 
         isApplyingCheckpoint = false;
 
         Log($"Checkpoint loaded: {saveData.saveName}");
         Log($"Loaded position: {saveData.player.GetPosition()}");
+        Log($"Loaded zone: {(zoneTracker != null ? zoneTracker.GetCurrentZoneID() : "No ZoneTracker")}");
+    }
+
+    private void RestorePlayerTransformSafely(Vector3 position, Quaternion rotation)
+    {
+        CharacterController controller = player.GetComponent<CharacterController>();
+
+        bool controllerWasEnabled = false;
+
+        if (controller != null)
+        {
+            controllerWasEnabled = controller.enabled;
+            controller.enabled = false;
+        }
+
+        playerCheckpointState.RestoreTransform(position, rotation);
+
+        if (controller != null)
+        {
+            controller.enabled = controllerWasEnabled;
+        }
+    }
+
+    private void RefreshZoneAfterCheckpoint(string savedZoneID)
+    {
+        AutoFindReferences();
+
+        if (zoneTracker == null)
+        {
+            Log("No ZoneTracker found to refresh.");
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(savedZoneID))
+        {
+            zoneTracker.SetCurrentZone(savedZoneID);
+        }
+
+        if (forceRefreshZoneAfterCheckpoint)
+        {
+            zoneTracker.ForceRefreshCurrentZoneAfterTeleport();
+        }
+
+        PlayerZoneTracker playerZoneTracker = player != null
+            ? player.GetComponent<PlayerZoneTracker>()
+            : null;
+
+        if (playerZoneTracker != null)
+        {
+            playerZoneTracker.SendMessage(
+                "ForceRefreshCurrentZoneAfterTeleport",
+                SendMessageOptions.DontRequireReceiver
+            );
+
+            playerZoneTracker.SendMessage(
+                "ForceRefreshCurrentZone",
+                SendMessageOptions.DontRequireReceiver
+            );
+        }
     }
 
     private void RespawnWithoutCheckpoint()
@@ -372,22 +449,21 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        if (playerCheckpointState != null)
+        RestorePlayerTransformSafely(
+            defaultRespawnPoint.position,
+            defaultRespawnPoint.rotation
+        );
+
+        if (zoneTracker != null)
         {
-            playerCheckpointState.RestoreTransform(
-                defaultRespawnPoint.position,
-                defaultRespawnPoint.rotation
-            );
-        }
-        else
-        {
-            player.SetPositionAndRotation(
-                defaultRespawnPoint.position,
-                defaultRespawnPoint.rotation
-            );
+            zoneTracker.ForceRefreshCurrentZoneAfterTeleport();
         }
 
-        ResetAllGuardsForCheckpoint();
+        if (resetGuardsAfterCheckpoint)
+        {
+            ResetAllGuardsForCheckpoint();
+        }
+
         ResetRuntimeUI();
 
         Log("Player respawned using fallback respawn point.");
@@ -395,6 +471,11 @@ public class SaveManager : MonoBehaviour
 
     private void ResetRuntimeUI()
     {
+        if (!resetDialogueAfterCheckpoint)
+        {
+            return;
+        }
+
         if (dialogueUI == null)
         {
             dialogueUI = FindObjectOfType<DialogueUI>();

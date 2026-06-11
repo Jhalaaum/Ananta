@@ -94,6 +94,8 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Wall Climbing")]
     [SerializeField] private bool enableWallClimb = true;
+    [Tooltip("If true, wall climbing only works when Climbable Wall Mask has at least one layer selected. This prevents ordinary walls from becoming climbable automatically.")]
+    [SerializeField] private bool requireExplicitClimbableWallLayer = true;
     [SerializeField] private LayerMask climbableWallMask;
     [SerializeField] private float wallCheckDistance = 0.9f;
     [SerializeField] private float wallCheckRadius = 0.45f;
@@ -118,6 +120,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float climbTopEdgeInset = 0.12f;
     [SerializeField] private float climbTopGroundCheckDistance = 0.6f;
     [SerializeField] private float climbTopRequiredSupport = 0.75f;
+    [Tooltip("Maximum vertical rise from the player's current feet position to the top landing point. Prevents huge early teleports on tall walls/cubes.")]
+    [SerializeField] private float climbTopMaxExitRise = 2.85f;
+    [Tooltip("Draws top-exit probe rays in the Scene view while climbing. Turn off after testing.")]
+    [SerializeField] private bool debugClimbTopExit = true;
     private float climbExitGroundedGraceTimer;
 
     [Header("Camera Polish")]
@@ -176,6 +182,14 @@ public class PlayerMovement : MonoBehaviour
     public bool IsWallClimbing => isWallClimbing;
     public bool IsLadderClimbing => isLadderClimbing;
     public bool IsMovementLocked => isInteracting || isHidden || isMantling || isWallClimbing || isLadderClimbing;
+    public float SprintEnergyNormalized => sprintEnergy;
+    public float SprintBlend => sprintBlend;
+    public bool IsExhausted => isExhausted;
+    public float CurrentControllerHeight => controller != null ? controller.height : 0f;
+    public float CurrentVerticalSpeed => verticalVelocity.y;
+    public Vector3 CurrentHorizontalVelocity => horizontalVelocity;
+    public string CurrentStanceName => currentStance.ToString();
+
 
     private Stance currentStance = Stance.Standing;
 
@@ -229,6 +243,94 @@ public class PlayerMovement : MonoBehaviour
         controller = GetComponent<CharacterController>();
     }
 
+    private void OnValidate()
+    {
+        if (controller == null)
+            controller = GetComponent<CharacterController>();
+
+        if (playerCamera != null && cameraComponent == null)
+            cameraComponent = playerCamera.GetComponent<Camera>();
+
+        walkSpeed = Mathf.Max(0f, walkSpeed);
+        sprintSpeed = Mathf.Max(walkSpeed, sprintSpeed);
+        slowWalkSpeed = Mathf.Max(0f, slowWalkSpeed);
+        crouchSpeed = Mathf.Max(0f, crouchSpeed);
+        crawlSpeed = Mathf.Max(0f, crawlSpeed);
+
+        groundedAcceleration = Mathf.Max(0.01f, groundedAcceleration);
+        groundedDeceleration = Mathf.Max(0.01f, groundedDeceleration);
+        airAcceleration = Mathf.Max(0.01f, airAcceleration);
+        airDeceleration = Mathf.Max(0.01f, airDeceleration);
+        directionChangeBoost = Mathf.Max(1f, directionChangeBoost);
+
+        jumpHeight = Mathf.Max(0f, jumpHeight);
+        gravity = Mathf.Min(-0.01f, gravity);
+        coyoteTime = Mathf.Max(0f, coyoteTime);
+        jumpBufferTime = Mathf.Max(0f, jumpBufferTime);
+        fallMultiplier = Mathf.Max(1f, fallMultiplier);
+        heldJumpRepeatDelay = Mathf.Max(0.01f, heldJumpRepeatDelay);
+
+        sprintBuildTime = Mathf.Max(0.01f, sprintBuildTime);
+        maxSprintDuration = Mathf.Max(0.01f, maxSprintDuration);
+        sprintRecoveryTime = Mathf.Max(0.01f, sprintRecoveryTime);
+        sprintSlowdownTime = Mathf.Max(0.01f, sprintSlowdownTime);
+        sprintRecoveryDelayAfterSlowdown = Mathf.Max(0f, sprintRecoveryDelayAfterSlowdown);
+        sprintRecoveryStartThreshold = Mathf.Clamp01(sprintRecoveryStartThreshold);
+
+        stanceTransitionSpeed = Mathf.Max(0.01f, stanceTransitionSpeed);
+        eyeLevelRatio = Mathf.Clamp(eyeLevelRatio, 0.5f, 1f);
+
+        mantleCheckDistance = Mathf.Max(0.05f, mantleCheckDistance);
+        mantleMinHeight = Mathf.Max(0.05f, mantleMinHeight);
+        mantleMaxHeight = Mathf.Max(mantleMinHeight + 0.05f, mantleMaxHeight);
+        mantleForwardOffset = Mathf.Max(0.05f, mantleForwardOffset);
+        mantleDuration = Mathf.Max(0.01f, mantleDuration);
+
+        rooftopGapAssistDistance = Mathf.Max(0f, rooftopGapAssistDistance);
+        rooftopGapAssistHeightTolerance = Mathf.Max(0f, rooftopGapAssistHeightTolerance);
+        sprintJumpMomentumMultiplier = Mathf.Max(1f, sprintJumpMomentumMultiplier);
+
+        ladderCheckDistance = Mathf.Max(0.05f, ladderCheckDistance);
+        ladderSnapOffset = Mathf.Max(0.05f, ladderSnapOffset);
+        ladderClimbSpeed = Mathf.Max(0f, ladderClimbSpeed);
+        ladderSideSpeed = Mathf.Max(0f, ladderSideSpeed);
+        ladderExitDuration = Mathf.Max(0.01f, ladderExitDuration);
+
+        wallCheckDistance = Mathf.Max(0.05f, wallCheckDistance);
+        wallCheckRadius = Mathf.Max(0.05f, wallCheckRadius);
+        climbUpSpeed = Mathf.Max(0f, climbUpSpeed);
+        climbDownSpeed = Mathf.Max(0f, climbDownSpeed);
+        climbSideSpeed = Mathf.Max(0f, climbSideSpeed);
+        climbStickToWallForce = Mathf.Max(0f, climbStickToWallForce);
+        climbWallOffset = Mathf.Max(0.05f, climbWallOffset);
+        climbDetachPush = Mathf.Max(0f, climbDetachPush);
+        climbTopExitDuration = Mathf.Max(0.01f, climbTopExitDuration);
+        climbExitGroundedGraceTime = Mathf.Max(0f, climbExitGroundedGraceTime);
+        climbTopSearchStart = Mathf.Max(0f, climbTopSearchStart);
+        climbTopSearchEnd = Mathf.Max(climbTopSearchStart + 0.05f, climbTopSearchEnd);
+        climbTopSearchStep = Mathf.Max(0.01f, climbTopSearchStep);
+        climbTopEdgeInset = Mathf.Max(0f, climbTopEdgeInset);
+        climbTopGroundCheckDistance = Mathf.Max(0.05f, climbTopGroundCheckDistance);
+        climbTopRequiredSupport = Mathf.Clamp01(climbTopRequiredSupport);
+        climbTopMaxExitRise = Mathf.Max(0.25f, climbTopMaxExitRise);
+
+        leanDistance = Mathf.Max(0f, leanDistance);
+        leanSpeed = Mathf.Max(0.01f, leanSpeed);
+        leanCheckRadius = Mathf.Max(0.01f, leanCheckRadius);
+
+        standCheckRadiusPadding = Mathf.Max(0f, standCheckRadiusPadding);
+        standCheckFloorOffset = Mathf.Max(0f, standCheckFloorOffset);
+
+        if (controller != null)
+        {
+            float minHeight = controller.radius * 2f + 0.05f;
+
+            crawlHeight = Mathf.Max(crawlHeight, minHeight);
+            crouchHeight = Mathf.Max(crouchHeight, crawlHeight + 0.05f);
+            standingHeight = Mathf.Max(standingHeight, crouchHeight + 0.05f);
+        }
+    }
+
     private void Awake()
     {
         if (controller == null)
@@ -258,11 +360,25 @@ public class PlayerMovement : MonoBehaviour
         if (mantleMask.value == 0)
             mantleMask = obstructionMask;
 
-        if (climbableWallMask.value == 0)
-            climbableWallMask = mantleMask;
+        // IMPORTANT: Do NOT auto-copy obstruction/mantle layers into climbableWallMask.
+        // If we do that, every normal wall can become climbable even when you did not mark it as climbable.
+        if (enableWallClimb && requireExplicitClimbableWallLayer && climbableWallMask.value == 0)
+        {
+            Debug.LogWarning(
+                "PlayerMovement: Wall climbing is enabled, but Climbable Wall Mask is empty. " +
+                "Wall climbing will not start until you assign a specific climbable layer.",
+                this
+            );
+        }
 
-        if (ladderMask.value == 0)
-            ladderMask = climbableWallMask;
+        if (enableLadders && ladderMask.value == 0)
+        {
+            Debug.LogWarning(
+                "PlayerMovement: Ladders are enabled, but Ladder Mask is empty. " +
+                "Ladder climbing will not start until you assign a specific ladder layer.",
+                this
+            );
+        }
 
         controller.stepOffset = standingStepOffset;
     }
@@ -270,6 +386,12 @@ public class PlayerMovement : MonoBehaviour
     private void Update()
     {
         ReadInput();
+
+#if UNITY_EDITOR
+        if (Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame)
+            DebugResetMovementState();
+#endif
+
         UpdateGroundedTimers();
 
         if (isLadderClimbing)
@@ -864,9 +986,20 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private bool IsWallClimbConfiguredAndEnabled()
+    {
+        if (!enableWallClimb)
+            return false;
+
+        if (requireExplicitClimbableWallLayer && climbableWallMask.value == 0)
+            return false;
+
+        return climbableWallMask.value != 0;
+    }
+
     private bool TryStartClimbDown()
     {
-        if (!enableGddParkourAssist || !enableWallClimb)
+        if (!enableGddParkourAssist || !IsWallClimbConfiguredAndEnabled())
             return false;
 
         if (isWallClimbing || isLadderClimbing || isMantling || isInteracting || isHidden)
@@ -925,7 +1058,7 @@ public class PlayerMovement : MonoBehaviour
 
     private bool TryStartWallClimb()
     {
-        if (!enableWallClimb)
+        if (!IsWallClimbConfiguredAndEnabled())
             return false;
 
         if (isWallClimbing || isMantling || isInteracting || isHidden)
@@ -972,6 +1105,12 @@ public class PlayerMovement : MonoBehaviour
         flatDirection.y = 0f;
 
         if (flatDirection.sqrMagnitude < 0.01f)
+        {
+            wallHit = default;
+            return false;
+        }
+
+        if (climbableWallMask.value == 0)
         {
             wallHit = default;
             return false;
@@ -1100,10 +1239,14 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 right = Vector3.Cross(Vector3.up, overWallDirection).normalized;
 
+        int topDetectionMask = GetClimbTopDetectionMask();
+
         float bestSupport = 0f;
         Vector3 bestPosition = Vector3.zero;
         Collider bestCollider = null;
 
+        // Important: for a cube/wall, the top surface is usually on the same layer/collider as the climbable wall.
+        // Therefore we raycast against a combined mask, not obstructionMask only.
         for (float forward = climbTopSearchStart; forward <= climbTopSearchEnd; forward += climbTopSearchStep)
         {
             Vector3 probeStart =
@@ -1111,12 +1254,17 @@ public class PlayerMovement : MonoBehaviour
                 Vector3.up * climbTopProbeHeight +
                 overWallDirection * forward;
 
+#if UNITY_EDITOR
+            if (debugClimbTopExit)
+                Debug.DrawRay(probeStart, Vector3.down * (climbTopProbeHeight + 3f), Color.yellow, 0.05f);
+#endif
+
             bool foundTop = Physics.Raycast(
                 probeStart,
                 Vector3.down,
                 out RaycastHit topHit,
                 climbTopProbeHeight + 3f,
-                obstructionMask,
+                topDetectionMask,
                 QueryTriggerInteraction.Ignore
             );
 
@@ -1126,15 +1274,28 @@ public class PlayerMovement : MonoBehaviour
             if (Vector3.Dot(topHit.normal, Vector3.up) < 0.7f)
                 continue;
 
-            if (topHit.point.y < transform.position.y + 0.25f)
+            float riseToTop = topHit.point.y - transform.position.y;
+
+            // Do not exit if the player is still far below the top. This prevents a tall cube from teleporting
+            // the player to the roof too early just because a ray saw the top face.
+            if (riseToTop < 0.15f || riseToTop > climbTopMaxExitRise)
                 continue;
 
             Vector3 candidate = topHit.point;
 
+            // Move the feet position slightly onto the top surface so the capsule is not balanced on the vertical edge.
             candidate += overWallDirection * (controller.radius + climbTopEdgeInset);
             candidate += Vector3.up * climbTopStandUpOffset;
 
-            float support = GetLandingSupportAmount(candidate, overWallDirection, right);
+            float support = GetLandingSupportAmount(candidate, overWallDirection, right, topDetectionMask);
+
+#if UNITY_EDITOR
+            if (debugClimbTopExit)
+            {
+                Color color = support >= climbTopRequiredSupport ? Color.green : Color.red;
+                Debug.DrawLine(candidate, candidate + Vector3.up * 1.25f, color, 0.05f);
+            }
+#endif
 
             if (support > bestSupport)
             {
@@ -1160,7 +1321,18 @@ public class PlayerMovement : MonoBehaviour
 
         return false;
     }
-    private float GetLandingSupportAmount(Vector3 feetPosition, Vector3 forward, Vector3 right)
+
+    private int GetClimbTopDetectionMask()
+    {
+        int mask = obstructionMask.value | climbableWallMask.value | mantleMask.value;
+
+        if (mask == 0)
+            mask = ~LayerMask.GetMask("Player");
+
+        return mask;
+    }
+
+    private float GetLandingSupportAmount(Vector3 feetPosition, Vector3 forward, Vector3 right, int topDetectionMask)
     {
         float radius = Mathf.Max(0.05f, controller.radius * 0.85f);
 
@@ -1177,14 +1349,19 @@ public class PlayerMovement : MonoBehaviour
 
         for (int i = 0; i < checkPoints.Length; i++)
         {
-            Vector3 rayStart = checkPoints[i] + Vector3.up * 0.25f;
+            Vector3 rayStart = checkPoints[i] + Vector3.up * 0.35f;
+
+#if UNITY_EDITOR
+            if (debugClimbTopExit)
+                Debug.DrawRay(rayStart, Vector3.down * climbTopGroundCheckDistance, Color.cyan, 0.05f);
+#endif
 
             bool hasGround = Physics.Raycast(
                 rayStart,
                 Vector3.down,
                 out RaycastHit hit,
                 climbTopGroundCheckDistance,
-                obstructionMask,
+                topDetectionMask,
                 QueryTriggerInteraction.Ignore
             );
 
@@ -1471,11 +1648,23 @@ public class PlayerMovement : MonoBehaviour
 
         transform.position = targetPosition;
 
-        controller.enabled = true;
+        currentStance = Stance.Standing;
+        controller.height = standingHeight;
+        controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
+        controller.stepOffset = standingStepOffset;
 
+        controller.enabled = true;
+        controller.Move(Vector3.down * 0.05f);
+
+        verticalVelocity = Vector3.zero;
         verticalVelocity.y = groundedStickForce;
+
+        horizontalVelocity = Vector3.zero;
+        sprintBlend = 0f;
+
         coyoteTimer = coyoteTime;
         jumpBufferTimer = 0f;
+        climbExitGroundedGraceTimer = climbExitGroundedGraceTime;
 
         isMantling = false;
     }
@@ -1834,5 +2023,79 @@ public class PlayerMovement : MonoBehaviour
     public void ForceStandIfPossible()
     {
         TryStandUp();
+    }
+
+    public void DebugResetMovementState()
+    {
+        StopAllCoroutines();
+
+        if (controller != null)
+            controller.enabled = true;
+
+        isMantling = false;
+        isWallClimbing = false;
+        isLadderClimbing = false;
+        isInteracting = false;
+        isHidden = false;
+
+        currentStance = Stance.Standing;
+
+        rawInput = Vector2.zero;
+        horizontalVelocity = Vector3.zero;
+        verticalVelocity = Vector3.zero;
+
+        sprintBlend = 0f;
+        sprintEnergy = 1f;
+        isExhausted = false;
+        sprintRecoveryDelayTimer = 0f;
+
+        currentLeanOffset = 0f;
+        targetLeanOffset = 0f;
+        landingOffset = 0f;
+
+        jumpBufferTimer = 0f;
+        coyoteTimer = 0f;
+        heldJumpTimer = 0f;
+        climbExitGroundedGraceTimer = 0f;
+
+        if (controller != null)
+        {
+            controller.height = standingHeight;
+            controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
+            controller.stepOffset = standingStepOffset;
+        }
+
+        if (playerCamera != null)
+        {
+            Vector3 localPos = playerCamera.localPosition;
+            localPos.x = baseCameraLocalX;
+            localPos.y = standingHeight * eyeLevelRatio;
+            localPos.z = baseCameraLocalZ;
+            playerCamera.localPosition = localPos;
+        }
+
+        if (cameraComponent != null)
+            cameraComponent.fieldOfView = normalFov;
+
+        CurrentMovementState = MovementState.Idle;
+    }
+
+    private void OnDisable()
+    {
+        if (controller != null)
+            controller.enabled = true;
+
+        isMantling = false;
+        isWallClimbing = false;
+        isLadderClimbing = false;
+        isInteracting = false;
+        isHidden = false;
+
+        rawInput = Vector2.zero;
+        horizontalVelocity = Vector3.zero;
+        verticalVelocity = Vector3.zero;
+        sprintBlend = 0f;
+        currentLeanOffset = 0f;
+        targetLeanOffset = 0f;
     }
 }

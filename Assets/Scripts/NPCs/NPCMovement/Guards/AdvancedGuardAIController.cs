@@ -832,14 +832,8 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void HandlePlayerSound(PlayerSoundEmitter.SoundField sound)
     {
-        if (currentState == GuardState.Chase ||
-            currentState == GuardState.CapturePlayer ||
+        if (currentState == GuardState.CapturePlayer ||
             IsBeingControlledByQuestioning())
-        {
-            return;
-        }
-
-        if (IsInFastTalkCooldown() && ignorePlayerDuringFastTalkCooldown)
         {
             return;
         }
@@ -849,17 +843,8 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
-        RestrictedZone currentZone = GetCurrentPlayerZone();
-
-        // KEY RULE:
-        // Noise only matters inside restricted / non-public areas.
-        if (currentZone == null || currentZone.IsPublicZone())
+        if (IsInFastTalkCooldown() && ignorePlayerDuringFastTalkCooldown)
         {
-            if (showSoundDebug)
-            {
-                Debug.Log($"[{gameObject.name}] Ignored sound because player is in public area.");
-            }
-
             return;
         }
 
@@ -888,60 +873,74 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
-        lastSoundReactionTime = Time.time;
+        RestrictedZone currentZone = GetCurrentPlayerZone();
+        bool playerIsInPublic = currentZone == null || currentZone.IsPublicZone();
+        bool guardIsChasing = currentState == GuardState.Chase;
 
-        currentSuspicionReason = GuardSuspicionReason.HeardNoise;
-        currentSuspicionReasonText = $"making noise inside {currentZone.zoneDisplayName}";
-
-        float soundSuspicionMultiplier = finalAudibility >= strongSoundAudibilityThreshold
-            ? strongSoundSuspicionMultiplier
-            : weakSoundSuspicionMultiplier;
-
-        suspicion += soundSuspicionBoost * finalAudibility * soundSuspicionMultiplier;
-        suspicion = Mathf.Clamp(suspicion, 0f, 100f);
-
-        if (GuardMemoryManager.Instance != null)
+        /*
+        * KEY RULE:
+        * Public sounds are ignored during normal patrol/investigation,
+        * but public sounds are allowed during chase.
+        */
+        if (playerIsInPublic && !guardIsChasing)
         {
-            GuardMemoryManager.Instance.ReportSuspicion(
-                GetCurrentZoneID(),
-                GuardSuspicionReason.HeardNoise,
-                $"heard noise inside {currentZone.zoneDisplayName}",
-                finalAudibility >= strongSoundAudibilityThreshold ? 5f : 2f,
-                false
-            );
-        }
+            if (showSoundDebug)
+            {
+                Debug.Log($"[{gameObject.name}] Ignored public sound because guard is not chasing.");
+            }
 
-        if (ZoneAlertManager.Instance != null && finalAudibility >= strongSoundAudibilityThreshold)
-        {
-            ZoneAlertManager.Instance.AddAlert(
-                GetCurrentZoneID(),
-                3f,
-                $"guard heard a strong sound inside {currentZone.zoneDisplayName}"
-            );
-        }
-
-        if (useRealisticSoundInvestigation)
-        {
-            StartPendingSoundInvestigation(sound.origin, finalAudibility);
-        }
-        else
-        {
-            soundPosition = sound.origin;
-            lastKnownPlayerPosition = sound.origin;
-            EnterInvestigateSound();
-        }
-
-        if (!onlyQuestionSoundIfPlayerSeen && TryStartQuestioningBeforeChase())
-        {
             return;
         }
 
-        if (vision != null &&
-            vision.CanSeePlayer &&
-            suspicion >= chaseThreshold &&
-            CanEscalateToChase())
+        lastSoundReactionTime = Time.time;
+
+        if (guardIsChasing)
         {
-            EnterChase();
+            HandleSoundDuringChase(sound.origin, finalAudibility, playerIsInPublic, currentZone);
+            return;
+        }
+
+        HandleSuspiciousSoundOutsideChase(sound.origin, finalAudibility, currentZone);
+    }
+    private void HandleSoundDuringChase(
+    Vector3 soundOrigin,
+    float finalAudibility,
+    bool playerIsInPublic,
+    RestrictedZone currentZone
+    )
+    {
+        soundPosition = soundOrigin;
+        lastKnownPlayerPosition = soundOrigin;
+        lostPlayerTimer = lostPlayerAfterSeconds;
+
+        currentSuspicionReason = GuardSuspicionReason.HeardNoise;
+
+        if (playerIsInPublic)
+        {
+            currentSuspicionReasonText = "making noise while fleeing in public";
+        }
+        else
+        {
+            string zoneName = currentZone != null && !string.IsNullOrWhiteSpace(currentZone.zoneDisplayName)
+                ? currentZone.zoneDisplayName
+                : "a restricted area";
+
+            currentSuspicionReasonText = $"making noise while fleeing inside {zoneName}";
+        }
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = false;
+            agent.speed = chaseSpeed;
+            agent.SetDestination(lastKnownPlayerPosition);
+        }
+
+        if (showSoundDebug)
+        {
+            Debug.Log(
+                $"[{gameObject.name}] Heard player during chase. " +
+                $"Following sound. Audibility: {finalAudibility:0.00}, Position: {soundOrigin}"
+            );
         }
     }
     private bool IsBeingControlledByQuestioning()
@@ -962,7 +961,75 @@ public class AdvancedGuardAIController : MonoBehaviour
             agent.SetDestination(patrolPoints[currentPatrolIndex].position);
         }
     }
+    private void HandleSuspiciousSoundOutsideChase(
+        Vector3 soundOrigin,
+        float finalAudibility,
+        RestrictedZone currentZone
+    )
+    {
+        if (currentZone == null || currentZone.IsPublicZone())
+        {
+            return;
+        }
 
+        string zoneName = !string.IsNullOrWhiteSpace(currentZone.zoneDisplayName)
+            ? currentZone.zoneDisplayName
+            : currentZone.zoneID;
+
+        currentSuspicionReason = GuardSuspicionReason.HeardNoise;
+        currentSuspicionReasonText = $"making noise inside {zoneName}";
+
+        float soundSuspicionMultiplier = finalAudibility >= strongSoundAudibilityThreshold
+            ? strongSoundSuspicionMultiplier
+            : weakSoundSuspicionMultiplier;
+
+        suspicion += soundSuspicionBoost * finalAudibility * soundSuspicionMultiplier;
+        suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
+        if (GuardMemoryManager.Instance != null)
+        {
+            GuardMemoryManager.Instance.ReportSuspicion(
+                GetCurrentZoneID(),
+                GuardSuspicionReason.HeardNoise,
+                $"heard noise inside {zoneName}",
+                finalAudibility >= strongSoundAudibilityThreshold ? 5f : 2f,
+                false
+            );
+        }
+
+        if (ZoneAlertManager.Instance != null && finalAudibility >= strongSoundAudibilityThreshold)
+        {
+            ZoneAlertManager.Instance.AddAlert(
+                GetCurrentZoneID(),
+                3f,
+                $"guard heard a strong sound inside {zoneName}"
+            );
+        }
+
+        if (useRealisticSoundInvestigation)
+        {
+            StartPendingSoundInvestigation(soundOrigin, finalAudibility);
+        }
+        else
+        {
+            soundPosition = soundOrigin;
+            lastKnownPlayerPosition = soundOrigin;
+            EnterInvestigateSound();
+        }
+
+        if (!onlyQuestionSoundIfPlayerSeen && TryStartQuestioningBeforeChase())
+        {
+            return;
+        }
+
+        if (vision != null &&
+            vision.CanSeePlayer &&
+            suspicion >= chaseThreshold &&
+            CanEscalateToChase())
+        {
+            EnterChase();
+        }
+    }
     private void UpdatePatrol()
     {
         if (patrolPoints.Length == 0)
@@ -1703,12 +1770,31 @@ public class AdvancedGuardAIController : MonoBehaviour
     {
         if (playerZoneTracker != null)
         {
-            return playerZoneTracker.GetCurrentZone();
+            RestrictedZone zone = playerZoneTracker.GetCurrentZone();
+
+            if (zone != null)
+            {
+                return zone;
+            }
         }
 
         if (PlayerZoneTracker.Instance != null)
         {
-            return PlayerZoneTracker.Instance.GetCurrentZone();
+            RestrictedZone zone = PlayerZoneTracker.Instance.GetCurrentZone();
+
+            if (zone != null)
+            {
+                return zone;
+            }
+        }
+
+        ZoneTracker simpleZoneTracker = player != null
+            ? player.GetComponent<ZoneTracker>()
+            : null;
+
+        if (simpleZoneTracker != null)
+        {
+            return simpleZoneTracker.GetCurrentRestrictedZone();
         }
 
         return null;
@@ -1717,12 +1803,21 @@ public class AdvancedGuardAIController : MonoBehaviour
     {
         RestrictedZone zone = GetCurrentPlayerZone();
 
-        if (zone == null || string.IsNullOrWhiteSpace(zone.zoneID))
+        if (zone != null && !string.IsNullOrWhiteSpace(zone.zoneID))
         {
-            return "public_city";
+            return zone.zoneID.Trim();
         }
 
-        return zone.zoneID.Trim();
+        ZoneTracker simpleZoneTracker = player != null
+            ? player.GetComponent<ZoneTracker>()
+            : null;
+
+        if (simpleZoneTracker != null)
+        {
+            return simpleZoneTracker.GetCurrentZoneID();
+        }
+
+        return "public_city";
     }
     public void ResetGuardForCheckpoint()
     {
