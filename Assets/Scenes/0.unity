@@ -1190,6 +1190,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 56977939}
   m_Mesh: {fileID: -8860536619630564212, guid: 8a82c54dce449534f8aee167f26ff3ad, type: 3}
+--- !u!1 &60797624
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 60797625}
+  m_Layer: 0
+  m_Name: PatrolPoint_04
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &60797625
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 60797624}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -19, y: 21, z: 38.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1394798867}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &61328249
 GameObject:
   m_ObjectHideFlags: 0
@@ -9084,7 +9115,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       propertyPath: m_Name
-      value: Guard (1)
+      value: Guard
       objectReference: {fileID: 0}
     - target: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
       propertyPath: m_Layer
@@ -10686,6 +10717,13 @@ MonoBehaviour:
   checkpointFileName: checkpoint_save.json
   dialogueUI: {fileID: 581266290}
   dialogueManager: {fileID: 463113609}
+  forceRefreshZoneAfterCheckpoint: 1
+  resetGuardsAfterCheckpoint: 1
+  resetDialogueAfterCheckpoint: 1
+  resetRuntimeDroppedItems: 1
+  restoreWorldItems: 1
+  restoreInventory: 1
+  restoreQuests: 1
   showDebugLogs: 1
 --- !u!114 &463113606
 MonoBehaviour:
@@ -11393,6 +11431,7 @@ MonoBehaviour:
   ladderTopForwardOffset: 0.75
   ladderExitDuration: 0.28
   enableWallClimb: 0
+  requireExplicitClimbableWallLayer: 1
   climbableWallMask:
     serializedVersion: 2
     m_Bits: 256
@@ -11492,6 +11531,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZoneTracker
   currentZoneID: default_zone
+  currentRestrictedZone: {fileID: 0}
+  zoneLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  refreshRadius: 0.75
+  refreshOnStart: 1
+  useTriggersOnly: 1
+  showDebugLogs: 1
 --- !u!114 &493262999
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12501,6 +12548,51 @@ Transform:
   - {fileID: 613725003}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &524746886
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 524746887}
+  - component: {fileID: 524746888}
+  m_Layer: 7
+  m_Name: NPCIdentity
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &524746887
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524746886}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.49508953, y: -0.56994987, z: -0.000579834}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 886101393}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &524746888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524746886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3fd8d2b1bcd74eefbe525019723e6fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCIdentity
+  identityData: {fileID: 11400000, guid: 5ca105e38309640608e1d1d6f72ad463, type: 2}
 --- !u!65 &537250536
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21042,6 +21134,441 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 881232744}
   m_CullTransparentMesh: 1
+--- !u!1001 &886101390
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -8.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.54
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 23.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_Name
+      value: Guard_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8048019318404249963, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      propertyPath: m_Height
+      value: 3.8
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 524746887}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 886101400}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 886101399}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 886101398}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 886101397}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 886101396}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 886101395}
+    - targetCorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 886101394}
+  m_SourcePrefab: {fileID: 100100000, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+--- !u!1 &886101391 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4077920504042127759, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+  m_PrefabInstance: {fileID: 886101390}
+  m_PrefabAsset: {fileID: 0}
+--- !u!195 &886101392 stripped
+NavMeshAgent:
+  m_CorrespondingSourceObject: {fileID: 5683675199421227678, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+  m_PrefabInstance: {fileID: 886101390}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &886101393 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1805216298779077424, guid: 4ae3cb5b8fb814eb2a1517e683ab80a0, type: 3}
+  m_PrefabInstance: {fileID: 886101390}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &886101394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886101391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c44c4eabf15244a395ca5b228188bd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningRepeatLimiter
+  preventRepeatedQuestioningForSameAction: 1
+  requireActionToStopBeforeRepeat: 1
+  emergencyResetAfterSeconds: 0
+  showDebugLogs: 1
+--- !u!114 &886101395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886101391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fee1c09a2bbd84863b988ab4ef6a7aae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardSuspicionReasoner
+  ignoreNormalWalkingInPublic: 1
+  validDisguiseSuspicionMultiplier: 0.15
+  partialDisguiseSuspicionMultiplier: 0.65
+  noDisguiseSuspicionMultiplier: 1.25
+  wrongDisguiseSuspicionMultiplier: 1.6
+  restrictedIdleMultiplier: 0.8
+  restrictedWalkingMultiplier: 1
+  restrictedRunningMultiplier: 1.45
+  restrictedCrouchingMultiplier: 1.2
+  restrictedCrawlingMultiplier: 1.5
+  reasonRules:
+  - reason: 1
+    reasonText: standing here
+    suspicionPerSecond: 0
+    minimumSuspicion: 0
+    canTriggerQuestioning: 0
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 0
+  - reason: 3
+    reasonText: running near the guards
+    suspicionPerSecond: 8
+    minimumSuspicion: 10
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 3
+  - reason: 4
+    reasonText: crouching in public
+    suspicionPerSecond: 18
+    minimumSuspicion: 20
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 6
+  - reason: 5
+    reasonText: crawling through the street
+    suspicionPerSecond: 28
+    minimumSuspicion: 35
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 1
+    memoryAmount: 10
+  - reason: 2
+    reasonText: moving strangely in public
+    suspicionPerSecond: 12
+    minimumSuspicion: 15
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 5
+  - reason: 9
+    reasonText: entering a restricted place without proper clothing
+    suspicionPerSecond: 45
+    minimumSuspicion: 45
+    canTriggerQuestioning: 1
+    canTriggerChase: 1
+    isSerious: 1
+    memoryAmount: 18
+  - reason: 7
+    reasonText: wearing the wrong disguise here
+    suspicionPerSecond: 55
+    minimumSuspicion: 55
+    canTriggerQuestioning: 1
+    canTriggerChase: 1
+    isSerious: 1
+    memoryAmount: 22
+  - reason: 8
+    reasonText: wearing an incomplete disguise
+    suspicionPerSecond: 24
+    minimumSuspicion: 25
+    canTriggerQuestioning: 1
+    canTriggerChase: 0
+    isSerious: 0
+    memoryAmount: 8
+  - reason: 6
+    reasonText: being somewhere you are not allowed
+    suspicionPerSecond: 50
+    minimumSuspicion: 50
+    canTriggerQuestioning: 1
+    canTriggerChase: 1
+    isSerious: 1
+    memoryAmount: 20
+  useGuardMemory: 1
+  memoryReportInterval: 2
+  showDebugLogs: 0
+--- !u!114 &886101396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886101391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10009f10ad371496699c6eb5b77f2d6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardQuestioningResponder
+  questioningProfile: {fileID: 11400000, guid: 6277aee0a22e0415d8c06e7edbcb0125, type: 2}
+  showReasonLineBeforeConversation: 1
+  minimumReasonLineDuration: 2.2
+  allowSkipReasonLineAfterMinimumTime: 1
+  skipReasonLineKey: 1
+  fallbackReasonLine: Stop. Explain yourself.
+  passedFastTalkCooldown: 7
+  warnedFastTalkCooldown: 5
+  clearStealthTogglesAfterSuccessfulFastTalk: 1
+  passedAlertIncrease: 3
+  warnedAlertIncrease: 12
+  failedAlertIncrease: 25
+  chaseAlertIncrease: 35
+  caughtAlertIncrease: 45
+  dialogueManager: {fileID: 463113609}
+  dialogueUI: {fileID: 581266290}
+  player: {fileID: 493262992}
+  agent: {fileID: 886101392}
+  guardAI: {fileID: 886101399}
+  localQuestionCooldownTimer: 0
+  ignorePlayerTimer: 0
+  showDebugLogs: 1
+--- !u!114 &886101397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886101391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07df4dfb727b04d209c7533a16ab3096, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardCaughtReporter
+  guardID: guard_02
+--- !u!114 &886101398
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886101391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3fd8d2b1bcd74eefbe525019723e6fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NPCIdentity
+  identityData: {fileID: 11400000, guid: 5ca105e38309640608e1d1d6f72ad463, type: 2}
+--- !u!114 &886101399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886101391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f59c6a11c8167467c9d7bb7c4f6ce66e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdvancedGuardAIController
+  currentState: 0
+  guardProfile: {fileID: 11400000, guid: fe31a2f6a86ac49249c69a2ac9b9c10f, type: 2}
+  patrolRouteParent: {fileID: 1394798867}
+  patrolPointReachDistance: 0.7
+  waitAtPatrolPointTime: 2
+  lookAroundTurnAngle: 55
+  lookAroundTurnSpeed: 90
+  patrolSpeed: 4
+  investigateSpeed: 6
+  chaseSpeed: 12
+  returnSpeed: 4
+  suspicion: 0
+  suspiciousThreshold: 35
+  chaseThreshold: 50
+  suspicionIncreasePerSecond: 35
+  suspicionDecreasePerSecond: 18
+  suspiciousLookTime: 1.3
+  farVisionMultiplier: 0.8
+  closeVisionMultiplier: 1.6
+  silentVisionMultiplier: 0.75
+  walkingVisionMultiplier: 1
+  sprintingVisionMultiplier: 3
+  crouchingVisionMultiplier: 0.45
+  crawlingVisionMultiplier: 0.25
+  airborneVisionMultiplier: 1.3
+  minAudibilityToInvestigate: 0.12
+  soundSuspicionBoost: 25
+  catchDistance: 3
+  lostPlayerAfterSeconds: 2.5
+  catchPathExtraAllowance: 0.35
+  playerNavMeshSampleDistance: 1.5
+  searchRadius: 6
+  searchPointCount: 3
+  searchPointReachDistance: 0.8
+  waitAtSearchPointTime: 1.2
+  firstSearchLookTime: 1.5
+  forwardGuessDistance: 4
+  sideSearchDistance: 3
+  wideningSearchStep: 2.5
+  guardRenderer: {fileID: 0}
+  alertIcon: {fileID: 0}
+  patrolColor: {r: 1, g: 1, b: 1, a: 1}
+  suspiciousColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  investigateColor: {r: 1, g: 0.65, b: 0, a: 1}
+  chaseColor: {r: 1, g: 0, b: 0, a: 1}
+  searchColor: {r: 1, g: 0.35, b: 0, a: 1}
+  returnColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  centerVisionBonus: 1.35
+  edgeVisionPenalty: 0.55
+  suspicionMemoryTime: 1.2
+  suspicionGraceDecayMultiplier: 0.35
+  alertStateVisionMultiplier: 1.25
+  suspicionStateVisionMultiplier: 1.1
+  useCoverIdentitySystem: 1
+  playerCoverIdentity: {fileID: 493263002}
+  playerZoneTracker: {fileID: 493263001}
+  playerMovementStateTracker: {fileID: 493263004}
+  unauthorizedZoneMinimumSuspicion: 20
+  unauthorizedZoneSuspicionPerSecond: 18
+  allowedDisguiseSuspicionMultiplier: 0.35
+  partialDisguiseSuspicionMultiplier: 0.65
+  noDisguiseRestrictedMultiplier: 1.4
+  wrongDisguiseRestrictedMultiplier: 1.8
+  suspicionReasoner: {fileID: 886101395}
+  currentSuspicionReason: 0
+  currentSuspicionReasonText: 
+  requireReasonToChase: 1
+  allowGuardQuestioning: 1
+  questioningResponder: {fileID: 886101396}
+  guardSaysReasonBeforeQuestioning: 1
+  fastTalkCooldownTimer: 0
+  fastTalkCooldownSuspicionMultiplier: 0.05
+  ignorePlayerDuringFastTalkCooldown: 1
+  blockQuestioningDuringFastTalkCooldown: 1
+  blockChaseDuringFastTalkCooldown: 1
+  showFastTalkCooldownDebug: 1
+  reduceSuspicionWhenDisguiseImproves: 1
+  disguiseCheckInterval: 0.2
+  validDisguiseSuspicionDropPerSecond: 30
+  newlyValidDisguiseInstantDrop: 25
+  validDisguiseSuspicionCap: 25
+  validDisguiseAlertReduction: 8
+  allowDisguiseReliefOnlyBeforeChase: 1
+  printDisguiseReliefDebug: 1
+  useRealisticSoundInvestigation: 1
+  soundReactionDelay: 0.45
+  minimumTimeBetweenSoundReactions: 0.6
+  soundPositionUncertaintyAtLowConfidence: 5
+  soundPositionUncertaintyAtHighConfidence: 0.8
+  strongSoundAudibilityThreshold: 0.55
+  weakSoundSuspicionMultiplier: 0.35
+  strongSoundSuspicionMultiplier: 1
+  onlyQuestionSoundIfPlayerSeen: 1
+  showSoundDebug: 1
+  questioningRepeatLimiter: {fileID: 886101394}
+  useGuardCoordination: 1
+  canCallForHelp: 1
+  canRespondToHelp: 1
+  callForHelpWhenChaseStarts: 1
+  callForHelpWhenStrongSoundHeard: 1
+  helpCallRadius: 18
+  helpCallCooldown: 6
+  helpCallUrgencyOnChase: 1.2
+  helpCallUrgencyOnSound: 0.65
+  externalAlertSuspicionBoost: 18
+  externalAlertInvestigationDelay: 0.2
+  respondingGuardCanOnlyChaseIfHeSeesPlayer: 1
+  ignoreExternalAlertsWhileChasing: 1
+  externalAlertCancelsPatrolWait: 1
+  showGuardCoordinationDebug: 1
+  callForHelpIndicator: {fileID: 0}
+  receivedHelpIndicator: {fileID: 0}
+  callForHelpIndicatorDuration: 1.75
+  receivedHelpIndicatorDuration: 1.25
+  hideIndicatorsOnStart: 1
+  isCurrentlyCallingForHelp: 0
+  isCurrentlyRespondingToHelp: 0
+  callForHelpIndicatorTimer: 0
+  receivedHelpIndicatorTimer: 0
+  lastHelpCallRecipientCount: 0
+  lastHelpCallInspectorMessage: 
+  lastReceivedHelpInspectorMessage: 
+  printStateChanges: 1
+  printSuspicionReasonChanges: 1
+--- !u!114 &886101400
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886101391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39006fec3b76f422e8de18f387db1188, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardVision
+  viewDistance: 10
+  viewAngle: 90
+  eyeHeight: 1.6
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  drawDebug: 1
+  canSeeColor: {r: 1, g: 0, b: 0, a: 1}
+  normalVisionColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &887314892
 GameObject:
   m_ObjectHideFlags: 0
@@ -26555,7 +27082,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1168854435}
   m_Layer: 0
-  m_Name: PatrolPoint_01
+  m_Name: PatrolPoint_04
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -31004,6 +31531,41 @@ Transform:
   - {fileID: 1766536860}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1394798866
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1394798867}
+  m_Layer: 0
+  m_Name: PatrolRoute_Guard_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1394798867
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1394798866}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.36292, y: 0, z: -18.07899}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1630757995}
+  - {fileID: 1409136447}
+  - {fileID: 1874097080}
+  - {fileID: 60797625}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1397784046
 GameObject:
   m_ObjectHideFlags: 0
@@ -31266,6 +31828,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1404042825}
   m_CullTransparentMesh: 1
+--- !u!1 &1409136446
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1409136447}
+  m_Layer: 0
+  m_Name: PatrolPoint_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1409136447
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1409136446}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -8.3, y: 0.94, z: 54.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1394798867}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1417918517
 GameObject:
   m_ObjectHideFlags: 0
@@ -33154,8 +33747,6 @@ MonoBehaviour:
   blockQuestioningDuringFastTalkCooldown: 1
   blockChaseDuringFastTalkCooldown: 1
   showFastTalkCooldownDebug: 1
-  printStateChanges: 1
-  printSuspicionReasonChanges: 1
   reduceSuspicionWhenDisguiseImproves: 1
   disguiseCheckInterval: 0.2
   validDisguiseSuspicionDropPerSecond: 30
@@ -33175,6 +33766,35 @@ MonoBehaviour:
   onlyQuestionSoundIfPlayerSeen: 1
   showSoundDebug: 1
   questioningRepeatLimiter: {fileID: 1500860581}
+  useGuardCoordination: 1
+  canCallForHelp: 1
+  canRespondToHelp: 1
+  callForHelpWhenChaseStarts: 1
+  callForHelpWhenStrongSoundHeard: 1
+  helpCallRadius: 18
+  helpCallCooldown: 6
+  helpCallUrgencyOnChase: 1.2
+  helpCallUrgencyOnSound: 0.65
+  externalAlertSuspicionBoost: 18
+  externalAlertInvestigationDelay: 0.2
+  respondingGuardCanOnlyChaseIfHeSeesPlayer: 1
+  ignoreExternalAlertsWhileChasing: 1
+  externalAlertCancelsPatrolWait: 1
+  showGuardCoordinationDebug: 1
+  callForHelpIndicator: {fileID: 0}
+  receivedHelpIndicator: {fileID: 0}
+  callForHelpIndicatorDuration: 1.75
+  receivedHelpIndicatorDuration: 1.25
+  hideIndicatorsOnStart: 1
+  isCurrentlyCallingForHelp: 0
+  isCurrentlyRespondingToHelp: 0
+  callForHelpIndicatorTimer: 0
+  receivedHelpIndicatorTimer: 0
+  lastHelpCallRecipientCount: 0
+  lastHelpCallInspectorMessage: 
+  lastReceivedHelpInspectorMessage: 
+  printStateChanges: 1
+  printSuspicionReasonChanges: 1
 --- !u!114 &1500860561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34889,6 +35509,37 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.020017613, y: 0.029383548, z: 0.02}
   m_Center: {x: 0.000008808443, y: 0.0015003788, z: 0}
+--- !u!1 &1630757994
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1630757995}
+  m_Layer: 0
+  m_Name: PatrolPoint_01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1630757995
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1630757994}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -10.6, y: 0.94, z: 40.7}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1394798867}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1636687482
 GameObject:
   m_ObjectHideFlags: 0
@@ -38543,6 +39194,37 @@ MonoBehaviour:
   selectedColor: {r: 0, g: 0, b: 0, a: 0}
   amountColor: {r: 1, g: 1, b: 1, a: 1}
   slotNumberColor: {r: 0.75, g: 0.68, b: 0.55, a: 1}
+--- !u!1 &1874097079
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1874097080}
+  m_Layer: 0
+  m_Name: PatrolPoint_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1874097080
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1874097079}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -24.1, y: 0.94, z: 38.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1394798867}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1875269311
 GameObject:
   m_ObjectHideFlags: 0
@@ -49261,7 +49943,9 @@ SceneRoots:
   - {fileID: 587754643}
   - {fileID: 858040865}
   - {fileID: 730049504}
+  - {fileID: 1394798867}
   - {fileID: 399963380}
+  - {fileID: 886101390}
   - {fileID: 83368671}
   - {fileID: 854216007}
   - {fileID: 581266289}
