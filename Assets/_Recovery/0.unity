@@ -11251,7 +11251,6 @@ GameObject:
   - component: {fileID: 493262998}
   - component: {fileID: 493262999}
   - component: {fileID: 493263002}
-  - component: {fileID: 493263001}
   - component: {fileID: 493263003}
   - component: {fileID: 493263004}
   m_Layer: 0
@@ -11583,20 +11582,6 @@ MonoBehaviour:
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  showDebugLogs: 1
---- !u!114 &493263001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 493262990}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 292622ec895c542b38c51d276c25f9c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerZoneTracker
-  currentZone: {fileID: 0}
   showDebugLogs: 1
 --- !u!114 &493263002
 MonoBehaviour:
@@ -21536,7 +21521,7 @@ MonoBehaviour:
   suspicionStateVisionMultiplier: 1.1
   useCoverIdentitySystem: 1
   playerCoverIdentity: {fileID: 493263002}
-  playerZoneTracker: {fileID: 493263001}
+  playerZoneTracker: {fileID: 0}
   playerMovementStateTracker: {fileID: 493263004}
   unauthorizedZoneMinimumSuspicion: 20
   unauthorizedZoneSuspicionPerSecond: 18
@@ -21611,6 +21596,17 @@ MonoBehaviour:
   lastReceivedHelpInspectorMessage: 
   printStateChanges: 1
   printSuspicionReasonChanges: 1
+  checkpointEscapeGraceDuration: 1.25
+  ignoreSightDuringCheckpointGrace: 1
+  ignoreSoundDuringCheckpointGrace: 1
+  blockQuestioningDuringCheckpointGrace: 1
+  blockChaseDuringCheckpointGrace: 1
+  clearGuardReasonDuringCheckpointGrace: 1
+  showCheckpointGraceDebug: 1
+  questionApproachSightGrace: 0.65
+  allowQuestionAfterRecentSightWhenClose: 1
+  keepApproachingBrieflyAfterSightLost: 1
+  checkpointGraceTimer: 0
 --- !u!114 &886101400
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33831,7 +33827,7 @@ MonoBehaviour:
   suspicionStateVisionMultiplier: 1.1
   useCoverIdentitySystem: 1
   playerCoverIdentity: {fileID: 493263002}
-  playerZoneTracker: {fileID: 493263001}
+  playerZoneTracker: {fileID: 0}
   playerMovementStateTracker: {fileID: 493263004}
   unauthorizedZoneMinimumSuspicion: 20
   unauthorizedZoneSuspicionPerSecond: 18
@@ -33906,6 +33902,17 @@ MonoBehaviour:
   lastReceivedHelpInspectorMessage: 
   printStateChanges: 1
   printSuspicionReasonChanges: 1
+  checkpointEscapeGraceDuration: 1.25
+  ignoreSightDuringCheckpointGrace: 1
+  ignoreSoundDuringCheckpointGrace: 1
+  blockQuestioningDuringCheckpointGrace: 1
+  blockChaseDuringCheckpointGrace: 1
+  clearGuardReasonDuringCheckpointGrace: 1
+  showCheckpointGraceDebug: 1
+  questionApproachSightGrace: 0.65
+  allowQuestionAfterRecentSightWhenClose: 1
+  keepApproachingBrieflyAfterSightLost: 1
+  checkpointGraceTimer: 0
 --- !u!114 &1500860561
 MonoBehaviour:
   m_ObjectHideFlags: 0
