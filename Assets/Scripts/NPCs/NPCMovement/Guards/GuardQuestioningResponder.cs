@@ -516,4 +516,39 @@ public class GuardQuestioningResponder : MonoBehaviour
             Debug.Log("[GuardQuestioningResponder] " + message);
         }
     }
+    public void ResetQuestioningForCheckpoint()
+    {
+        StopAllCoroutines();
+
+        IsQuestioning = false;
+        IsResolvingOutcome = false;
+
+        ignorePlayerTimer = 0f;
+        localQuestionCooldownTimer = 0f;
+
+        if (agent != null)
+        {
+            agent.isStopped = false;
+            agent.ResetPath();
+        }
+
+        if (PlayerControlLock.Instance != null)
+        {
+            PlayerControlLock.Instance.UnlockPlayer();
+        }
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.ClearChoices();
+            dialogueUI.HidePrompt();
+            dialogueUI.HideDialogue();
+        }
+
+        questioningRoutine = null;
+
+        if (showDebugLogs)
+        {
+            Debug.Log("[GuardQuestioningResponder] Reset for checkpoint.");
+        }
+    }
 }

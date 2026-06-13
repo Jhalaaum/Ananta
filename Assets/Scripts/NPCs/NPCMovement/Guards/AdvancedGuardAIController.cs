@@ -275,7 +275,22 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private GuardSuspicionEvaluation currentSuspicionEvaluation;
     private string currentQuestioningSignature;
+    [Header("Checkpoint Respawn Grace")]
+    public float checkpointEscapeGraceDuration = 1.25f;
+    public bool ignoreSightDuringCheckpointGrace = true;
+    public bool ignoreSoundDuringCheckpointGrace = true;
+    public bool blockQuestioningDuringCheckpointGrace = true;
+    public bool blockChaseDuringCheckpointGrace = true;
+    public bool clearGuardReasonDuringCheckpointGrace = true;
+    public bool showCheckpointGraceDebug = true;
+    [Header("Question Approach Forgiveness")]
+    public float questionApproachSightGrace = 0.65f;
+    public bool allowQuestionAfterRecentSightWhenClose = true;
+    public bool keepApproachingBrieflyAfterSightLost = true;
 
+    private float questionApproachLostSightTimer;
+    [Header("Checkpoint Runtime")]
+    public float checkpointGraceTimer;
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -388,6 +403,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         TickFastTalkCooldown();
+        TickCheckpointGrace();
         TickQuestionAttemptCooldown();
         UpdateCallForHelpFeedback();
         UpdateDisguiseSuspicionRelief();
@@ -554,7 +570,11 @@ public class AdvancedGuardAIController : MonoBehaviour
         {
             return;
         }
-
+        if (IsInCheckpointGrace() && ignoreSightDuringCheckpointGrace)
+        {
+            ClearSuspicionCompletely();
+            return;
+        }
         bool canSeePlayer = CanCurrentlySeePlayer();
 
         if (!canSeePlayer)
@@ -783,12 +803,7 @@ public class AdvancedGuardAIController : MonoBehaviour
             return false;
         }
 
-        if (currentState == GuardState.QuestionApproach)
-        {
-            return true;
-        }
-
-        if (localQuestionAttemptCooldownTimer > 0f)
+        if (IsInCheckpointGrace() && blockQuestioningDuringCheckpointGrace)
         {
             return false;
         }
@@ -799,6 +814,12 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         if (IsQuestioningOrResolving())
+        {
+            return false;
+        }
+
+        if (localQuestionAttemptCooldownTimer > 0f &&
+            currentState != GuardState.QuestionApproach)
         {
             return false;
         }
@@ -828,7 +849,7 @@ public class AdvancedGuardAIController : MonoBehaviour
             return false;
         }
 
-        if (!CanCurrentlySeePlayer())
+        if (!CanCurrentlySeePlayer() && currentState != GuardState.QuestionApproach)
         {
             return false;
         }
@@ -849,19 +870,79 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         return StartQuestioningNow(signature);
     }
+    private void TickCheckpointGrace()
+    {
+        if (checkpointGraceTimer <= 0f)
+        {
+            return;
+        }
 
+        checkpointGraceTimer -= Time.deltaTime;
+
+        if (checkpointGraceTimer < 0f)
+        {
+            checkpointGraceTimer = 0f;
+        }
+
+        if (clearGuardReasonDuringCheckpointGrace)
+        {
+            ClearSuspicionReasonOnly();
+        }
+    }
+
+    public bool IsInCheckpointGrace()
+    {
+        return checkpointGraceTimer > 0f;
+    }
+
+    private void StartCheckpointGrace()
+    {
+        checkpointGraceTimer = checkpointEscapeGraceDuration;
+
+        if (showCheckpointGraceDebug)
+        {
+            Debug.Log($"[{gameObject.name}] Checkpoint grace started for {checkpointEscapeGraceDuration:0.00}s.");
+        }
+    }
+
+    private void ClearSuspicionReasonOnly()
+    {
+        currentSuspicionReason = GuardSuspicionReason.None;
+        currentSuspicionReasonText = "";
+        currentSuspicionEvaluation = GuardSuspicionEvaluation.Ignore();
+        currentQuestioningSignature = "";
+    }
+
+    private void ClearSuspicionCompletely()
+    {
+        suspicion = 0f;
+        recentlySawPlayerTimer = 0f;
+        lostPlayerTimer = 0f;
+
+        ClearSuspicionReasonOnly();
+    }
     private bool StartQuestioningNow(string signature)
     {
-        if (questioningResponder == null || !questioningResponder.CanQuestion())
+        if (questioningResponder == null)
         {
             return false;
         }
 
-        localQuestionAttemptCooldownTimer = minimumTimeBetweenQuestionAttempts;
+        if (!questioningResponder.CanQuestion())
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(signature))
+        {
+            signature = BuildQuestioningSignature(currentSuspicionEvaluation);
+        }
 
         string reasonLine = GetGuardQuestioningReasonLine();
 
         questioningResponder.StartQuestioning(reasonLine);
+
+        localQuestionAttemptCooldownTimer = minimumTimeBetweenQuestionAttempts;
 
         if (questioningRepeatLimiter != null)
         {
@@ -874,7 +955,6 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         return true;
     }
-
     private void EnterQuestionApproach()
     {
         if (currentState == GuardState.QuestionApproach)
@@ -884,19 +964,24 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         currentState = GuardState.QuestionApproach;
         questionApproachTimer = questioningMaxApproachTime;
+        questionApproachLostSightTimer = questionApproachSightGrace;
 
         agent.speed = investigateSpeed;
         agent.stoppingDistance = questioningApproachStopDistance;
         agent.isStopped = false;
 
-        if (player != null)
+        if (player != null && CanCurrentlySeePlayer())
         {
+            lastKnownPlayerPosition = player.position;
             agent.SetDestination(player.position);
+        }
+        else
+        {
+            agent.SetDestination(lastKnownPlayerPosition);
         }
 
         SetVisualState(suspiciousColor, true);
     }
-
     private void UpdateQuestionApproach()
     {
         if (player == null)
@@ -905,31 +990,72 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
-        if (!CanCurrentlySeePlayer())
+        questionApproachTimer -= Time.deltaTime;
+
+        bool canSeePlayerNow = CanCurrentlySeePlayer();
+
+        if (canSeePlayerNow)
         {
-            if (returnToSearchIfQuestionApproachFails)
+            questionApproachLostSightTimer = questionApproachSightGrace;
+            lastKnownPlayerPosition = player.position;
+        }
+        else
+        {
+            questionApproachLostSightTimer -= Time.deltaTime;
+        }
+
+        bool hasRecentApproachSight = questionApproachLostSightTimer > 0f;
+
+        if (!canSeePlayerNow && !hasRecentApproachSight)
+        {
+            if (keepApproachingBrieflyAfterSightLost)
             {
-                EnterInvestigateLastKnownPosition();
+                lastKnownPlayerPosition = GetSafeNavMeshPosition(lastKnownPlayerPosition, 3f);
+                agent.isStopped = false;
+                agent.speed = investigateSpeed;
+                agent.stoppingDistance = questioningApproachStopDistance;
+                agent.SetDestination(lastKnownPlayerPosition);
+
+                FaceTarget(lastKnownPlayerPosition);
             }
-            else
+
+            if (questionApproachTimer <= 0f)
             {
-                EnterSuspicious();
+                if (returnToSearchIfQuestionApproachFails)
+                {
+                    EnterInvestigateLastKnownPosition();
+                }
+                else
+                {
+                    EnterSuspicious();
+                }
             }
 
             return;
         }
 
-        questionApproachTimer -= Time.deltaTime;
-
         agent.isStopped = false;
         agent.speed = investigateSpeed;
         agent.stoppingDistance = questioningApproachStopDistance;
-        agent.SetDestination(player.position);
 
-        FaceTarget(player.position);
+        if (canSeePlayerNow)
+        {
+            agent.SetDestination(player.position);
+            FaceTarget(player.position);
+        }
+        else
+        {
+            agent.SetDestination(lastKnownPlayerPosition);
+            FaceTarget(lastKnownPlayerPosition);
+        }
 
         if (IsCloseEnoughToQuestion())
         {
+            if (!canSeePlayerNow && !allowQuestionAfterRecentSightWhenClose)
+            {
+                return;
+            }
+
             agent.isStopped = true;
 
             string signature = BuildQuestioningSignature(currentSuspicionEvaluation);
@@ -942,7 +1068,6 @@ public class AdvancedGuardAIController : MonoBehaviour
             EnterSuspicious();
         }
     }
-
     private bool IsCloseEnoughToQuestion()
     {
         if (player == null)
@@ -978,6 +1103,10 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private bool CanEscalateToChase()
     {
+        if (IsInCheckpointGrace() && blockChaseDuringCheckpointGrace)
+        {
+            return false;
+        }
         if (IsInFastTalkCooldown() && blockChaseDuringFastTalkCooldown)
         {
             return false;
@@ -1107,6 +1236,10 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void HandlePlayerSound(PlayerSoundEmitter.SoundField sound)
     {
+        if (IsInCheckpointGrace() && ignoreSoundDuringCheckpointGrace)
+        {
+            return;
+        }
         if (currentState == GuardState.CapturePlayer ||
             IsBeingControlledByQuestioning())
         {
@@ -1242,6 +1375,18 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
+        if (PlayerHasValidDisguiseForCurrentZone(currentZone))
+        {
+            if (showSoundDebug)
+            {
+                Debug.Log(
+                    $"[{gameObject.name}] Ignored restricted-zone sound because player has a valid disguise for {currentZone.zoneDisplayName}."
+                );
+            }
+
+            return;
+        }
+
         string zoneName = !string.IsNullOrWhiteSpace(currentZone.zoneDisplayName)
             ? currentZone.zoneDisplayName
             : currentZone.zoneID;
@@ -1309,7 +1454,6 @@ public class AdvancedGuardAIController : MonoBehaviour
             EnterChase();
         }
     }
-
     private bool IsBeingControlledByQuestioning()
     {
         return questioningResponder != null && questioningResponder.IsQuestioning;
@@ -2176,43 +2320,79 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         return "public_city";
     }
+    private bool PlayerHasValidDisguiseForCurrentZone(RestrictedZone zone)
+    {
+        if (zone == null)
+        {
+            return false;
+        }
 
+        if (zone.IsPublicZone())
+        {
+            return false;
+        }
+
+        if (playerCoverIdentity == null)
+        {
+            return false;
+        }
+
+        return playerCoverIdentity.IsAllowedInZone(zone);
+    }
     public void ResetGuardForCheckpoint()
     {
         StopAllCoroutines();
         CancelInvoke();
 
-        suspicion = 0f;
-        recentlySawPlayerTimer = 0f;
-        lostPlayerTimer = 0f;
-        searchWaitTimer = 0f;
+        ClearSuspicionCompletely();
+
         patrolWaitTimer = 0f;
         lookAroundTimer = 0f;
-        fastTalkCooldownTimer = 0f;
+        searchWaitTimer = 0f;
         localQuestionAttemptCooldownTimer = 0f;
         questionApproachTimer = 0f;
 
-        ClearGuardCoordinationRuntimeState();
+        fastTalkCooldownTimer = 0f;
 
         isWaitingAtSearchPoint = false;
         searchPointsVisited = 0;
-        hasEstimatedMoveDirection = false;
-        hasPendingSoundInvestigation = false;
 
-        currentSuspicionReason = GuardSuspicionReason.None;
-        currentSuspicionReasonText = "";
-        currentSuspicionEvaluation = GuardSuspicionEvaluation.Ignore();
-        currentQuestioningSignature = "";
+        hasEstimatedMoveDirection = false;
+        estimatedPlayerMoveDirection = Vector3.zero;
+
+        hasPendingSoundInvestigation = false;
+        pendingSoundPosition = Vector3.zero;
+        pendingSoundConfidence = 0f;
+        pendingSoundTimer = 0f;
+        lastSoundReactionTime = -999f;
+        currentSearchRadiusMultiplier = 1f;
+        currentSearchWaitMultiplier = 1f;
+
+        soundPosition = Vector3.zero;
+        lastKnownPlayerPosition = Vector3.zero;
+        previousKnownPlayerPosition = Vector3.zero;
+
+        ClearGuardCoordinationRuntimeState();
 
         if (questioningRepeatLimiter != null)
         {
             questioningRepeatLimiter.ResetLimiter();
         }
 
+        if (questioningResponder != null)
+        {
+            questioningResponder.SendMessage(
+                "ResetQuestioningForCheckpoint",
+                SendMessageOptions.DontRequireReceiver
+            );
+        }
+
         if (agent != null)
         {
             agent.isStopped = false;
             agent.ResetPath();
+            agent.stoppingDistance = patrolStoppingDistance;
+            agent.speed = patrolSpeed;
         }
 
         if (alertIcon != null)
@@ -2220,10 +2400,19 @@ public class AdvancedGuardAIController : MonoBehaviour
             alertIcon.SetActive(false);
         }
 
-        currentPatrolIndex = GetNearestPatrolPointIndex();
-        EnterPatrol();
-    }
+        SetVisualState(patrolColor, false);
 
+        currentPatrolIndex = GetNearestPatrolPointIndex();
+
+        StartCheckpointGrace();
+
+        EnterPatrol();
+
+        if (showCheckpointGraceDebug)
+        {
+            Debug.Log($"[{gameObject.name}] Guard reset for checkpoint. Suspicion and reasons cleared.");
+        }
+    }
     public float GetSuspicion()
     {
         return suspicion;

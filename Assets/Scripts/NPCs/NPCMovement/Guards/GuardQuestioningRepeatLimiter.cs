@@ -97,16 +97,8 @@ public class GuardQuestioningRepeatLimiter : MonoBehaviour
             return true;
         }
 
-        if (sameSignature &&
-            sameReason &&
-            repeatedQuestionCount >= maxRepeatedQuestionsForSameSignature)
-        {
-            return true;
-        }
-
         return false;
     }
-
     public void MarkQuestioned(
         GuardSuspicionReason reason,
         string signature,
