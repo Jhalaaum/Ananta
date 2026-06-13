@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -10,12 +11,16 @@ public class AdvancedGuardAIController : MonoBehaviour
         Patrol,
         LookAround,
         Suspicious,
+        QuestionApproach,
         InvestigateSound,
         Chase,
         SearchArea,
         ReturnToPatrol,
         CapturePlayer
     }
+
+    private static readonly List<AdvancedGuardAIController> AllGuards =
+        new List<AdvancedGuardAIController>();
 
     [Header("Current State")]
     public GuardState currentState = GuardState.Patrol;
@@ -35,6 +40,15 @@ public class AdvancedGuardAIController : MonoBehaviour
     public float investigateSpeed = 3.2f;
     public float chaseSpeed = 5.2f;
     public float returnSpeed = 2.8f;
+
+    [Header("AA Movement Polish")]
+    public bool configureAgentForPolish = true;
+    public float agentAcceleration = 18f;
+    public float agentAngularSpeed = 540f;
+    public float patrolStoppingDistance = 0.15f;
+    public float chaseStoppingDistance = 0.2f;
+    public float investigateStoppingDistance = 0.3f;
+    public float manualTurnSpeed = 540f;
 
     [Header("Suspicion")]
     [Range(0f, 100f)] public float suspicion = 0f;
@@ -59,6 +73,8 @@ public class AdvancedGuardAIController : MonoBehaviour
     [Header("Hearing")]
     public float minAudibilityToInvestigate = 0.12f;
     public float soundSuspicionBoost = 25f;
+    public bool allowHearingDuringChase = true;
+    public bool chaseCanFollowPublicSounds = true;
 
     [Header("Chase")]
     public float catchDistance = 1.4f;
@@ -122,6 +138,17 @@ public class AdvancedGuardAIController : MonoBehaviour
     public GuardQuestioningResponder questioningResponder;
     public bool guardSaysReasonBeforeQuestioning = true;
 
+    [Header("Question Approach")]
+    public bool guardMustBeCloseToQuestion = true;
+    public float questioningStartDistance = 2.2f;
+    public float questioningApproachStopDistance = 1.8f;
+    public float questioningMaxApproachTime = 4.0f;
+    public float minimumTimeBetweenQuestionAttempts = 3.0f;
+    public bool returnToSearchIfQuestionApproachFails = true;
+
+    private float questionApproachTimer;
+    private float localQuestionAttemptCooldownTimer;
+
     [Header("Fast Talk Cooldown")]
     public float fastTalkCooldownTimer;
     public float fastTalkCooldownSuspicionMultiplier = 0.05f;
@@ -140,6 +167,11 @@ public class AdvancedGuardAIController : MonoBehaviour
     public bool allowDisguiseReliefOnlyBeforeChase = true;
     public bool printDisguiseReliefDebug = true;
 
+    private float disguiseCheckTimer;
+    private bool previousDisguiseAllowed;
+    private string previousDisguiseSetID = "";
+    private float previousDisguiseCompleteness;
+
     [Header("Realistic Sound Investigation")]
     public bool useRealisticSoundInvestigation = true;
     public float soundReactionDelay = 0.45f;
@@ -151,6 +183,14 @@ public class AdvancedGuardAIController : MonoBehaviour
     public float strongSoundSuspicionMultiplier = 1f;
     public bool onlyQuestionSoundIfPlayerSeen = true;
     public bool showSoundDebug = true;
+
+    private bool hasPendingSoundInvestigation;
+    private Vector3 pendingSoundPosition;
+    private float pendingSoundConfidence;
+    private float pendingSoundTimer;
+    private float lastSoundReactionTime = -999f;
+    private float currentSearchRadiusMultiplier = 1f;
+    private float currentSearchWaitMultiplier = 1f;
 
     [Header("Questioning Repeat Limiter")]
     public GuardQuestioningRepeatLimiter questioningRepeatLimiter;
@@ -192,6 +232,13 @@ public class AdvancedGuardAIController : MonoBehaviour
     [TextArea(2, 4)] public string lastHelpCallInspectorMessage;
     [TextArea(2, 4)] public string lastReceivedHelpInspectorMessage;
 
+    private float lastHelpCallTime = -999f;
+    private bool isRespondingToExternalAlert;
+    private float externalAlertDelayTimer;
+    private Vector3 pendingExternalAlertPosition;
+    private string pendingExternalAlertReason;
+    private float pendingExternalAlertUrgency;
+
     [Header("Debug")]
     public bool printStateChanges = true;
     public bool printSuspicionReasonChanges = true;
@@ -227,27 +274,6 @@ public class AdvancedGuardAIController : MonoBehaviour
     private string previousSuspicionReasonText;
 
     private GuardSuspicionEvaluation currentSuspicionEvaluation;
-
-    private float disguiseCheckTimer;
-    private bool previousDisguiseAllowed;
-    private string previousDisguiseSetID = "";
-    private float previousDisguiseCompleteness;
-
-    private bool hasPendingSoundInvestigation;
-    private Vector3 pendingSoundPosition;
-    private float pendingSoundConfidence;
-    private float pendingSoundTimer;
-    private float lastSoundReactionTime = -999f;
-    private float currentSearchRadiusMultiplier = 1f;
-    private float currentSearchWaitMultiplier = 1f;
-
-    private float lastHelpCallTime = -999f;
-    private bool isRespondingToExternalAlert;
-    private float externalAlertDelayTimer;
-    private Vector3 pendingExternalAlertPosition;
-    private string pendingExternalAlertReason;
-    private float pendingExternalAlertUrgency;
-
     private string currentQuestioningSignature;
 
     private void Awake()
@@ -318,17 +344,24 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void OnEnable()
     {
+        if (!AllGuards.Contains(this))
+        {
+            AllGuards.Add(this);
+        }
+
         PlayerSoundEmitter.OnSoundEmitted += HandlePlayerSound;
     }
 
     private void OnDisable()
     {
+        AllGuards.Remove(this);
         PlayerSoundEmitter.OnSoundEmitted -= HandlePlayerSound;
     }
 
     private void Start()
     {
         ApplyGuardProfile();
+        ConfigureAgentForPolish();
 
         if (hideIndicatorsOnStart)
         {
@@ -348,8 +381,6 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void Update()
     {
-        UpdateCallForHelpFeedback();
-
         if (questioningResponder != null && questioningResponder.IsQuestioning)
         {
             DebugStateChange();
@@ -357,6 +388,8 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         TickFastTalkCooldown();
+        TickQuestionAttemptCooldown();
+        UpdateCallForHelpFeedback();
         UpdateDisguiseSuspicionRelief();
         UpdatePendingSoundInvestigation();
         UpdateExternalGuardAlertResponse();
@@ -375,6 +408,10 @@ public class AdvancedGuardAIController : MonoBehaviour
 
             case GuardState.Suspicious:
                 UpdateSuspicious();
+                break;
+
+            case GuardState.QuestionApproach:
+                UpdateQuestionApproach();
                 break;
 
             case GuardState.InvestigateSound:
@@ -402,6 +439,19 @@ public class AdvancedGuardAIController : MonoBehaviour
         DebugSuspicionReasonChange();
     }
 
+    private void ConfigureAgentForPolish()
+    {
+        if (!configureAgentForPolish || agent == null)
+        {
+            return;
+        }
+
+        agent.acceleration = agentAcceleration;
+        agent.angularSpeed = agentAngularSpeed;
+        agent.updateRotation = false;
+        agent.autoBraking = true;
+    }
+
     private void TickFastTalkCooldown()
     {
         if (fastTalkCooldownTimer <= 0f)
@@ -414,6 +464,21 @@ public class AdvancedGuardAIController : MonoBehaviour
         if (fastTalkCooldownTimer < 0f)
         {
             fastTalkCooldownTimer = 0f;
+        }
+    }
+
+    private void TickQuestionAttemptCooldown()
+    {
+        if (localQuestionAttemptCooldownTimer <= 0f)
+        {
+            return;
+        }
+
+        localQuestionAttemptCooldownTimer -= Time.deltaTime;
+
+        if (localQuestionAttemptCooldownTimer < 0f)
+        {
+            localQuestionAttemptCooldownTimer = 0f;
         }
     }
 
@@ -591,12 +656,11 @@ public class AdvancedGuardAIController : MonoBehaviour
         float stateMultiplier = GetStateVisionMultiplier();
         float coverIdentityMultiplier = GetCoverIdentitySuspicionMultiplier();
         float zoneLegalityMultiplier = GetZoneLegalitySuspicionMultiplier();
+        float zoneAlertMultiplier = GetZoneAlertSuspicionMultiplier();
 
         float reasonSuspicionPerSecond = evaluation.suspicionPerSecond > 0f
             ? evaluation.suspicionPerSecond
             : suspicionIncreasePerSecond;
-
-        float zoneAlertMultiplier = GetZoneAlertSuspicionMultiplier();
 
         float increaseAmount =
             reasonSuspicionPerSecond *
@@ -658,6 +722,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         if (suspicion >= suspiciousThreshold &&
             currentState != GuardState.Suspicious &&
+            currentState != GuardState.QuestionApproach &&
             currentState != GuardState.InvestigateSound &&
             currentState != GuardState.SearchArea)
         {
@@ -712,6 +777,22 @@ public class AdvancedGuardAIController : MonoBehaviour
             return false;
         }
 
+        if (currentState == GuardState.Chase ||
+            currentState == GuardState.CapturePlayer)
+        {
+            return false;
+        }
+
+        if (currentState == GuardState.QuestionApproach)
+        {
+            return true;
+        }
+
+        if (localQuestionAttemptCooldownTimer > 0f)
+        {
+            return false;
+        }
+
         if (IsInFastTalkCooldown() && blockQuestioningDuringFastTalkCooldown)
         {
             return false;
@@ -760,6 +841,24 @@ public class AdvancedGuardAIController : MonoBehaviour
             return false;
         }
 
+        if (guardMustBeCloseToQuestion && !IsCloseEnoughToQuestion())
+        {
+            EnterQuestionApproach();
+            return true;
+        }
+
+        return StartQuestioningNow(signature);
+    }
+
+    private bool StartQuestioningNow(string signature)
+    {
+        if (questioningResponder == null || !questioningResponder.CanQuestion())
+        {
+            return false;
+        }
+
+        localQuestionAttemptCooldownTimer = minimumTimeBetweenQuestionAttempts;
+
         string reasonLine = GetGuardQuestioningReasonLine();
 
         questioningResponder.StartQuestioning(reasonLine);
@@ -774,6 +873,84 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void EnterQuestionApproach()
+    {
+        if (currentState == GuardState.QuestionApproach)
+        {
+            return;
+        }
+
+        currentState = GuardState.QuestionApproach;
+        questionApproachTimer = questioningMaxApproachTime;
+
+        agent.speed = investigateSpeed;
+        agent.stoppingDistance = questioningApproachStopDistance;
+        agent.isStopped = false;
+
+        if (player != null)
+        {
+            agent.SetDestination(player.position);
+        }
+
+        SetVisualState(suspiciousColor, true);
+    }
+
+    private void UpdateQuestionApproach()
+    {
+        if (player == null)
+        {
+            EnterSearchArea();
+            return;
+        }
+
+        if (!CanCurrentlySeePlayer())
+        {
+            if (returnToSearchIfQuestionApproachFails)
+            {
+                EnterInvestigateLastKnownPosition();
+            }
+            else
+            {
+                EnterSuspicious();
+            }
+
+            return;
+        }
+
+        questionApproachTimer -= Time.deltaTime;
+
+        agent.isStopped = false;
+        agent.speed = investigateSpeed;
+        agent.stoppingDistance = questioningApproachStopDistance;
+        agent.SetDestination(player.position);
+
+        FaceTarget(player.position);
+
+        if (IsCloseEnoughToQuestion())
+        {
+            agent.isStopped = true;
+
+            string signature = BuildQuestioningSignature(currentSuspicionEvaluation);
+            StartQuestioningNow(signature);
+            return;
+        }
+
+        if (questionApproachTimer <= 0f)
+        {
+            EnterSuspicious();
+        }
+    }
+
+    private bool IsCloseEnoughToQuestion()
+    {
+        if (player == null)
+        {
+            return false;
+        }
+
+        return Vector3.Distance(transform.position, player.position) <= questioningStartDistance;
     }
 
     private string GetGuardQuestioningReasonLine()
@@ -885,6 +1062,7 @@ public class AdvancedGuardAIController : MonoBehaviour
                 return alertStateVisionMultiplier;
 
             case GuardState.Suspicious:
+            case GuardState.QuestionApproach:
             case GuardState.InvestigateSound:
             case GuardState.SearchArea:
                 return suspicionStateVisionMultiplier;
@@ -984,6 +1162,19 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
+        if (guardIsChasing)
+        {
+            if (!allowHearingDuringChase)
+            {
+                return;
+            }
+
+            if (playerIsInPublic && !chaseCanFollowPublicSounds)
+            {
+                return;
+            }
+        }
+
         lastSoundReactionTime = Time.time;
 
         if (guardIsChasing)
@@ -1002,8 +1193,10 @@ public class AdvancedGuardAIController : MonoBehaviour
         RestrictedZone currentZone
     )
     {
-        soundPosition = soundOrigin;
-        lastKnownPlayerPosition = soundOrigin;
+        Vector3 safePosition = GetSafeNavMeshPosition(soundOrigin, 3f);
+
+        soundPosition = safePosition;
+        lastKnownPlayerPosition = safePosition;
         lostPlayerTimer = lostPlayerAfterSeconds;
 
         currentSuspicionReason = GuardSuspicionReason.HeardNoise;
@@ -1025,6 +1218,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         {
             agent.isStopped = false;
             agent.speed = chaseSpeed;
+            agent.stoppingDistance = chaseStoppingDistance;
             agent.SetDestination(lastKnownPlayerPosition);
         }
 
@@ -1032,7 +1226,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         {
             Debug.Log(
                 $"[{gameObject.name}] Heard player during chase. " +
-                $"Following sound. Audibility: {finalAudibility:0.00}, Position: {soundOrigin}"
+                $"Following sound. Audibility: {finalAudibility:0.00}, Position: {safePosition}"
             );
         }
     }
@@ -1098,8 +1292,8 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
         else
         {
-            soundPosition = soundOrigin;
-            lastKnownPlayerPosition = soundOrigin;
+            soundPosition = GetSafeNavMeshPosition(soundOrigin, 3f);
+            lastKnownPlayerPosition = soundPosition;
             EnterInvestigateSound();
         }
 
@@ -1108,8 +1302,7 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
-        if (vision != null &&
-            vision.CanSeePlayer &&
+        if (CanCurrentlySeePlayer() &&
             suspicion >= chaseThreshold &&
             CanEscalateToChase())
         {
@@ -1126,6 +1319,7 @@ public class AdvancedGuardAIController : MonoBehaviour
     {
         currentState = GuardState.Patrol;
         agent.speed = patrolSpeed;
+        agent.stoppingDistance = patrolStoppingDistance;
         agent.isStopped = false;
 
         SetVisualState(patrolColor, false);
@@ -1142,6 +1336,8 @@ public class AdvancedGuardAIController : MonoBehaviour
         {
             return;
         }
+
+        FaceTarget(agent.steeringTarget);
 
         if (ReachedDestination(patrolPointReachDistance))
         {
@@ -1218,9 +1414,13 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         lookAroundTimer -= Time.deltaTime;
 
-        if (player != null)
+        if (player != null && CanCurrentlySeePlayer())
         {
             FaceTarget(player.position);
+        }
+        else
+        {
+            LookAroundDuringSearch();
         }
 
         if (suspicion >= chaseThreshold && CanEscalateToChase())
@@ -1247,6 +1447,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
 
         agent.speed = investigateSpeed * alertSpeedMultiplier;
+        agent.stoppingDistance = investigateStoppingDistance;
         agent.isStopped = false;
         agent.SetDestination(soundPosition);
 
@@ -1269,7 +1470,7 @@ public class AdvancedGuardAIController : MonoBehaviour
                 return;
             }
         }
-        else if (vision != null && vision.CanSeePlayer)
+        else if (CanCurrentlySeePlayer())
         {
             if (TryStartQuestioningBeforeChase())
             {
@@ -1290,6 +1491,7 @@ public class AdvancedGuardAIController : MonoBehaviour
     {
         currentState = GuardState.InvestigateSound;
         agent.speed = investigateSpeed;
+        agent.stoppingDistance = investigateStoppingDistance;
         agent.isStopped = false;
         agent.SetDestination(lastKnownPlayerPosition);
 
@@ -1310,6 +1512,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         currentState = GuardState.Chase;
         agent.speed = chaseSpeed;
+        agent.stoppingDistance = chaseStoppingDistance;
         agent.isStopped = false;
         lostPlayerTimer = lostPlayerAfterSeconds;
 
@@ -1347,7 +1550,7 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
-        if (vision != null && vision.CanSeePlayer)
+        if (CanCurrentlySeePlayer())
         {
             lastKnownPlayerPosition = player.position;
             agent.SetDestination(player.position);
@@ -1377,6 +1580,7 @@ public class AdvancedGuardAIController : MonoBehaviour
     {
         currentState = GuardState.SearchArea;
         agent.speed = investigateSpeed;
+        agent.stoppingDistance = investigateStoppingDistance;
         agent.isStopped = false;
 
         searchPointsVisited = 0;
@@ -1389,7 +1593,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void UpdateSearchArea()
     {
-        if (vision != null && vision.CanSeePlayer)
+        if (CanCurrentlySeePlayer())
         {
             if (TryStartQuestioningBeforeChase())
             {
@@ -1505,6 +1709,7 @@ public class AdvancedGuardAIController : MonoBehaviour
     {
         currentState = GuardState.ReturnToPatrol;
         agent.speed = returnSpeed;
+        agent.stoppingDistance = patrolStoppingDistance;
         agent.isStopped = false;
 
         suspicion = Mathf.Clamp(suspicion, 0f, 35f);
@@ -1598,6 +1803,11 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         for (int i = 0; i < patrolPoints.Length; i++)
         {
+            if (patrolPoints[i] == null)
+            {
+                continue;
+            }
+
             float distance = Vector3.Distance(transform.position, patrolPoints[i].position);
 
             if (distance < nearestDistance)
@@ -1625,7 +1835,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         transform.rotation = Quaternion.RotateTowards(
             transform.rotation,
             targetRotation,
-            360f * Time.deltaTime
+            manualTurnSpeed * Time.deltaTime
         );
     }
 
@@ -1685,7 +1895,9 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private bool TrySetSearchDestination(Vector3 targetPosition)
     {
-        if (NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
+        Vector3 safePosition = GetSafeNavMeshPosition(targetPosition, 2.5f);
+
+        if (NavMesh.SamplePosition(safePosition, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
         {
             currentSearchPoint = hit.position;
             agent.SetDestination(currentSearchPoint);
@@ -1728,7 +1940,7 @@ public class AdvancedGuardAIController : MonoBehaviour
             return false;
         }
 
-        if (!vision.CanSeePlayer)
+        if (!CanCurrentlySeePlayer())
         {
             return false;
         }
@@ -1894,12 +2106,8 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
-        string zoneName = !string.IsNullOrWhiteSpace(zone.zoneDisplayName)
-            ? zone.zoneDisplayName
-            : zone.zoneID;
-
         currentSuspicionReason = GuardSuspicionReason.UnauthorizedZone;
-        currentSuspicionReasonText = $"being somewhere you are not allowed in {zoneName}";
+        currentSuspicionReasonText = $"being somewhere you are not allowed in {zone.zoneDisplayName}";
 
         if (suspicion < unauthorizedZoneMinimumSuspicion)
         {
@@ -1981,25 +2189,25 @@ public class AdvancedGuardAIController : MonoBehaviour
         patrolWaitTimer = 0f;
         lookAroundTimer = 0f;
         fastTalkCooldownTimer = 0f;
+        localQuestionAttemptCooldownTimer = 0f;
+        questionApproachTimer = 0f;
+
+        ClearGuardCoordinationRuntimeState();
 
         isWaitingAtSearchPoint = false;
         searchPointsVisited = 0;
         hasEstimatedMoveDirection = false;
-
         hasPendingSoundInvestigation = false;
-        pendingSoundPosition = Vector3.zero;
-        pendingSoundConfidence = 0f;
-        pendingSoundTimer = 0f;
-        lastSoundReactionTime = -999f;
-        currentSearchRadiusMultiplier = 1f;
-        currentSearchWaitMultiplier = 1f;
-
-        ClearGuardCoordinationRuntimeState();
 
         currentSuspicionReason = GuardSuspicionReason.None;
         currentSuspicionReasonText = "";
         currentSuspicionEvaluation = GuardSuspicionEvaluation.Ignore();
         currentQuestioningSignature = "";
+
+        if (questioningRepeatLimiter != null)
+        {
+            questioningRepeatLimiter.ResetLimiter();
+        }
 
         if (agent != null)
         {
@@ -2041,7 +2249,18 @@ public class AdvancedGuardAIController : MonoBehaviour
             agent.ResetPath();
         }
 
-        suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+        if (IsInFastTalkCooldown())
+        {
+            suspicion = Mathf.Clamp(suspicion, 0f, 10f);
+            currentSuspicionReason = GuardSuspicionReason.None;
+            currentSuspicionReasonText = "";
+            currentSuspicionEvaluation = GuardSuspicionEvaluation.Ignore();
+        }
+        else
+        {
+            suspicion = Mathf.Clamp(suspicion, 0f, 35f);
+        }
+
         EnterReturnToPatrol();
     }
 
@@ -2078,40 +2297,257 @@ public class AdvancedGuardAIController : MonoBehaviour
         EnterCapturePlayer();
     }
 
-    private void DebugStateChange()
+    public bool IsQuestioningOrResolving()
     {
-        if (!printStateChanges)
-        {
-            return;
-        }
-
-        if (previousState != currentState)
-        {
-            Debug.Log(gameObject.name + " changed state to: " + currentState);
-            previousState = currentState;
-        }
+        return questioningResponder != null &&
+               (questioningResponder.IsQuestioning || questioningResponder.IsResolvingOutcome);
     }
 
-    private void DebugSuspicionReasonChange()
+    private float GetZoneAlertSuspicionMultiplier()
     {
-        if (!printSuspicionReasonChanges)
+        if (ZoneAlertManager.Instance == null)
+        {
+            return 1f;
+        }
+
+        return ZoneAlertManager.Instance.GetSuspicionMultiplier(GetCurrentZoneID());
+    }
+
+    private float GetCurrentQuestioningThreshold()
+    {
+        if (questioningResponder == null || questioningResponder.questioningProfile == null)
+        {
+            return 999f;
+        }
+
+        float baseThreshold = questioningResponder.questioningProfile.questioningThreshold;
+
+        if (ZoneAlertManager.Instance == null)
+        {
+            return baseThreshold;
+        }
+
+        return baseThreshold + ZoneAlertManager.Instance.GetQuestioningThresholdModifier(GetCurrentZoneID());
+    }
+
+    private void UpdateDisguiseSuspicionRelief()
+    {
+        if (!reduceSuspicionWhenDisguiseImproves)
         {
             return;
         }
 
-        if (previousSuspicionReason != currentSuspicionReason ||
-            previousSuspicionReasonText != currentSuspicionReasonText)
+        if (playerCoverIdentity == null)
         {
-            if (currentSuspicionReason != GuardSuspicionReason.None)
+            return;
+        }
+
+        if (currentState == GuardState.CapturePlayer)
+        {
+            return;
+        }
+
+        if (allowDisguiseReliefOnlyBeforeChase && currentState == GuardState.Chase)
+        {
+            return;
+        }
+
+        disguiseCheckTimer -= Time.deltaTime;
+
+        if (disguiseCheckTimer > 0f)
+        {
+            return;
+        }
+
+        float reliefDelta = Mathf.Max(Time.deltaTime, disguiseCheckInterval);
+        disguiseCheckTimer = disguiseCheckInterval;
+
+        RestrictedZone zone = GetCurrentPlayerZone();
+
+        if (zone == null || zone.IsPublicZone())
+        {
+            previousDisguiseAllowed = false;
+            previousDisguiseSetID = "";
+            previousDisguiseCompleteness = 0f;
+            return;
+        }
+
+        string currentDisguiseSetID = playerCoverIdentity.GetBestDisguiseSetID();
+        float currentCompleteness = playerCoverIdentity.GetBestDisguiseCompleteness();
+        bool currentAllowed = playerCoverIdentity.IsAllowedInZone(zone);
+
+        bool disguiseChanged =
+            currentDisguiseSetID != previousDisguiseSetID ||
+            Mathf.Abs(currentCompleteness - previousDisguiseCompleteness) > 0.01f;
+
+        bool becameAllowed = !previousDisguiseAllowed && currentAllowed;
+
+        if (currentAllowed)
+        {
+            suspicion -= validDisguiseSuspicionDropPerSecond * reliefDelta;
+            suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
+            if (suspicion > validDisguiseSuspicionCap)
             {
-                Debug.Log(
-                    $"[{gameObject.name}] Suspicion reason: {currentSuspicionReason} / {currentSuspicionReasonText}"
+                suspicion = Mathf.MoveTowards(
+                    suspicion,
+                    validDisguiseSuspicionCap,
+                    validDisguiseSuspicionDropPerSecond * reliefDelta
                 );
             }
 
-            previousSuspicionReason = currentSuspicionReason;
-            previousSuspicionReasonText = currentSuspicionReasonText;
+            if (becameAllowed || disguiseChanged)
+            {
+                suspicion -= newlyValidDisguiseInstantDrop;
+                suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
+                if (ZoneAlertManager.Instance != null)
+                {
+                    ZoneAlertManager.Instance.ReduceAlert(
+                        GetCurrentZoneID(),
+                        validDisguiseAlertReduction,
+                        "player changed into a valid disguise"
+                    );
+                }
+
+                currentSuspicionReason = GuardSuspicionReason.None;
+                currentSuspicionReasonText = "valid disguise";
+
+                if (printDisguiseReliefDebug)
+                {
+                    Debug.Log(
+                        $"[{gameObject.name}] Disguise relief: {currentDisguiseSetID}, " +
+                        $"Completeness: {currentCompleteness:0.00}, Suspicion: {suspicion:0.0}"
+                    );
+                }
+            }
         }
+
+        previousDisguiseAllowed = currentAllowed;
+        previousDisguiseSetID = currentDisguiseSetID;
+        previousDisguiseCompleteness = currentCompleteness;
+    }
+
+    private void StartPendingSoundInvestigation(Vector3 actualSoundPosition, float confidence)
+    {
+        hasPendingSoundInvestigation = true;
+        pendingSoundConfidence = Mathf.Clamp01(confidence);
+        pendingSoundTimer = soundReactionDelay;
+
+        float uncertainty = Mathf.Lerp(
+            soundPositionUncertaintyAtLowConfidence,
+            soundPositionUncertaintyAtHighConfidence,
+            pendingSoundConfidence
+        );
+
+        Vector2 randomOffset = Random.insideUnitCircle * uncertainty;
+
+        pendingSoundPosition = new Vector3(
+            actualSoundPosition.x + randomOffset.x,
+            actualSoundPosition.y,
+            actualSoundPosition.z + randomOffset.y
+        );
+
+        pendingSoundPosition = GetSafeNavMeshPosition(pendingSoundPosition, 3f);
+
+        if (showSoundDebug)
+        {
+            Debug.Log(
+                $"[{gameObject.name}] Heard sound. Confidence: {pendingSoundConfidence:0.00}, " +
+                $"Uncertainty: {uncertainty:0.0}, Investigating approximate position."
+            );
+        }
+
+        currentState = GuardState.Suspicious;
+        agent.isStopped = true;
+        lookAroundTimer = soundReactionDelay;
+        SetVisualState(suspiciousColor, true);
+
+        FaceTarget(pendingSoundPosition);
+    }
+
+    private void UpdatePendingSoundInvestigation()
+    {
+        if (!hasPendingSoundInvestigation)
+        {
+            return;
+        }
+
+        if (currentState == GuardState.Chase ||
+            currentState == GuardState.CapturePlayer)
+        {
+            hasPendingSoundInvestigation = false;
+            return;
+        }
+
+        pendingSoundTimer -= Time.deltaTime;
+
+        FaceTarget(pendingSoundPosition);
+
+        if (pendingSoundTimer > 0f)
+        {
+            return;
+        }
+
+        CommitPendingSoundInvestigation();
+    }
+
+    private void CommitPendingSoundInvestigation()
+    {
+        hasPendingSoundInvestigation = false;
+
+        soundPosition = pendingSoundPosition;
+        lastKnownPlayerPosition = pendingSoundPosition;
+
+        currentSearchRadiusMultiplier = Mathf.Lerp(
+            1.5f,
+            0.75f,
+            pendingSoundConfidence
+        );
+
+        currentSearchWaitMultiplier = Mathf.Lerp(
+            1.35f,
+            0.9f,
+            pendingSoundConfidence
+        );
+
+        EnterInvestigateSound();
+    }
+
+    private string BuildQuestioningSignature(GuardSuspicionEvaluation evaluation)
+    {
+        string zoneID = GetCurrentZoneID();
+
+        string movementState = "UnknownMovement";
+
+        if (playerMovementStateTracker != null)
+        {
+            movementState = playerMovementStateTracker.GetCurrentState().ToString();
+        }
+
+        string disguiseSet = "NoDisguise";
+        int disguiseCompletenessPercent = 0;
+
+        if (playerCoverIdentity != null)
+        {
+            disguiseSet = playerCoverIdentity.GetBestDisguiseSetID();
+
+            if (string.IsNullOrWhiteSpace(disguiseSet))
+            {
+                disguiseSet = "NoDisguise";
+            }
+
+            disguiseCompletenessPercent = Mathf.RoundToInt(
+                playerCoverIdentity.GetBestDisguiseCompleteness() * 100f
+            );
+        }
+
+        return
+            $"Reason:{evaluation.reason}|" +
+            $"Zone:{zoneID}|" +
+            $"Movement:{movementState}|" +
+            $"Disguise:{disguiseSet}|" +
+            $"DisguiseComplete:{disguiseCompletenessPercent}";
     }
 
     private void CallNearbyGuardsForHelp(string reason, float urgency)
@@ -2156,11 +2592,9 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         Vector3 safeAlertPosition = GetSafeNavMeshPosition(alertPosition, 3f);
 
-        AdvancedGuardAIController[] guards = FindObjectsOfType<AdvancedGuardAIController>();
-
         int recipients = 0;
 
-        foreach (AdvancedGuardAIController guard in guards)
+        foreach (AdvancedGuardAIController guard in AllGuards)
         {
             if (guard == null)
             {
@@ -2297,11 +2731,7 @@ public class AdvancedGuardAIController : MonoBehaviour
     {
         if (!isRespondingToExternalAlert)
         {
-            if (receivedHelpIndicatorTimer <= 0f)
-            {
-                isCurrentlyRespondingToHelp = false;
-            }
-
+            isCurrentlyRespondingToHelp = false;
             return;
         }
 
@@ -2458,260 +2888,40 @@ public class AdvancedGuardAIController : MonoBehaviour
         }
     }
 
-    public bool IsQuestioningOrResolving()
+    private void DebugStateChange()
     {
-        return questioningResponder != null &&
-               (questioningResponder.IsQuestioning || questioningResponder.IsResolvingOutcome);
+        if (!printStateChanges)
+        {
+            return;
+        }
+
+        if (previousState != currentState)
+        {
+            Debug.Log(gameObject.name + " changed state to: " + currentState);
+            previousState = currentState;
+        }
     }
 
-    private float GetZoneAlertSuspicionMultiplier()
+    private void DebugSuspicionReasonChange()
     {
-        if (ZoneAlertManager.Instance == null)
-        {
-            return 1f;
-        }
-
-        return ZoneAlertManager.Instance.GetSuspicionMultiplier(GetCurrentZoneID());
-    }
-
-    private float GetCurrentQuestioningThreshold()
-    {
-        if (questioningResponder == null || questioningResponder.questioningProfile == null)
-        {
-            return 999f;
-        }
-
-        float baseThreshold = questioningResponder.questioningProfile.questioningThreshold;
-
-        if (ZoneAlertManager.Instance == null)
-        {
-            return baseThreshold;
-        }
-
-        return baseThreshold + ZoneAlertManager.Instance.GetQuestioningThresholdModifier(GetCurrentZoneID());
-    }
-
-    private void UpdateDisguiseSuspicionRelief()
-    {
-        if (!reduceSuspicionWhenDisguiseImproves)
+        if (!printSuspicionReasonChanges)
         {
             return;
         }
 
-        if (playerCoverIdentity == null)
+        if (previousSuspicionReason != currentSuspicionReason ||
+            previousSuspicionReasonText != currentSuspicionReasonText)
         {
-            return;
-        }
-
-        if (currentState == GuardState.CapturePlayer)
-        {
-            return;
-        }
-
-        if (allowDisguiseReliefOnlyBeforeChase && currentState == GuardState.Chase)
-        {
-            return;
-        }
-
-        disguiseCheckTimer -= Time.deltaTime;
-
-        if (disguiseCheckTimer > 0f)
-        {
-            return;
-        }
-
-        disguiseCheckTimer = disguiseCheckInterval;
-
-        RestrictedZone zone = GetCurrentPlayerZone();
-
-        if (zone == null || zone.IsPublicZone())
-        {
-            previousDisguiseAllowed = false;
-            previousDisguiseSetID = "";
-            previousDisguiseCompleteness = 0f;
-            return;
-        }
-
-        string currentDisguiseSetID = playerCoverIdentity.GetBestDisguiseSetID();
-        float currentCompleteness = playerCoverIdentity.GetBestDisguiseCompleteness();
-        bool currentAllowed = playerCoverIdentity.IsAllowedInZone(zone);
-
-        bool disguiseChanged =
-            currentDisguiseSetID != previousDisguiseSetID ||
-            Mathf.Abs(currentCompleteness - previousDisguiseCompleteness) > 0.01f;
-
-        bool becameAllowed = !previousDisguiseAllowed && currentAllowed;
-
-        if (currentAllowed)
-        {
-            suspicion -= validDisguiseSuspicionDropPerSecond * Time.deltaTime;
-            suspicion = Mathf.Clamp(suspicion, 0f, 100f);
-
-            if (suspicion > validDisguiseSuspicionCap)
+            if (currentSuspicionReason != GuardSuspicionReason.None)
             {
-                suspicion = Mathf.MoveTowards(
-                    suspicion,
-                    validDisguiseSuspicionCap,
-                    validDisguiseSuspicionDropPerSecond * Time.deltaTime
+                Debug.Log(
+                    $"[{gameObject.name}] Suspicion reason: {currentSuspicionReason} / {currentSuspicionReasonText}"
                 );
             }
 
-            if (becameAllowed || disguiseChanged)
-            {
-                suspicion -= newlyValidDisguiseInstantDrop;
-                suspicion = Mathf.Clamp(suspicion, 0f, 100f);
-
-                if (ZoneAlertManager.Instance != null)
-                {
-                    ZoneAlertManager.Instance.ReduceAlert(
-                        GetCurrentZoneID(),
-                        validDisguiseAlertReduction,
-                        "player changed into a valid disguise"
-                    );
-                }
-
-                currentSuspicionReason = GuardSuspicionReason.None;
-                currentSuspicionReasonText = "valid disguise";
-
-                if (printDisguiseReliefDebug)
-                {
-                    Debug.Log(
-                        $"[{gameObject.name}] Disguise relief: {currentDisguiseSetID}, " +
-                        $"Completeness: {currentCompleteness:0.00}, Suspicion: {suspicion:0.0}"
-                    );
-                }
-            }
+            previousSuspicionReason = currentSuspicionReason;
+            previousSuspicionReasonText = currentSuspicionReasonText;
         }
-
-        previousDisguiseAllowed = currentAllowed;
-        previousDisguiseSetID = currentDisguiseSetID;
-        previousDisguiseCompleteness = currentCompleteness;
-    }
-
-    private void StartPendingSoundInvestigation(Vector3 actualSoundPosition, float confidence)
-    {
-        hasPendingSoundInvestigation = true;
-        pendingSoundConfidence = Mathf.Clamp01(confidence);
-        pendingSoundTimer = soundReactionDelay;
-
-        float uncertainty = Mathf.Lerp(
-            soundPositionUncertaintyAtLowConfidence,
-            soundPositionUncertaintyAtHighConfidence,
-            pendingSoundConfidence
-        );
-
-        Vector2 randomOffset = Random.insideUnitCircle * uncertainty;
-
-        pendingSoundPosition = new Vector3(
-            actualSoundPosition.x + randomOffset.x,
-            actualSoundPosition.y,
-            actualSoundPosition.z + randomOffset.y
-        );
-
-        if (showSoundDebug)
-        {
-            Debug.Log(
-                $"[{gameObject.name}] Heard sound. Confidence: {pendingSoundConfidence:0.00}, " +
-                $"Uncertainty: {uncertainty:0.0}, Investigating approximate position."
-            );
-        }
-
-        currentState = GuardState.Suspicious;
-        agent.isStopped = true;
-        lookAroundTimer = soundReactionDelay;
-        SetVisualState(suspiciousColor, true);
-
-        if (player != null)
-        {
-            FaceTarget(player.position);
-        }
-    }
-
-    private void UpdatePendingSoundInvestigation()
-    {
-        if (!hasPendingSoundInvestigation)
-        {
-            return;
-        }
-
-        if (currentState == GuardState.Chase ||
-            currentState == GuardState.CapturePlayer)
-        {
-            hasPendingSoundInvestigation = false;
-            return;
-        }
-
-        pendingSoundTimer -= Time.deltaTime;
-
-        if (player != null)
-        {
-            FaceTarget(player.position);
-        }
-
-        if (pendingSoundTimer > 0f)
-        {
-            return;
-        }
-
-        CommitPendingSoundInvestigation();
-    }
-
-    private void CommitPendingSoundInvestigation()
-    {
-        hasPendingSoundInvestigation = false;
-
-        soundPosition = pendingSoundPosition;
-        lastKnownPlayerPosition = pendingSoundPosition;
-
-        currentSearchRadiusMultiplier = Mathf.Lerp(
-            1.5f,
-            0.75f,
-            pendingSoundConfidence
-        );
-
-        currentSearchWaitMultiplier = Mathf.Lerp(
-            1.35f,
-            0.9f,
-            pendingSoundConfidence
-        );
-
-        EnterInvestigateSound();
-    }
-
-    private string BuildQuestioningSignature(GuardSuspicionEvaluation evaluation)
-    {
-        string zoneID = GetCurrentZoneID();
-
-        string movementState = "UnknownMovement";
-
-        if (playerMovementStateTracker != null)
-        {
-            movementState = playerMovementStateTracker.GetCurrentState().ToString();
-        }
-
-        string disguiseSet = "NoDisguise";
-        int disguiseCompletenessPercent = 0;
-
-        if (playerCoverIdentity != null)
-        {
-            disguiseSet = playerCoverIdentity.GetBestDisguiseSetID();
-
-            if (string.IsNullOrWhiteSpace(disguiseSet))
-            {
-                disguiseSet = "NoDisguise";
-            }
-
-            disguiseCompletenessPercent = Mathf.RoundToInt(
-                playerCoverIdentity.GetBestDisguiseCompleteness() * 100f
-            );
-        }
-
-        return
-            $"Reason:{evaluation.reason}|" +
-            $"Zone:{zoneID}|" +
-            $"Movement:{movementState}|" +
-            $"Disguise:{disguiseSet}|" +
-            $"DisguiseComplete:{disguiseCompletenessPercent}";
     }
 
     private void OnDrawGizmosSelected()
@@ -2730,6 +2940,12 @@ public class AdvancedGuardAIController : MonoBehaviour
                 Gizmos.DrawWireSphere(pendingExternalAlertPosition, 0.6f);
                 Gizmos.DrawLine(transform.position, pendingExternalAlertPosition);
             }
+        }
+
+        if (guardMustBeCloseToQuestion)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawWireSphere(transform.position, questioningStartDistance);
         }
     }
 }

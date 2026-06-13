@@ -10687,6 +10687,7 @@ GameObject:
   - component: {fileID: 463113623}
   - component: {fileID: 463113624}
   - component: {fileID: 463113625}
+  - component: {fileID: 463113626}
   m_Layer: 0
   m_Name: Game Systems
   m_TagString: Untagged
@@ -11079,6 +11080,21 @@ MonoBehaviour:
   showDebugLogs: 1
   enablePrintKey: 1
   printAlertKey: 28
+--- !u!114 &463113626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 463113603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5fa4d23844a5496fb64bc861dc2cc86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GuardAlertManager
+  defaultAlertRadius: 18
+  defaultUrgency: 1
+  showDebugLogs: 1
 --- !u!1 &481703960
 GameObject:
   m_ObjectHideFlags: 0

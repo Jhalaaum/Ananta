@@ -2,59 +2,109 @@ using UnityEngine;
 
 public class GuardQuestioningRepeatLimiter : MonoBehaviour
 {
-    [Header("Repeat Prevention")]
-    public bool preventRepeatedQuestioningForSameAction = true;
+    [Header("Repeat Blocking")]
+    public float sameReasonBlockDuration = 12f;
+    public float globalQuestionBlockDuration = 4f;
+    public float maxSameReasonMemoryDuration = 25f;
 
-    [Tooltip("If true, the same reason can only be questioned again after the player stops doing that action first.")]
-    public bool requireActionToStopBeforeRepeat = true;
+    [Header("Escalation Protection")]
+    public int maxRepeatedQuestionsForSameSignature = 1;
+    public float extendedBlockAfterRepeatedQuestioning = 20f;
 
-    [Tooltip("Optional emergency reset. Set to 0 or below to disable time-based reset.")]
-    public float emergencyResetAfterSeconds = 0f;
+    [Header("Runtime Inspector")]
+    public GuardSuspicionReason lastQuestionedReason;
+    public string lastQuestionedSignature;
+    public string lastQuestionedReasonText;
+    public int repeatedQuestionCount;
+    public float sameReasonBlockTimer;
+    public float globalBlockTimer;
+    public float sameReasonMemoryTimer;
 
     [Header("Debug")]
-    public bool showDebugLogs = true;
+    public bool showDebugLogs = false;
 
-    private bool hasLockedReason;
-    private GuardSuspicionReason lockedReason;
-    private string lockedSignature;
-    private string lockedReasonText;
-    private float lockedTimer;
+    private GuardSuspicionReason observedReason;
+    private string observedSignature;
+
+    private void Update()
+    {
+        TickTimers();
+    }
+
+    private void TickTimers()
+    {
+        if (sameReasonBlockTimer > 0f)
+        {
+            sameReasonBlockTimer -= Time.deltaTime;
+        }
+
+        if (globalBlockTimer > 0f)
+        {
+            globalBlockTimer -= Time.deltaTime;
+        }
+
+        if (sameReasonMemoryTimer > 0f)
+        {
+            sameReasonMemoryTimer -= Time.deltaTime;
+
+            if (sameReasonMemoryTimer <= 0f)
+            {
+                repeatedQuestionCount = 0;
+                lastQuestionedSignature = "";
+                lastQuestionedReasonText = "";
+                lastQuestionedReason = GuardSuspicionReason.None;
+            }
+        }
+
+        sameReasonBlockTimer = Mathf.Max(0f, sameReasonBlockTimer);
+        globalBlockTimer = Mathf.Max(0f, globalBlockTimer);
+        sameReasonMemoryTimer = Mathf.Max(0f, sameReasonMemoryTimer);
+    }
+
+    public void ObserveCurrentReason(GuardSuspicionEvaluation evaluation, string signature)
+    {
+        observedReason = evaluation.reason;
+        observedSignature = signature;
+
+        if (string.IsNullOrWhiteSpace(signature))
+        {
+            return;
+        }
+
+        if (signature != lastQuestionedSignature)
+        {
+            repeatedQuestionCount = 0;
+        }
+    }
 
     public bool IsBlocked(GuardSuspicionReason reason, string signature)
     {
-        if (!preventRepeatedQuestioningForSameAction)
+        if (globalBlockTimer > 0f)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(signature))
         {
             return false;
         }
 
-        if (!hasLockedReason)
+        bool sameSignature = signature == lastQuestionedSignature;
+        bool sameReason = reason == lastQuestionedReason;
+
+        if (sameSignature && sameReason && sameReasonBlockTimer > 0f)
         {
-            return false;
+            return true;
         }
 
-        if (reason == GuardSuspicionReason.None)
+        if (sameSignature &&
+            sameReason &&
+            repeatedQuestionCount >= maxRepeatedQuestionsForSameSignature)
         {
-            return false;
+            return true;
         }
 
-        if (lockedReason != reason)
-        {
-            return false;
-        }
-
-        if (lockedSignature != signature)
-        {
-            return false;
-        }
-
-        if (showDebugLogs)
-        {
-            Debug.Log(
-                $"[GuardQuestioningRepeatLimiter] Blocked repeat questioning for: {lockedReason} / {lockedReasonText}"
-            );
-        }
-
-        return true;
+        return false;
     }
 
     public void MarkQuestioned(
@@ -63,105 +113,54 @@ public class GuardQuestioningRepeatLimiter : MonoBehaviour
         string reasonText
     )
     {
-        if (!preventRepeatedQuestioningForSameAction)
+        if (string.IsNullOrWhiteSpace(signature))
         {
-            return;
+            signature = reason.ToString();
         }
 
-        if (reason == GuardSuspicionReason.None)
+        bool sameSignature = signature == lastQuestionedSignature;
+        bool sameReason = reason == lastQuestionedReason;
+
+        if (sameSignature && sameReason)
         {
-            return;
+            repeatedQuestionCount++;
+        }
+        else
+        {
+            repeatedQuestionCount = 1;
         }
 
-        hasLockedReason = true;
-        lockedReason = reason;
-        lockedSignature = signature;
-        lockedReasonText = reasonText;
-        lockedTimer = 0f;
+        lastQuestionedReason = reason;
+        lastQuestionedSignature = signature;
+        lastQuestionedReasonText = reasonText;
+
+        globalBlockTimer = globalQuestionBlockDuration;
+
+        sameReasonBlockTimer = repeatedQuestionCount > maxRepeatedQuestionsForSameSignature
+            ? extendedBlockAfterRepeatedQuestioning
+            : sameReasonBlockDuration;
+
+        sameReasonMemoryTimer = maxSameReasonMemoryDuration;
 
         if (showDebugLogs)
         {
             Debug.Log(
-                $"[GuardQuestioningRepeatLimiter] Locked reason: {lockedReason} / {lockedReasonText} / Signature: {lockedSignature}"
+                $"[GuardQuestioningRepeatLimiter] Marked questioned. " +
+                $"Reason: {reason}, Count: {repeatedQuestionCount}, Signature: {signature}"
             );
         }
     }
 
-    public void ObserveCurrentReason(
-        GuardSuspicionEvaluation evaluation,
-        string currentSignature
-    )
+    public void ResetLimiter()
     {
-        if (!hasLockedReason)
-        {
-            return;
-        }
-
-        lockedTimer += Time.deltaTime;
-
-        if (emergencyResetAfterSeconds > 0f && lockedTimer >= emergencyResetAfterSeconds)
-        {
-            ClearLock("emergency timeout");
-            return;
-        }
-
-        if (!requireActionToStopBeforeRepeat)
-        {
-            return;
-        }
-
-        if (!evaluation.shouldIncreaseSuspicion ||
-            evaluation.reason == GuardSuspicionReason.None)
-        {
-            ClearLock("player stopped suspicious action");
-            return;
-        }
-
-        if (evaluation.reason != lockedReason)
-        {
-            ClearLock("suspicion reason changed");
-            return;
-        }
-
-        if (currentSignature != lockedSignature)
-        {
-            ClearLock("suspicious action signature changed");
-            return;
-        }
-    }
-
-    public void ClearLock(string reason)
-    {
-        if (!hasLockedReason)
-        {
-            return;
-        }
-
-        if (showDebugLogs)
-        {
-            Debug.Log(
-                $"[GuardQuestioningRepeatLimiter] Cleared lock because {reason}. Previous: {lockedReason} / {lockedReasonText}"
-            );
-        }
-
-        hasLockedReason = false;
-        lockedReason = GuardSuspicionReason.None;
-        lockedSignature = "";
-        lockedReasonText = "";
-        lockedTimer = 0f;
-    }
-
-    public string GetDebugText()
-    {
-        if (!hasLockedReason)
-        {
-            return "No questioning lock.";
-        }
-
-        return
-            $"Locked Reason: {lockedReason}\n" +
-            $"Text: {lockedReasonText}\n" +
-            $"Signature: {lockedSignature}\n" +
-            $"Timer: {lockedTimer:0.0}s";
+        lastQuestionedReason = GuardSuspicionReason.None;
+        lastQuestionedSignature = "";
+        lastQuestionedReasonText = "";
+        repeatedQuestionCount = 0;
+        sameReasonBlockTimer = 0f;
+        globalBlockTimer = 0f;
+        sameReasonMemoryTimer = 0f;
+        observedReason = GuardSuspicionReason.None;
+        observedSignature = "";
     }
 }
