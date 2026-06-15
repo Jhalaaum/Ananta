@@ -8,12 +8,45 @@ public class GuardQuestioningResponder : MonoBehaviour
     [Header("Questioning")]
     public GuardQuestioningProfile questioningProfile;
 
-    [Header("Reason Line")]
+    [Header("Reason Line / Questioning Start Indicator")]
     public bool showReasonLineBeforeConversation = true;
     public float minimumReasonLineDuration = 2.2f;
+    public bool autoStartConversationAfterReasonLine = true;
     public bool allowSkipReasonLineAfterMinimumTime = true;
     public Key skipReasonLineKey = Key.Space;
     public string fallbackReasonLine = "Stop. Explain yourself.";
+
+    [Header("Dialogue Countdown Indicator")]
+    public bool showCountdownBeforeConversation = true;
+    public bool refreshCountdownText = true;
+    public float countdownRefreshInterval = 0.2f;
+    public string reasonSpeakerName = "Guard";
+    public string countdownFormat = "Questioning starts in {0:0.0}s";
+    public string continuePromptText = "Press Space / E / Enter to respond.";
+
+    [Header("Far Challenge Behaviour")]
+    public bool hideReasonLineAfterFarChallenge = true;
+    public bool showCountdownDuringFarChallenge = false;
+    [Header("Far Challenge Timing")]
+    public bool ensureReasonLineFullyVisibleBeforeClosing = true;
+
+    [Tooltip("Used to estimate how long the typewriter needs to fully reveal the reason line.")]
+    public float estimatedReasonLineCharactersPerSecond = 38f;
+
+    [Tooltip("Extra time after the estimated full line reveal before the UI closes.")]
+    public float reasonLineHoldAfterFullyVisible = 0.55f;
+
+    [Tooltip("After the reason UI closes, questioning cannot start for this many seconds.")]
+    public float postReasonLineQuestionGraceDuration = 2f;
+
+    [Header("Far Challenge Runtime")]
+    public bool isPostReasonLineGraceActive;
+    public float postReasonLineGraceTimer;
+    [Header("Reason Line Runtime")]
+    public bool isShowingReasonLine;
+    public bool IsPreparingQuestioning { get; private set; }
+    public float reasonLineCountdownTimer;
+    [TextArea(2, 5)] public string currentReasonLineDebug;
 
     [Header("Fast Talk Cooldown")]
     public float passedFastTalkCooldown = 7f;
@@ -45,6 +78,7 @@ public class GuardQuestioningResponder : MonoBehaviour
 
     private float lastQuestioningTime = -999f;
     private Coroutine questioningRoutine;
+    private Coroutine reasonLineRoutine;
 
     private void Awake()
     {
@@ -84,11 +118,19 @@ public class GuardQuestioningResponder : MonoBehaviour
         if (ignorePlayerTimer > 0f)
         {
             ignorePlayerTimer -= Time.deltaTime;
+            if (ignorePlayerTimer < 0f)
+            {
+                ignorePlayerTimer = 0f;
+            }
         }
 
         if (localQuestionCooldownTimer > 0f)
         {
             localQuestionCooldownTimer -= Time.deltaTime;
+            if (localQuestionCooldownTimer < 0f)
+            {
+                localQuestionCooldownTimer = 0f;
+            }
         }
     }
 
@@ -104,7 +146,7 @@ public class GuardQuestioningResponder : MonoBehaviour
             return false;
         }
 
-        if (IsQuestioning || IsResolvingOutcome)
+        if (IsPreparingQuestioning || IsQuestioning || IsResolvingOutcome)
         {
             return false;
         }
@@ -137,6 +179,181 @@ public class GuardQuestioningResponder : MonoBehaviour
         return true;
     }
 
+    public bool CanStartConversationNow()
+    {
+        if (questioningProfile == null)
+        {
+            return false;
+        }
+
+        if (questioningProfile.questioningConversation == null)
+        {
+            return false;
+        }
+
+        if (IsPreparingQuestioning)
+        {
+            return false;
+        }
+
+        if (isShowingReasonLine)
+        {
+            return false;
+        }
+
+        if (isPostReasonLineGraceActive || postReasonLineGraceTimer > 0f)
+        {
+            return false;
+        }
+
+        if (IsQuestioning || IsResolvingOutcome)
+        {
+            return false;
+        }
+
+        if (ignorePlayerTimer > 0f)
+        {
+            return false;
+        }
+
+        if (guardAI != null && guardAI.IsInFastTalkCooldown())
+        {
+            return false;
+        }
+
+        if (dialogueManager != null && dialogueManager.IsDialogueActive)
+        {
+            return false;
+        }
+
+        return true;
+    }
+    public void ShowReasonLineOnly(string reasonLine)
+    {
+        if (IsQuestioning || IsResolvingOutcome)
+        {
+            return;
+        }
+
+        if (reasonLineRoutine != null)
+        {
+            StopCoroutine(reasonLineRoutine);
+        }
+
+        reasonLineRoutine = StartCoroutine(ReasonLineOnlyRoutine(reasonLine));
+    }
+
+    private IEnumerator ReasonLineOnlyRoutine(string reasonLine)
+    {
+        IsPreparingQuestioning = true;
+
+        string finalReasonLine = !string.IsNullOrWhiteSpace(reasonLine)
+            ? reasonLine
+            : fallbackReasonLine;
+
+        isShowingReasonLine = true;
+        isPostReasonLineGraceActive = false;
+        postReasonLineGraceTimer = 0f;
+
+        float displayDuration = Mathf.Max(0f, minimumReasonLineDuration);
+
+        if (ensureReasonLineFullyVisibleBeforeClosing)
+        {
+            float characterRevealTime = finalReasonLine.Length /
+                                        Mathf.Max(1f, estimatedReasonLineCharactersPerSecond);
+
+            float estimatedFullDisplayTime = characterRevealTime + reasonLineHoldAfterFullyVisible;
+
+            displayDuration = Mathf.Max(displayDuration, estimatedFullDisplayTime);
+        }
+
+        reasonLineCountdownTimer = displayDuration;
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.ForceHidePrompt();
+
+            if (showCountdownDuringFarChallenge)
+            {
+                dialogueUI.ShowLine(
+                    reasonSpeakerName,
+                    BuildReasonLineDisplay(finalReasonLine, reasonLineCountdownTimer)
+                );
+            }
+            else
+            {
+                dialogueUI.ShowLine(reasonSpeakerName, finalReasonLine);
+                currentReasonLineDebug = finalReasonLine;
+            }
+        }
+
+        float refreshTimer = 0f;
+
+        while (reasonLineCountdownTimer > 0f)
+        {
+            FacePlayer();
+
+            reasonLineCountdownTimer -= Time.unscaledDeltaTime;
+
+            if (reasonLineCountdownTimer < 0f)
+            {
+                reasonLineCountdownTimer = 0f;
+            }
+
+            refreshTimer -= Time.unscaledDeltaTime;
+
+            if (dialogueUI != null &&
+                showCountdownDuringFarChallenge &&
+                refreshCountdownText &&
+                refreshTimer <= 0f)
+            {
+                refreshTimer = Mathf.Max(0.05f, countdownRefreshInterval);
+
+                dialogueUI.ShowLine(
+                    reasonSpeakerName,
+                    BuildReasonLineDisplay(finalReasonLine, reasonLineCountdownTimer)
+                );
+            }
+
+            yield return null;
+        }
+
+        isShowingReasonLine = false;
+        reasonLineCountdownTimer = 0f;
+        currentReasonLineDebug = "";
+
+        if (hideReasonLineAfterFarChallenge && dialogueUI != null)
+        {
+            dialogueUI.HideDialogue();
+            dialogueUI.HidePrompt();
+        }
+
+        // Important:
+        // The reason has finished and the UI is now closed.
+        // Now give the player a grace period before real questioning can begin.
+        isPostReasonLineGraceActive = true;
+        postReasonLineGraceTimer = Mathf.Max(0f, postReasonLineQuestionGraceDuration);
+
+        while (postReasonLineGraceTimer > 0f)
+        {
+            FacePlayer();
+
+            postReasonLineGraceTimer -= Time.deltaTime;
+
+            if (postReasonLineGraceTimer < 0f)
+            {
+                postReasonLineGraceTimer = 0f;
+            }
+
+            yield return null;
+        }
+
+        isPostReasonLineGraceActive = false;
+        postReasonLineGraceTimer = 0f;
+        IsPreparingQuestioning = false;
+
+        reasonLineRoutine = null;
+    }
     public void StartQuestioning()
     {
         StartQuestioning("");
@@ -154,16 +371,132 @@ public class GuardQuestioningResponder : MonoBehaviour
             StopCoroutine(questioningRoutine);
         }
 
-        questioningRoutine = StartCoroutine(QuestioningRoutine(reasonLine));
+        questioningRoutine = StartCoroutine(LegacyQuestioningRoutine(reasonLine));
     }
 
-    private IEnumerator QuestioningRoutine(string reasonLine)
+    private IEnumerator LegacyQuestioningRoutine(string reasonLine)
     {
+        IsPreparingQuestioning = true;
+
+        if (showReasonLineBeforeConversation && dialogueUI != null)
+        {
+            yield return ShowReasonLineBlockingRoutine(reasonLine);
+        }
+
+        IsPreparingQuestioning = false;
+
+        if (guardAI != null &&
+            (guardAI.currentState == AdvancedGuardAIController.GuardState.Chase ||
+             guardAI.currentState == AdvancedGuardAIController.GuardState.CapturePlayer))
+        {
+            questioningRoutine = null;
+            yield break;
+        }
+
+        yield return ConversationRoutine();
+    }
+
+    public bool StartQuestioningConversationOnly(string reasonLine)
+    {
+        if (!CanStartConversationNow())
+        {
+            return false;
+        }
+
+        if (reasonLineRoutine != null)
+        {
+            StopCoroutine(reasonLineRoutine);
+            reasonLineRoutine = null;
+        }
+
+        if (questioningRoutine != null)
+        {
+            StopCoroutine(questioningRoutine);
+        }
+
+        isShowingReasonLine = false;
+        reasonLineCountdownTimer = 0f;
+        currentReasonLineDebug = "";
+        IsPreparingQuestioning = false;
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.HideDialogue();
+            dialogueUI.HidePrompt();
+        }
+
+        questioningRoutine = StartCoroutine(ConversationRoutine());
+        return true;
+    }
+
+    private IEnumerator ShowReasonLineBlockingRoutine(string reasonLine)
+    {
+        string finalReasonLine = !string.IsNullOrWhiteSpace(reasonLine)
+            ? reasonLine
+            : fallbackReasonLine;
+
+        isShowingReasonLine = true;
+        reasonLineCountdownTimer = Mathf.Max(0f, minimumReasonLineDuration);
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.ForceHidePrompt();
+            dialogueUI.ShowLine(
+                reasonSpeakerName,
+                BuildReasonLineDisplay(finalReasonLine, reasonLineCountdownTimer)
+            );
+        }
+
+        float refreshTimer = 0f;
+
+        while (reasonLineCountdownTimer > 0f)
+        {
+            FacePlayer();
+
+            reasonLineCountdownTimer -= Time.unscaledDeltaTime;
+
+            if (reasonLineCountdownTimer < 0f)
+            {
+                reasonLineCountdownTimer = 0f;
+            }
+
+            refreshTimer -= Time.unscaledDeltaTime;
+
+            if (dialogueUI != null &&
+                showCountdownBeforeConversation &&
+                refreshCountdownText &&
+                refreshTimer <= 0f)
+            {
+                refreshTimer = Mathf.Max(0.05f, countdownRefreshInterval);
+                dialogueUI.ShowLine(
+                    reasonSpeakerName,
+                    BuildReasonLineDisplay(finalReasonLine, reasonLineCountdownTimer)
+                );
+            }
+
+            yield return null;
+        }
+
+        isShowingReasonLine = false;
+        reasonLineCountdownTimer = 0f;
+        currentReasonLineDebug = "";
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.HideDialogue();
+        }
+
+        yield return null;
+    }
+
+    private IEnumerator ConversationRoutine()
+    {
+        IsPreparingQuestioning = false;
         IsQuestioning = true;
         IsResolvingOutcome = false;
         lastQuestioningTime = Time.time;
 
-        Log("Questioning started.");
+        Log("Questioning conversation started.");
 
         if (agent != null)
         {
@@ -181,11 +514,6 @@ public class GuardQuestioningResponder : MonoBehaviour
         if (GuardQuestioningManager.Instance != null)
         {
             GuardQuestioningManager.Instance.BeginQuestioning();
-        }
-
-        if (showReasonLineBeforeConversation && dialogueUI != null)
-        {
-            yield return ShowReasonLineRoutine(reasonLine);
         }
 
         if (dialogueManager != null && questioningProfile.questioningConversation != null)
@@ -224,50 +552,54 @@ public class GuardQuestioningResponder : MonoBehaviour
         Log("Questioning finished.");
     }
 
-    private IEnumerator ShowReasonLineRoutine(string reasonLine)
+    private string BuildReasonLineDisplay(string reasonLine, float secondsRemaining)
     {
-        string finalReasonLine = !string.IsNullOrWhiteSpace(reasonLine)
+        string safeReason = !string.IsNullOrWhiteSpace(reasonLine)
             ? reasonLine
             : fallbackReasonLine;
 
-        dialogueUI.ForceHidePrompt();
-        dialogueUI.ShowLine("Guard", finalReasonLine);
-
-        float timer = 0f;
-
-        while (timer < minimumReasonLineDuration)
+        if (!showCountdownBeforeConversation)
         {
-            FacePlayer();
-            timer += Time.unscaledDeltaTime;
-            yield return null;
+            currentReasonLineDebug = safeReason;
+            return safeReason;
         }
 
-        if (allowSkipReasonLineAfterMinimumTime)
+        string countdownText = string.Format(
+            countdownFormat,
+            Mathf.Max(0f, secondsRemaining)
+        );
+
+        string displayText = safeReason + "\n\n" + countdownText;
+
+        currentReasonLineDebug = displayText;
+        return displayText;
+    }
+
+    public void CancelPendingQuestioning(string reason)
+    {
+        if (reasonLineRoutine != null)
         {
-            bool continuePressed = false;
-
-            while (!continuePressed)
-            {
-                FacePlayer();
-
-                if (Keyboard.current == null)
-                {
-                    break;
-                }
-
-                if (Keyboard.current[skipReasonLineKey].wasPressedThisFrame ||
-                    Keyboard.current.eKey.wasPressedThisFrame ||
-                    Keyboard.current.enterKey.wasPressedThisFrame)
-                {
-                    continuePressed = true;
-                }
-
-                yield return null;
-            }
+            StopCoroutine(reasonLineRoutine);
+            reasonLineRoutine = null;
         }
 
-        dialogueUI.HideDialogue();
-        yield return null;
+        if (IsPreparingQuestioning)
+        {
+            IsPreparingQuestioning = false;
+        }
+        isPostReasonLineGraceActive = false;
+        postReasonLineGraceTimer = 0f;
+        isShowingReasonLine = false;
+        reasonLineCountdownTimer = 0f;
+        currentReasonLineDebug = "";
+
+        if (dialogueUI != null)
+        {
+            dialogueUI.HideDialogue();
+            dialogueUI.HidePrompt();
+        }
+
+        Log("Pending questioning cancelled: " + reason);
     }
 
     private void ApplyOutcome(GuardQuestioningOutcome outcome)
@@ -406,43 +738,23 @@ public class GuardQuestioningResponder : MonoBehaviour
         switch (outcome)
         {
             case GuardQuestioningOutcome.Passed:
-                ZoneAlertManager.Instance.AddAlert(
-                    zoneID,
-                    passedAlertIncrease,
-                    "Fast Talk passed"
-                );
+                ZoneAlertManager.Instance.AddAlert(zoneID, passedAlertIncrease, "Fast Talk passed");
                 break;
 
             case GuardQuestioningOutcome.Warned:
-                ZoneAlertManager.Instance.AddAlert(
-                    zoneID,
-                    warnedAlertIncrease,
-                    "Guard issued warning"
-                );
+                ZoneAlertManager.Instance.AddAlert(zoneID, warnedAlertIncrease, "Guard issued warning");
                 break;
 
             case GuardQuestioningOutcome.Failed:
-                ZoneAlertManager.Instance.AddAlert(
-                    zoneID,
-                    failedAlertIncrease,
-                    "Player failed questioning"
-                );
+                ZoneAlertManager.Instance.AddAlert(zoneID, failedAlertIncrease, "Player failed questioning");
                 break;
 
             case GuardQuestioningOutcome.Chase:
-                ZoneAlertManager.Instance.AddAlert(
-                    zoneID,
-                    chaseAlertIncrease,
-                    "Guard began chase"
-                );
+                ZoneAlertManager.Instance.AddAlert(zoneID, chaseAlertIncrease, "Guard began chase");
                 break;
 
             case GuardQuestioningOutcome.Caught:
-                ZoneAlertManager.Instance.AddAlert(
-                    zoneID,
-                    caughtAlertIncrease,
-                    "Player was caught"
-                );
+                ZoneAlertManager.Instance.AddAlert(zoneID, caughtAlertIncrease, "Player was caught");
                 break;
         }
     }
@@ -509,17 +821,11 @@ public class GuardQuestioningResponder : MonoBehaviour
         );
     }
 
-    private void Log(string message)
-    {
-        if (showDebugLogs)
-        {
-            Debug.Log("[GuardQuestioningResponder] " + message);
-        }
-    }
     public void ResetQuestioningForCheckpoint()
     {
         StopAllCoroutines();
 
+        IsPreparingQuestioning = false;
         IsQuestioning = false;
         IsResolvingOutcome = false;
 
@@ -543,12 +849,24 @@ public class GuardQuestioningResponder : MonoBehaviour
             dialogueUI.HidePrompt();
             dialogueUI.HideDialogue();
         }
+        isPostReasonLineGraceActive = false;
+        postReasonLineGraceTimer = 0f;
+        IsPreparingQuestioning = false;
+        isShowingReasonLine = false;
+        reasonLineCountdownTimer = 0f;
+        currentReasonLineDebug = "";
 
         questioningRoutine = null;
+        reasonLineRoutine = null;
 
+        Log("Reset for checkpoint.");
+    }
+
+    private void Log(string message)
+    {
         if (showDebugLogs)
         {
-            Debug.Log("[GuardQuestioningResponder] Reset for checkpoint.");
+            Debug.Log("[GuardQuestioningResponder] " + message);
         }
     }
 }
