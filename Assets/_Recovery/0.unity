@@ -1723,9 +1723,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 169858658}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: -5, y: -66.479996}
   m_SizeDelta: {x: -70, y: 90}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &79502701
@@ -1950,9 +1950,9 @@ RectTransform:
   - {fileID: 2094709098}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 560, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &84072542
@@ -2821,9 +2821,9 @@ RectTransform:
   - {fileID: 717880699}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 720, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &110995222
@@ -6352,7 +6352,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.2
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: afeb3ab5b0da048389759e7da160189d, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: d394060afc3f94a498c53fed237f43d5, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1 &299853506
 GameObject:
@@ -7873,9 +7873,9 @@ RectTransform:
   - {fileID: 742008933}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 480, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &355440289
@@ -11813,10 +11813,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1534744231}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 34.64}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &504902373
 MonoBehaviour:
@@ -12298,9 +12298,9 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 169858658}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 160, y: -188.31999}
   m_SizeDelta: {x: 260, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &516419530
@@ -15023,9 +15023,9 @@ RectTransform:
   - {fileID: 2054566551}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 240, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &622643883
@@ -17625,9 +17625,9 @@ RectTransform:
   - {fileID: 1857400351}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 160, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &722693887
@@ -20731,8 +20731,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 736, y: -247.5}
-  m_SizeDelta: {x: 1412, y: 0}
+  m_AnchoredPosition: {x: 736, y: -244.15999}
+  m_SizeDelta: {x: 1412, y: 48}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &859863490
 MonoBehaviour:
@@ -21400,9 +21400,27 @@ MonoBehaviour:
   questioningProfile: {fileID: 11400000, guid: 6277aee0a22e0415d8c06e7edbcb0125, type: 2}
   showReasonLineBeforeConversation: 1
   minimumReasonLineDuration: 2.2
+  autoStartConversationAfterReasonLine: 1
   allowSkipReasonLineAfterMinimumTime: 1
   skipReasonLineKey: 1
   fallbackReasonLine: Stop. Explain yourself.
+  showCountdownBeforeConversation: 1
+  refreshCountdownText: 1
+  countdownRefreshInterval: 0.2
+  reasonSpeakerName: Guard
+  countdownFormat: Questioning starts in {0:0.0}s
+  continuePromptText: Press Space / E / Enter to respond.
+  hideReasonLineAfterFarChallenge: 1
+  showCountdownDuringFarChallenge: 0
+  ensureReasonLineFullyVisibleBeforeClosing: 1
+  estimatedReasonLineCharactersPerSecond: 38
+  reasonLineHoldAfterFullyVisible: 0.55
+  postReasonLineQuestionGraceDuration: 2
+  isPostReasonLineGraceActive: 0
+  postReasonLineGraceTimer: 0
+  isShowingReasonLine: 0
+  reasonLineCountdownTimer: 0
+  currentReasonLineDebug: 
   passedFastTalkCooldown: 7
   warnedFastTalkCooldown: 5
   clearStealthTogglesAfterSuccessfulFastTalk: 1
@@ -21548,6 +21566,25 @@ MonoBehaviour:
   blockQuestioningDuringFastTalkCooldown: 1
   blockChaseDuringFastTalkCooldown: 1
   showFastTalkCooldownDebug: 1
+  useQuestionComplianceSystem: 1
+  challengeReactionGrace: 0.35
+  fleeDistanceAfterChallenge: 3.75
+  questionBreakDistance: 5.5
+  chaseIfPlayerSprintsAfterChallenge: 1
+  chaseIfPlayerMovesTooFarAfterChallenge: 1
+  searchIfPlayerHidesDuringChallenge: 1
+  questionApproachSightGrace: 0.65
+  allowQuestionAfterRecentSightWhenClose: 1
+  keepApproachingBrieflyAfterSightLost: 1
+  callForHelpWhenPlayerRefusesQuestioning: 1
+  addZoneAlertWhenPlayerRefusesQuestioning: 1
+  addMemoryWhenPlayerRefusesQuestioning: 1
+  hasOrderedPlayerToStop: 0
+  challengeGraceTimer: 0
+  questionApproachLostSightTimer: 0
+  challengePlayerStartPosition: {x: 0, y: 0, z: 0}
+  distancePlayerMovedSinceChallenge: 0
+  complianceDebugStatus: 
   reduceSuspicionWhenDisguiseImproves: 1
   disguiseCheckInterval: 0.2
   validDisguiseSuspicionDropPerSecond: 30
@@ -21556,6 +21593,8 @@ MonoBehaviour:
   validDisguiseAlertReduction: 8
   allowDisguiseReliefOnlyBeforeChase: 1
   printDisguiseReliefDebug: 1
+  showFarReasonLineWhenChallenging: 1
+  onlyShowFarReasonLineOncePerApproach: 1
   useRealisticSoundInvestigation: 1
   soundReactionDelay: 0.45
   minimumTimeBetweenSoundReactions: 0.6
@@ -21603,9 +21642,6 @@ MonoBehaviour:
   blockChaseDuringCheckpointGrace: 1
   clearGuardReasonDuringCheckpointGrace: 1
   showCheckpointGraceDebug: 1
-  questionApproachSightGrace: 0.65
-  allowQuestionAfterRecentSightWhenClose: 1
-  keepApproachingBrieflyAfterSightLost: 1
   checkpointGraceTimer: 0
 --- !u!114 &886101400
 MonoBehaviour:
@@ -23437,9 +23473,9 @@ RectTransform:
   - {fileID: 441619974}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 80, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &998958528
@@ -23610,10 +23646,10 @@ RectTransform:
   - {fileID: 13631971}
   m_Father: {fileID: 859863489}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 706, y: -24}
+  m_SizeDelta: {x: 700, y: 48}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1000912795
 MonoBehaviour:
@@ -28569,9 +28605,9 @@ RectTransform:
   - {fileID: 1675274385}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 640, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1257375377
@@ -33854,6 +33890,25 @@ MonoBehaviour:
   blockQuestioningDuringFastTalkCooldown: 1
   blockChaseDuringFastTalkCooldown: 1
   showFastTalkCooldownDebug: 1
+  useQuestionComplianceSystem: 1
+  challengeReactionGrace: 0.35
+  fleeDistanceAfterChallenge: 3.75
+  questionBreakDistance: 5.5
+  chaseIfPlayerSprintsAfterChallenge: 1
+  chaseIfPlayerMovesTooFarAfterChallenge: 1
+  searchIfPlayerHidesDuringChallenge: 1
+  questionApproachSightGrace: 0.65
+  allowQuestionAfterRecentSightWhenClose: 1
+  keepApproachingBrieflyAfterSightLost: 1
+  callForHelpWhenPlayerRefusesQuestioning: 1
+  addZoneAlertWhenPlayerRefusesQuestioning: 1
+  addMemoryWhenPlayerRefusesQuestioning: 1
+  hasOrderedPlayerToStop: 0
+  challengeGraceTimer: 0
+  questionApproachLostSightTimer: 0
+  challengePlayerStartPosition: {x: 0, y: 0, z: 0}
+  distancePlayerMovedSinceChallenge: 0
+  complianceDebugStatus: 
   reduceSuspicionWhenDisguiseImproves: 1
   disguiseCheckInterval: 0.2
   validDisguiseSuspicionDropPerSecond: 30
@@ -33862,6 +33917,8 @@ MonoBehaviour:
   validDisguiseAlertReduction: 8
   allowDisguiseReliefOnlyBeforeChase: 1
   printDisguiseReliefDebug: 1
+  showFarReasonLineWhenChallenging: 1
+  onlyShowFarReasonLineOncePerApproach: 1
   useRealisticSoundInvestigation: 1
   soundReactionDelay: 0.45
   minimumTimeBetweenSoundReactions: 0.6
@@ -33909,9 +33966,6 @@ MonoBehaviour:
   blockChaseDuringCheckpointGrace: 1
   clearGuardReasonDuringCheckpointGrace: 1
   showCheckpointGraceDebug: 1
-  questionApproachSightGrace: 0.65
-  allowQuestionAfterRecentSightWhenClose: 1
-  keepApproachingBrieflyAfterSightLost: 1
   checkpointGraceTimer: 0
 --- !u!114 &1500860561
 MonoBehaviour:
@@ -33983,9 +34037,27 @@ MonoBehaviour:
   questioningProfile: {fileID: 11400000, guid: 6277aee0a22e0415d8c06e7edbcb0125, type: 2}
   showReasonLineBeforeConversation: 1
   minimumReasonLineDuration: 2.2
+  autoStartConversationAfterReasonLine: 1
   allowSkipReasonLineAfterMinimumTime: 1
   skipReasonLineKey: 1
   fallbackReasonLine: Stop. Explain yourself.
+  showCountdownBeforeConversation: 1
+  refreshCountdownText: 1
+  countdownRefreshInterval: 0.2
+  reasonSpeakerName: Guard
+  countdownFormat: Questioning starts in {0:0.0}s
+  continuePromptText: Press Space / E / Enter to respond.
+  hideReasonLineAfterFarChallenge: 1
+  showCountdownDuringFarChallenge: 0
+  ensureReasonLineFullyVisibleBeforeClosing: 1
+  estimatedReasonLineCharactersPerSecond: 38
+  reasonLineHoldAfterFullyVisible: 0.55
+  postReasonLineQuestionGraceDuration: 2
+  isPostReasonLineGraceActive: 0
+  postReasonLineGraceTimer: 0
+  isShowingReasonLine: 0
+  reasonLineCountdownTimer: 0
+  currentReasonLineDebug: 
   passedFastTalkCooldown: 7
   warnedFastTalkCooldown: 5
   clearStealthTogglesAfterSuccessfulFastTalk: 1
@@ -34259,7 +34331,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 30, y: -15}
-  m_SizeDelta: {x: 100, y: 0}
+  m_SizeDelta: {x: 100, y: 34.64}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1534744232
 MonoBehaviour:
@@ -38082,9 +38154,9 @@ RectTransform:
   - {fileID: 1480135321}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 320, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1783316631
@@ -39230,9 +39302,9 @@ RectTransform:
   - {fileID: 1747711319}
   m_Father: {fileID: 158906896}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 400, y: -45}
   m_SizeDelta: {x: 72, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1863306092

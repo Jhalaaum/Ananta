@@ -1044,7 +1044,99 @@ public class AdvancedGuardAIController : MonoBehaviour
             $"Grace: {challengeGraceTimer:0.00}\n" +
             $"Sight Grace: {questionApproachLostSightTimer:0.00}";
     }
+    public void ReceiveCrimeReport(CrimeReport report)
+    {
+        if (report == null)
+        {
+            return;
+        }
 
+        if (currentState == GuardState.CapturePlayer)
+        {
+            return;
+        }
+
+        if (questioningResponder != null &&
+            (questioningResponder.IsQuestioning || questioningResponder.IsResolvingOutcome))
+        {
+            return;
+        }
+
+        if (report.suspect != null)
+        {
+            player = report.suspect;
+        }
+
+        Vector3 safeCrimePosition = GetSafeNavMeshPosition(report.crimePosition, 3f);
+
+        lastKnownPlayerPosition = safeCrimePosition;
+        soundPosition = safeCrimePosition;
+
+        currentSuspicionReason = ConvertCrimeToSuspicionReason(report.crimeType);
+        currentSuspicionReasonText = report.crimeDescription;
+
+        suspicion += report.suspicionAmount;
+        suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
+        if (ZoneAlertManager.Instance != null && report.zoneAlertAmount > 0f)
+        {
+            ZoneAlertManager.Instance.AddAlert(
+                GetCurrentZoneID(),
+                report.zoneAlertAmount,
+                $"crime witnessed: {report.crimeDescription}"
+            );
+        }
+
+        if (GuardMemoryManager.Instance != null)
+        {
+            GuardMemoryManager.Instance.ReportSuspicion(
+                GetCurrentZoneID(),
+                currentSuspicionReason,
+                report.crimeDescription,
+                report.suspicionAmount * 0.35f,
+                report.immediateChaseIfSeen
+            );
+        }
+
+        if (report.immediateChaseIfSeen && CanCurrentlySeePlayer())
+        {
+            suspicion = 100f;
+            EnterChase();
+            return;
+        }
+
+        if (CanCurrentlySeePlayer() && suspicion >= GetCurrentQuestioningThreshold())
+        {
+            TryStartQuestioningBeforeChase();
+            return;
+        }
+
+        EnterInvestigateSound();
+    }
+    private GuardSuspicionReason ConvertCrimeToSuspicionReason(CrimeType crimeType)
+    {
+        switch (crimeType)
+        {
+            case CrimeType.Theft:
+            case CrimeType.Contraband:
+                return GuardSuspicionReason.ContrabandSeen;
+
+            case CrimeType.Lockpicking:
+                return GuardSuspicionReason.LockpickingSeen;
+
+            case CrimeType.Assault:
+                return GuardSuspicionReason.AttackedGuard;
+
+            case CrimeType.IgnoredQuestioning:
+                return GuardSuspicionReason.IgnoredWarning;
+
+            case CrimeType.Trespassing:
+                return GuardSuspicionReason.UnauthorizedZone;
+
+            default:
+                return GuardSuspicionReason.SawPlayerNormally;
+        }
+    }
     private bool ShouldTreatPlayerAsFleeingQuestioning()
     {
         if (!hasOrderedPlayerToStop)
