@@ -16,6 +16,7 @@ public class AdvancedGuardAIController : MonoBehaviour
         Chase,
         SearchArea,
         ReturnToPatrol,
+        FollowCivilianToCrime,
         CapturePlayer
     }
     private static readonly List<AdvancedGuardAIController> AllGuards =
@@ -93,6 +94,19 @@ public class AdvancedGuardAIController : MonoBehaviour
     public float sideSearchDistance = 3f;
     public float wideningSearchStep = 2.5f;
 
+    [Header("Alert/Search Re-Acquisition")]
+    public float alertSawPlayerMinimumSuspicion = 55f;
+    public float alertSawPlayerSuspicionPerSecond = 35f;
+    public bool searchTurnsToSuspiciousWhenSeeingPlayer = true;
+    public bool investigationTurnsToSuspiciousWhenSeeingPlayer = true;
+    public bool printReacquireDebug = true;
+
+    [Header("Search Path Fail-Safe")]
+    public float failedSearchPointWaitTime = 0.6f;
+    public float searchDestinationSampleDistance = 2.5f;
+    public float searchPathStuckGraceTime = 0.75f;
+
+    private float searchPathStuckTimer;
     [Header("Visual Debug")]
     public Renderer guardRenderer;
     public GameObject alertIcon;
@@ -155,7 +169,19 @@ public class AdvancedGuardAIController : MonoBehaviour
     public bool blockQuestioningDuringFastTalkCooldown = true;
     public bool blockChaseDuringFastTalkCooldown = true;
     public bool showFastTalkCooldownDebug = true;
+    [Header("Civilian Crime Report Lead")]
+    public bool canAcceptCivilianCrimeLead = true;
+    public float civilianLeadFollowDistance = 2.2f;
+    public float civilianLeadCrimeArriveDistance = 2.8f;
+    public float civilianLeadFollowRefreshInterval = 0.2f;
+    public float civilianLeadSuspicionBoost = 12f;
+    public bool showCivilianLeadDebug = true;
 
+    private Transform civilianCrimeLeader;
+    private CrimeReport civilianLedCrimeReport;
+    private Vector3 civilianLedCrimePosition;
+    private float civilianLeadConversationTimer;
+    private float civilianLeadRefreshTimer;
     [Header("Questioning Compliance / Refusal")]
     public bool useQuestionComplianceSystem = true;
 
@@ -477,6 +503,9 @@ public class AdvancedGuardAIController : MonoBehaviour
 
             case GuardState.CapturePlayer:
                 UpdateCapturePlayer();
+                break;
+            case GuardState.FollowCivilianToCrime:
+                UpdateFollowCivilianToCrime();
                 break;
         }
 
@@ -1956,6 +1985,11 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void UpdateInvestigateSound()
     {
+        if (ReactToVisiblePlayerDuringAlertState("investigation"))
+        {
+            return;
+        }
+
         FaceTarget(agent.steeringTarget);
 
         if (!onlyQuestionSoundIfPlayerSeen)
@@ -1981,18 +2015,34 @@ public class AdvancedGuardAIController : MonoBehaviour
             EnterSearchArea();
         }
     }
-
     private void EnterInvestigateLastKnownPosition()
     {
         currentState = GuardState.InvestigateSound;
-        agent.speed = investigateSpeed;
-        agent.stoppingDistance = investigateStoppingDistance;
-        agent.isStopped = false;
-        agent.SetDestination(lastKnownPlayerPosition);
+
+        if (lastKnownPlayerPosition == Vector3.zero)
+        {
+            lastKnownPlayerPosition = transform.position;
+        }
+
+        Vector3 safePosition = GetSafeNavMeshPosition(lastKnownPlayerPosition, 3f);
+        lastKnownPlayerPosition = safePosition;
+        soundPosition = safePosition;
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.speed = investigateSpeed;
+            agent.stoppingDistance = investigateStoppingDistance;
+            agent.isStopped = false;
+
+            if (!TrySetSearchDestination(safePosition))
+            {
+                EnterSearchArea();
+                return;
+            }
+        }
 
         SetVisualState(investigateColor, true);
     }
-
     private void EnterChase()
     {
         if (currentState == GuardState.Chase)
@@ -2088,23 +2138,15 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void UpdateSearchArea()
     {
-        if (CanCurrentlySeePlayer())
+        if (ReactToVisiblePlayerDuringAlertState("search"))
         {
-            if (TryStartQuestioningBeforeChase())
-            {
-                return;
-            }
-
-            if (suspicion >= chaseThreshold && CanEscalateToChase())
-            {
-                EnterChase();
-                return;
-            }
+            return;
         }
 
         if (isWaitingAtSearchPoint)
         {
             searchWaitTimer -= Time.deltaTime;
+
             LookAroundDuringSearch();
 
             if (searchWaitTimer <= 0f)
@@ -2125,30 +2167,126 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
+        if (agent == null || !agent.isOnNavMesh)
+        {
+            EnterReturnToPatrol();
+            return;
+        }
+
         FaceTarget(agent.steeringTarget);
+
+        if (!agent.pathPending &&
+            (!agent.hasPath || agent.pathStatus == NavMeshPathStatus.PathInvalid))
+        {
+            searchPathStuckTimer += Time.deltaTime;
+
+            if (searchPathStuckTimer >= searchPathStuckGraceTime)
+            {
+                BeginSearchWaitAtCurrentPosition();
+            }
+
+            return;
+        }
+
+        searchPathStuckTimer = 0f;
 
         if (ReachedDestination(searchPointReachDistance))
         {
-            agent.isStopped = true;
-            isWaitingAtSearchPoint = true;
-
-            float alertWaitMultiplier = 1f;
-
-            if (ZoneAlertManager.Instance != null)
-            {
-                alertWaitMultiplier = ZoneAlertManager.Instance.GetSearchWaitMultiplier(GetCurrentZoneID());
-            }
-
-            float confidenceWaitMultiplier = currentSearchWaitMultiplier <= 0f
-                ? 1f
-                : currentSearchWaitMultiplier;
-
-            searchWaitTimer = searchPointsVisited == 0
-                ? firstSearchLookTime * alertWaitMultiplier * confidenceWaitMultiplier
-                : waitAtSearchPointTime * alertWaitMultiplier * confidenceWaitMultiplier;
+            BeginSearchWaitAtCurrentPosition();
         }
     }
+    private void BeginSearchWaitAtCurrentPosition()
+    {
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
 
+        isWaitingAtSearchPoint = true;
+        searchPathStuckTimer = 0f;
+
+        float alertWaitMultiplier = 1f;
+
+        if (ZoneAlertManager.Instance != null)
+        {
+            alertWaitMultiplier = ZoneAlertManager.Instance.GetSearchWaitMultiplier(GetCurrentZoneID());
+        }
+
+        float confidenceWaitMultiplier = currentSearchWaitMultiplier <= 0f
+            ? 1f
+            : currentSearchWaitMultiplier;
+
+        searchWaitTimer = searchPointsVisited == 0
+            ? firstSearchLookTime * alertWaitMultiplier * confidenceWaitMultiplier
+            : waitAtSearchPointTime * alertWaitMultiplier * confidenceWaitMultiplier;
+    }
+    private bool ReactToVisiblePlayerDuringAlertState(string source)
+    {
+        if (!CanCurrentlySeePlayer())
+        {
+            return false;
+        }
+
+        if (player == null)
+        {
+            return false;
+        }
+
+        lastKnownPlayerPosition = player.position;
+        soundPosition = player.position;
+
+        FaceTarget(player.position);
+
+        if (currentSuspicionReason == GuardSuspicionReason.None ||
+            currentSuspicionReason == GuardSuspicionReason.HeardNoise ||
+            currentSuspicionReason == GuardSuspicionReason.InvestigatedSound)
+        {
+            currentSuspicionReason = GuardSuspicionReason.SawPlayerNormally;
+            currentSuspicionReasonText = $"spotting you during {source}";
+        }
+
+        if (suspicion < alertSawPlayerMinimumSuspicion)
+        {
+            suspicion = alertSawPlayerMinimumSuspicion;
+        }
+
+        suspicion += alertSawPlayerSuspicionPerSecond * Time.deltaTime;
+        suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
+        if (printReacquireDebug)
+        {
+            Debug.Log(
+                $"[{gameObject.name}] Re-acquired player during {source}. " +
+                $"Suspicion: {suspicion:0.0}, Reason: {currentSuspicionReasonText}"
+            );
+        }
+
+        if (TryStartQuestioningBeforeChase())
+        {
+            return true;
+        }
+
+        if (suspicion >= chaseThreshold && CanEscalateToChase())
+        {
+            EnterChase();
+            return true;
+        }
+
+        if (source == "search" && searchTurnsToSuspiciousWhenSeeingPlayer)
+        {
+            EnterSuspicious();
+            return true;
+        }
+
+        if (source == "investigation" && investigationTurnsToSuspiciousWhenSeeingPlayer)
+        {
+            EnterSuspicious();
+            return true;
+        }
+
+        return false;
+    }
     private int GetEffectiveSearchPointCount()
     {
         int extra = 0;
@@ -2163,6 +2301,11 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private void PickNextSmartSearchPoint()
     {
+        if (agent == null || !agent.isOnNavMesh)
+        {
+            return;
+        }
+
         agent.isStopped = false;
 
         Vector3 searchTarget;
@@ -2197,7 +2340,18 @@ public class AdvancedGuardAIController : MonoBehaviour
             return;
         }
 
-        TrySetSearchDestination(GetWideningSearchPoint());
+        if (TrySetSearchDestination(GetWideningSearchPoint()))
+        {
+            return;
+        }
+
+        currentSearchPoint = transform.position;
+        BeginSearchWaitAtCurrentPosition();
+
+        if (printReacquireDebug)
+        {
+            Debug.LogWarning($"[{gameObject.name}] Could not find valid search point. Searching current position.");
+        }
     }
 
     private void EnterReturnToPatrol()
@@ -2273,19 +2427,36 @@ public class AdvancedGuardAIController : MonoBehaviour
             return false;
         }
 
+        if (!agent.isOnNavMesh)
+        {
+            return false;
+        }
+
         if (agent.pathPending)
         {
             return false;
         }
 
-        if (!agent.hasPath)
+        if (agent.hasPath)
         {
+            if (agent.remainingDistance <= reachDistance)
+            {
+                return true;
+            }
+
+            if (agent.remainingDistance <= reachDistance + 0.25f &&
+                agent.velocity.sqrMagnitude < 0.02f)
+            {
+                return true;
+            }
+
             return false;
         }
 
-        return agent.remainingDistance <= reachDistance;
-    }
+        float distanceToDestination = Vector3.Distance(transform.position, agent.destination);
 
+        return distanceToDestination <= reachDistance + 0.25f;
+    }
     private int GetNearestPatrolPointIndex()
     {
         if (patrolPoints == null || patrolPoints.Length == 0)
@@ -2390,18 +2561,42 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     private bool TrySetSearchDestination(Vector3 targetPosition)
     {
-        Vector3 safePosition = GetSafeNavMeshPosition(targetPosition, 2.5f);
-
-        if (NavMesh.SamplePosition(safePosition, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
+        if (agent == null || !agent.isOnNavMesh)
         {
-            currentSearchPoint = hit.position;
-            agent.SetDestination(currentSearchPoint);
-            return true;
+            return false;
         }
 
-        return false;
-    }
+        if (!NavMesh.SamplePosition(
+                targetPosition,
+                out NavMeshHit hit,
+                searchDestinationSampleDistance,
+                NavMesh.AllAreas))
+        {
+            return false;
+        }
 
+        NavMeshPath path = new NavMeshPath();
+
+        bool pathFound = NavMesh.CalculatePath(
+            transform.position,
+            hit.position,
+            NavMesh.AllAreas,
+            path
+        );
+
+        if (!pathFound || path.status != NavMeshPathStatus.PathComplete)
+        {
+            return false;
+        }
+
+        currentSearchPoint = hit.position;
+        agent.isStopped = false;
+        agent.stoppingDistance = investigateStoppingDistance;
+        agent.SetDestination(currentSearchPoint);
+        searchPathStuckTimer = 0f;
+
+        return true;
+    }
     private void LookAroundDuringSearch()
     {
         lookAroundTimer += Time.deltaTime;
@@ -2697,6 +2892,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         ClearSuspicionCompletely();
         ClearQuestionComplianceRuntime();
+        ClearCivilianLeadRuntime();
         localQuestionAttemptCooldownTimer = 0f;
         questionApproachTimer = 0f;
         patrolWaitTimer = 0f;
@@ -2783,6 +2979,7 @@ public class AdvancedGuardAIController : MonoBehaviour
 
     public void ForceReturnToPatrol()
     {
+        ClearCivilianLeadRuntime();
         StopAllCoroutines();
 
         if (agent != null)
@@ -3269,7 +3466,155 @@ public class AdvancedGuardAIController : MonoBehaviour
 
         return true;
     }
+    public bool AcceptCivilianCrimeLead(
+        CrimeReport report,
+        Transform civilianLeader,
+        Vector3 crimePosition,
+        float conversationDuration
+    )
+    {
+        if (!canAcceptCivilianCrimeLead)
+        {
+            return false;
+        }
 
+        if (report == null || civilianLeader == null)
+        {
+            return false;
+        }
+
+        if (currentState == GuardState.CapturePlayer ||
+            currentState == GuardState.Chase)
+        {
+            return false;
+        }
+
+        if (questioningResponder != null &&
+            (questioningResponder.IsQuestioning || questioningResponder.IsResolvingOutcome))
+        {
+            return false;
+        }
+
+        civilianCrimeLeader = civilianLeader;
+        civilianLedCrimeReport = report;
+        civilianLedCrimePosition = GetSafeNavMeshPosition(crimePosition, 3f);
+        civilianLeadConversationTimer = Mathf.Max(0f, conversationDuration);
+        civilianLeadRefreshTimer = 0f;
+
+        currentState = GuardState.FollowCivilianToCrime;
+
+        currentSuspicionReason = ConvertCrimeToSuspicionReason(report.crimeType);
+        currentSuspicionReasonText = $"civilian reported {report.crimeDescription}";
+
+        suspicion += civilianLeadSuspicionBoost;
+        suspicion = Mathf.Clamp(suspicion, 0f, 100f);
+
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+            agent.speed = investigateSpeed;
+            agent.stoppingDistance = civilianLeadFollowDistance;
+        }
+
+        SetVisualState(investigateColor, true);
+
+        if (showCivilianLeadDebug)
+        {
+            Debug.Log(
+                $"[{gameObject.name}] Civilian report accepted. " +
+                $"Leader: {civilianLeader.gameObject.name}, Crime: {report.crimeDescription}"
+            );
+        }
+
+        return true;
+    }
+
+    private void UpdateFollowCivilianToCrime()
+    {
+        if (civilianCrimeLeader == null || civilianLedCrimeReport == null)
+        {
+            ClearCivilianLeadRuntime();
+            EnterReturnToPatrol();
+            return;
+        }
+
+        if (civilianLeadConversationTimer > 0f)
+        {
+            civilianLeadConversationTimer -= Time.deltaTime;
+
+            if (agent != null && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+
+            FaceTarget(civilianCrimeLeader.position);
+            return;
+        }
+
+        if (agent == null || !agent.isOnNavMesh)
+        {
+            CrimeReport report = civilianLedCrimeReport;
+            ClearCivilianLeadRuntime();
+            ReceiveCrimeReport(report);
+            return;
+        }
+
+        agent.isStopped = false;
+        agent.speed = investigateSpeed;
+        agent.stoppingDistance = civilianLeadFollowDistance;
+
+        civilianLeadRefreshTimer -= Time.deltaTime;
+
+        if (civilianLeadRefreshTimer <= 0f)
+        {
+            civilianLeadRefreshTimer = civilianLeadFollowRefreshInterval;
+            agent.SetDestination(civilianCrimeLeader.position);
+        }
+
+        FaceTarget(agent.steeringTarget);
+
+        float guardDistanceToCrime = Vector3.Distance(
+            transform.position,
+            civilianLedCrimePosition
+        );
+
+        float civilianDistanceToCrime = Vector3.Distance(
+            civilianCrimeLeader.position,
+            civilianLedCrimePosition
+        );
+
+        bool reachedCrimeArea =
+            guardDistanceToCrime <= civilianLeadCrimeArriveDistance ||
+            (civilianDistanceToCrime <= civilianLeadCrimeArriveDistance &&
+            Vector3.Distance(transform.position, civilianCrimeLeader.position) <= civilianLeadFollowDistance + 1.2f);
+
+        if (!reachedCrimeArea)
+        {
+            return;
+        }
+
+        CrimeReport finalReport = civilianLedCrimeReport;
+
+        ClearCivilianLeadRuntime();
+
+        if (showCivilianLeadDebug)
+        {
+            Debug.Log($"[{gameObject.name}] Arrived at crime spot with civilian. Receiving crime report.");
+        }
+
+        ReceiveCrimeReport(finalReport);
+    }
+
+    private void ClearCivilianLeadRuntime()
+    {
+        civilianCrimeLeader = null;
+        civilianLedCrimeReport = null;
+        civilianLedCrimePosition = Vector3.zero;
+        civilianLeadConversationTimer = 0f;
+        civilianLeadRefreshTimer = 0f;
+    }
     private void UpdateExternalGuardAlertResponse()
     {
         if (!isRespondingToExternalAlert)
