@@ -28,47 +28,86 @@ public class WorldItemDropper : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
     }
 
-    public void DropItem(ItemData itemData)
+    public bool DropItem(ItemData itemData)
     {
-        DropItem(itemData, 1);
+        return DropItem(itemData, 1);
     }
 
-    public void DropItem(ItemData itemData, int amount)
+    public bool DropItem(ItemData itemData, int amount)
     {
         if (itemData == null)
         {
-            Debug.LogWarning("[WorldItemDropper] Cannot drop null item.");
-            return;
+            Debug.LogWarning(
+                "[WorldItemDropper] Cannot drop null item."
+            );
+
+            return false;
         }
 
         if (amount <= 0)
         {
-            amount = 1;
-        }
+            Debug.LogWarning(
+                $"[WorldItemDropper] Cannot drop {itemData.itemName}. " +
+                $"Invalid amount: {amount}"
+            );
 
+            return false;
+        }
         if (defaultWorldItemPrefab == null)
         {
-            Debug.LogWarning("[WorldItemDropper] Missing default world item prefab.");
-            return;
+            Debug.LogWarning(
+                "[WorldItemDropper] Missing default world item prefab."
+            );
+
+            return false;
         }
 
         Vector3 spawnPosition = GetDropPosition();
 
-        GameObject spawned = Instantiate(defaultWorldItemPrefab, spawnPosition, Quaternion.identity);
+        GameObject spawned = Instantiate(
+            defaultWorldItemPrefab,
+            spawnPosition,
+            Quaternion.identity
+        );
 
-        WorldDroppedItem droppedItem = spawned.GetComponent<WorldDroppedItem>();
+        if (spawned == null)
+        {
+            Debug.LogError(
+                $"[WorldItemDropper] Failed to instantiate dropped item: " +
+                $"{itemData.itemName}"
+            );
 
-        if (droppedItem != null)
-        {
-            droppedItem.SetItem(itemData, amount);
+            return false;
         }
-        else
+
+        WorldDroppedItem droppedItem =
+            spawned.GetComponent<WorldDroppedItem>();
+
+        if (droppedItem == null)
         {
-            Debug.LogWarning("[WorldItemDropper] Spawned prefab has no WorldDroppedItem component.");
+            Debug.LogError(
+                "[WorldItemDropper] Spawned prefab has no " +
+                "WorldDroppedItem component. Destroying invalid object."
+            );
+
+            Destroy(spawned);
+
+            return false;
         }
+
+        droppedItem.SetItem(
+            itemData,
+            amount
+        );
 
         Rigidbody rb = spawned.GetComponent<Rigidbody>();
 
@@ -82,16 +121,28 @@ public class WorldItemDropper : MonoBehaviour
 
             if (useThrowForce)
             {
-                rb.AddForce(transform.forward * throwForce + Vector3.up * upwardForce, ForceMode.Impulse);
+                Vector3 force =
+                    transform.forward * throwForce +
+                    Vector3.up * upwardForce;
+
+                rb.AddForce(
+                    force,
+                    ForceMode.Impulse
+                );
             }
         }
 
         if (showDebugLogs)
         {
-            Debug.Log($"[WorldItemDropper] Dropped {itemData.itemName} x{amount} at {spawnPosition}");
+            Debug.Log(
+                $"[WorldItemDropper] Dropped " +
+                $"{itemData.itemName} x{amount} " +
+                $"at {spawnPosition}"
+            );
         }
-    }
 
+        return true;
+    }
     private Vector3 GetDropPosition()
     {
         Vector3 basePosition;
@@ -102,7 +153,10 @@ public class WorldItemDropper : MonoBehaviour
         }
         else
         {
-            basePosition = transform.position + transform.forward * forwardOffset + Vector3.up * upwardOffset;
+            basePosition =
+                transform.position +
+                transform.forward * forwardOffset +
+                Vector3.up * upwardOffset;
         }
 
         if (!raycastToGround)
@@ -110,13 +164,29 @@ public class WorldItemDropper : MonoBehaviour
             return basePosition;
         }
 
-        Vector3 rayStart = basePosition + Vector3.up * groundRaycastHeight;
+        Vector3 rayStart =
+            basePosition +
+            Vector3.up * groundRaycastHeight;
 
-        if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, groundRaycastDistance, groundLayerMask, QueryTriggerInteraction.Ignore))
+        // Look downward for valid ground.
+        if (Physics.Raycast(
+                rayStart,
+                Vector3.down,
+                out RaycastHit hit,
+                groundRaycastDistance,
+                groundLayerMask,
+                QueryTriggerInteraction.Ignore))
         {
             return hit.point + Vector3.up * 0.15f;
         }
-
         return basePosition;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 }

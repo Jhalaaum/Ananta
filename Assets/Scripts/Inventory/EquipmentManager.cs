@@ -319,4 +319,147 @@ public class EquipmentManager : MonoBehaviour
             Debug.Log($"[EquipmentManager] {message}");
         }
     }
+    public EquipmentSaveData CaptureEquipment()
+    {
+        EquipmentSaveData saveData =
+            new EquipmentSaveData();
+
+        saveData.headItemID =
+            GetItemID(headItem);
+
+        saveData.bodyItemID =
+            GetItemID(bodyItem);
+
+        saveData.legsItemID =
+            GetItemID(legsItem);
+
+        saveData.feetItemID =
+            GetItemID(feetItem);
+
+        saveData.accessoryItemIDs.Clear();
+
+        if (accessoryItems != null)
+        {
+            for (int i = 0; i < accessoryItems.Length; i++)
+            {
+                saveData.accessoryItemIDs.Add(
+                    GetItemID(accessoryItems[i])
+                );
+            }
+        }
+
+        if (showDebugLogs)
+        {
+            Debug.Log(
+                "[EquipmentManager] Equipment captured."
+            );
+        }
+
+        return saveData;
+    }
+    public void RestoreEquipment(
+    EquipmentSaveData saveData)
+    {
+        headItem = null;
+        bodyItem = null;
+        legsItem = null;
+        feetItem = null;
+
+        if (accessoryItems == null ||
+            accessoryItems.Length != 4)
+        {
+            accessoryItems = new ItemData[4];
+        }
+
+        for (int i = 0; i < accessoryItems.Length; i++)
+        {
+            accessoryItems[i] = null;
+        }
+
+        if (saveData == null)
+        {
+            OnEquipmentChanged?.Invoke();
+
+            Log(
+                "No equipment save data found. " +
+                "Equipment restored as empty."
+            );
+
+            return;
+        }
+
+        headItem =
+            GetItemFromID(saveData.headItemID);
+
+        bodyItem =
+            GetItemFromID(saveData.bodyItemID);
+
+        legsItem =
+            GetItemFromID(saveData.legsItemID);
+
+        feetItem =
+            GetItemFromID(saveData.feetItemID);
+
+        if (saveData.accessoryItemIDs != null)
+        {
+            int count = Mathf.Min(
+                accessoryItems.Length,
+                saveData.accessoryItemIDs.Count
+            );
+
+            for (int i = 0; i < count; i++)
+            {
+                accessoryItems[i] =
+                    GetItemFromID(
+                        saveData.accessoryItemIDs[i]
+                    );
+            }
+        }
+
+        Log("Equipment restored.");
+
+        OnEquipmentChanged?.Invoke();
+    }
+    private string GetItemID(ItemData item)
+    {
+        if (item == null)
+        {
+            return "";
+        }
+
+        return string.IsNullOrWhiteSpace(item.itemID)
+            ? ""
+            : item.itemID.Trim();
+    }
+    private ItemData GetItemFromID(string itemID)
+    {
+        if (string.IsNullOrWhiteSpace(itemID))
+        {
+            return null;
+        }
+
+        if (ItemDatabase.Instance == null)
+        {
+            Debug.LogWarning(
+                "[EquipmentManager] Cannot restore equipment. " +
+                "ItemDatabase.Instance is missing."
+            );
+
+            return null;
+        }
+
+        ItemData item =
+            ItemDatabase.Instance.GetItemByID(
+                itemID.Trim()
+            );
+
+        if (item == null)
+        {
+            Debug.LogWarning(
+                $"[EquipmentManager] Could not restore equipment item: {itemID}"
+            );
+        }
+
+        return item;
+    }
 }

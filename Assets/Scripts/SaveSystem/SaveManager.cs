@@ -40,6 +40,7 @@ public class SaveManager : MonoBehaviour
     public bool restoreWorldItems = true;
     public bool restoreInventory = true;
     public bool restoreQuests = true;
+    public bool restoreEquipment = true;
 
     [Header("Debug")]
     public bool showDebugLogs = true;
@@ -224,6 +225,11 @@ public class SaveManager : MonoBehaviour
         {
             saveData.inventorySaveData = InventoryManager.Instance.CaptureInventory();
         }
+        if (EquipmentManager.Instance != null)
+        {
+            saveData.equipment =
+                EquipmentManager.Instance.CaptureEquipment();
+        }
 
         if (WorldItemStateManager.Instance != null)
         {
@@ -333,6 +339,13 @@ public class SaveManager : MonoBehaviour
         if (restoreInventory && InventoryManager.Instance != null)
         {
             InventoryManager.Instance.RestoreInventory(saveData.inventorySaveData);
+        }
+        if (restoreEquipment &&
+            EquipmentManager.Instance != null)
+        {
+            EquipmentManager.Instance.RestoreEquipment(
+                saveData.equipment
+            );
         }
 
         if (restoreWorldItems && WorldItemStateManager.Instance != null)

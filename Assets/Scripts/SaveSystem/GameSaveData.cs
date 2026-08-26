@@ -11,18 +11,28 @@ public class GameSaveData
 
     public PlayerSaveData player = new PlayerSaveData();
 
-    public QuestSaveCollection questProgress = new QuestSaveCollection();
+    public QuestSaveCollection questProgress =
+        new QuestSaveCollection();
 
+    public MoneySaveData money =
+        new MoneySaveData();
 
-    public MoneySaveData money = new MoneySaveData();
-    public DisguiseSaveData disguise = new DisguiseSaveData();
-    public WorldSuspicionSaveData worldSuspicion = new WorldSuspicionSaveData();
-    public ZoneAlertSaveData zoneAlert = new ZoneAlertSaveData();
-    public StoryFlagSaveData storyFlags = new StoryFlagSaveData();
+    public EquipmentSaveData equipment =
+        new EquipmentSaveData();
+
+    public WorldSuspicionSaveData worldSuspicion =
+        new WorldSuspicionSaveData();
+
+    public ZoneAlertSaveData zoneAlert =
+        new ZoneAlertSaveData();
+
+    public StoryFlagSaveData storyFlags =
+        new StoryFlagSaveData();
+
     public InventorySaveData inventorySaveData;
+
     public WorldItemStateSaveData worldItemStateSaveData;
 }
-
 
 [Serializable]
 public class MoneySaveData
@@ -31,9 +41,15 @@ public class MoneySaveData
 }
 
 [Serializable]
-public class DisguiseSaveData
+public class EquipmentSaveData
 {
-    public string equippedDisguiseID;
+    public string headItemID = "";
+    public string bodyItemID = "";
+    public string legsItemID = "";
+    public string feetItemID = "";
+
+    public List<string> accessoryItemIDs =
+        new List<string>();
 }
 
 [Serializable]
@@ -45,7 +61,8 @@ public class WorldSuspicionSaveData
 [Serializable]
 public class ZoneAlertSaveData
 {
-    public List<ZoneAlertEntrySaveData> zones = new List<ZoneAlertEntrySaveData>();
+    public List<ZoneAlertEntrySaveData> zones =
+        new List<ZoneAlertEntrySaveData>();
 }
 
 [Serializable]
@@ -58,7 +75,8 @@ public class ZoneAlertEntrySaveData
 [Serializable]
 public class StoryFlagSaveData
 {
-    public List<StoryFlagEntrySaveData> flags = new List<StoryFlagEntrySaveData>();
+    public List<StoryFlagEntrySaveData> flags =
+        new List<StoryFlagEntrySaveData>();
 }
 
 [Serializable]

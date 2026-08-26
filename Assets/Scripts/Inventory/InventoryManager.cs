@@ -121,6 +121,18 @@ public class InventoryManager : MonoBehaviour
             return false;
         }
 
+        // IMPORTANT:
+        // Do not modify the inventory unless the ENTIRE requested amount fits.
+        if (!CanAddItem(itemData, amount))
+        {
+            Debug.LogWarning(
+                $"[InventoryManager] Cannot add {itemData.itemName} x{amount}. " +
+                "Not enough inventory space."
+            );
+
+            return false;
+        }
+
         int remainingAmount = amount;
 
         if (itemData.isStackable)
@@ -139,7 +151,17 @@ public class InventoryManager : MonoBehaviour
                     continue;
                 }
 
-                int amountToAdd = Mathf.Min(slot.GetSpaceRemaining(), remainingAmount);
+                int spaceRemaining = slot.GetSpaceRemaining();
+
+                if (spaceRemaining <= 0)
+                {
+                    continue;
+                }
+
+                int amountToAdd = Mathf.Min(
+                    spaceRemaining,
+                    remainingAmount
+                );
 
                 slot.amount += amountToAdd;
                 remainingAmount -= amountToAdd;
@@ -161,9 +183,19 @@ public class InventoryManager : MonoBehaviour
                 continue;
             }
 
-            int amountForSlot = itemData.isStackable
-                ? Mathf.Min(itemData.maxStackSize, remainingAmount)
-                : 1;
+            int amountForSlot;
+
+            if (itemData.isStackable)
+            {
+                amountForSlot = Mathf.Min(
+                    itemData.maxStackSize,
+                    remainingAmount
+                );
+            }
+            else
+            {
+                amountForSlot = 1;
+            }
 
             slot.itemData = itemData;
             slot.amount = amountForSlot;
@@ -177,11 +209,13 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
-        Debug.LogWarning("[InventoryManager] Inventory full.");
-        OnInventoryChanged?.Invoke();
+        Debug.LogError(
+            $"[InventoryManager] AddItem reached an unexpected state for " +
+            $"{itemData.itemName} x{amount}."
+        );
+
         return false;
     }
-
     public bool AddItemByID(string itemID, int amount = 1)
     {
         if (ItemDatabase.Instance == null)
@@ -219,29 +253,53 @@ public class InventoryManager : MonoBehaviour
                     continue;
                 }
 
-                if (slot.CanStackWith(itemData))
+                if (!slot.CanStackWith(itemData))
                 {
-                    remainingAmount -= slot.GetSpaceRemaining();
+                    continue;
+                }
 
-                    if (remainingAmount <= 0)
-                    {
-                        return true;
-                    }
+                int availableSpace = Mathf.Max(
+                    0,
+                    slot.GetSpaceRemaining()
+                );
+
+                remainingAmount -= availableSpace;
+
+                if (remainingAmount <= 0)
+                {
+                    return true;
                 }
             }
         }
 
         foreach (InventorySlot slot in slots)
         {
-            if (slot != null && slot.IsEmpty())
+            if (slot == null || !slot.IsEmpty())
+            {
+                continue;
+            }
+
+            if (itemData.isStackable)
+            {
+                remainingAmount -= Mathf.Max(
+                    1,
+                    itemData.maxStackSize
+                );
+            }
+            else
+            {
+                remainingAmount -= 1;
+            }
+
+            if (remainingAmount <= 0)
             {
                 return true;
             }
         }
 
+        // Not enough total capacity.
         return false;
     }
-
     public bool RemoveFromSlot(int slotIndex, int amount = 1)
     {
         InventorySlot slot = GetSlot(slotIndex);
@@ -366,26 +424,59 @@ public class InventoryManager : MonoBehaviour
 
         ItemData item = slot.itemData;
 
-        if (!item.canDrop || item.isImportant)
+        if (item == null)
         {
-            Debug.Log($"[InventoryManager] Cannot drop important item: {item.itemName}");
             return;
         }
 
-        RemoveFromSlot(slotIndex, 1);
-
-        if (WorldItemDropper.Instance != null)
+        if (!item.canDrop || item.isImportant)
         {
+            Debug.Log(
+                $"[InventoryManager] Cannot drop important item: {item.itemName}"
+            );
+
+            return;
+        }
+
+        if (WorldItemDropper.Instance == null)
+        {
+            Debug.LogWarning(
+                $"[InventoryManager] Cannot drop {item.itemName}. " +
+                "No WorldItemDropper exists."
+            );
+
+            return;
+        }
+
+        bool spawned =
             WorldItemDropper.Instance.DropItem(item, 1);
-        }
-        else
+
+        if (!spawned)
         {
-            Debug.LogWarning("[InventoryManager] No WorldItemDropper found. Item removed but not spawned.");
+            Debug.LogWarning(
+                $"[InventoryManager] Failed to drop {item.itemName}. " +
+                "Item remains in inventory."
+            );
+
+            return;
         }
 
-        Debug.Log($"[InventoryManager] Dropped item: {item.itemName}");
-    }
+        bool removed = RemoveFromSlot(slotIndex, 1);
 
+        if (!removed)
+        {
+            Debug.LogError(
+                $"[InventoryManager] World item spawned, but failed " +
+                $"to remove {item.itemName} from inventory."
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            $"[InventoryManager] Dropped item: {item.itemName}"
+        );
+    }
     public void DropSelectedHotbarItem()
     {
         DropSlot(selectedHotbarIndex);
