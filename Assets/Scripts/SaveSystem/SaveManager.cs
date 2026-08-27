@@ -11,8 +11,7 @@ public class SaveManager : MonoBehaviour
     [Header("References")]
     public Transform player;
     public PlayerCheckpointState playerCheckpointState;
-    public ZoneTracker zoneTracker;
-
+    public PlayerZoneTracker playerZoneTracker;
     [Header("Fallback Respawn")]
     public Transform defaultRespawnPoint;
     public bool reloadSceneIfNoCheckpoint = false;
@@ -163,9 +162,10 @@ public class SaveManager : MonoBehaviour
                 playerCheckpointState = player.GetComponent<PlayerCheckpointState>();
             }
 
-            if (zoneTracker == null)
+            if (playerZoneTracker == null)
             {
-                zoneTracker = player.GetComponent<ZoneTracker>();
+                playerZoneTracker =
+                    player.GetComponent<PlayerZoneTracker>();
             }
         }
 
@@ -196,18 +196,25 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        if (forceRefreshZoneAfterCheckpoint && zoneTracker != null)
+        if (forceRefreshZoneAfterCheckpoint &&
+            playerZoneTracker != null)
         {
-            zoneTracker.ForceRefreshCurrentZone();
+            playerZoneTracker.ForceRefreshCurrentZone();
         }
 
         GameSaveData saveData = new GameSaveData();
 
         saveData.saveName = saveName;
-        saveData.savedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        saveData.savedAt =
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-        string sceneName = SceneManager.GetActiveScene().name;
-        string zoneID = zoneTracker != null ? zoneTracker.GetCurrentZoneID() : "unknown_zone";
+        string sceneName =
+            SceneManager.GetActiveScene().name;
+
+        string zoneID =
+            playerZoneTracker != null
+                ? playerZoneTracker.GetCurrentZoneID()
+                : "public_city";
 
         if (saveData.player == null)
         {
@@ -378,7 +385,7 @@ public class SaveManager : MonoBehaviour
 
         Log($"Checkpoint loaded: {saveData.saveName}");
         Log($"Loaded position: {saveData.player.GetPosition()}");
-        Log($"Loaded zone: {(zoneTracker != null ? zoneTracker.GetCurrentZoneID() : "No ZoneTracker")}");
+        Log($"Loaded zone: " + $"{(zoneTracker != null ? zoneTracker.GetCurrentZoneID() : "No ZoneTracker")}");
     }
 
     private void RestorePlayerTransformSafely(Vector3 position, Quaternion rotation)
@@ -401,44 +408,45 @@ public class SaveManager : MonoBehaviour
         }
     }
 
-    private void RefreshZoneAfterCheckpoint(string savedZoneID)
+    private void RefreshZoneAfterCheckpoint(
+        string savedZoneID)
     {
         AutoFindReferences();
 
-        if (zoneTracker == null)
+        if (playerZoneTracker == null)
         {
-            Log("No ZoneTracker found to refresh.");
+            Log(
+                "No PlayerZoneTracker found to refresh."
+            );
+
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(savedZoneID))
-        {
-            zoneTracker.SetCurrentZone(savedZoneID);
-        }
+        playerZoneTracker
+            .ForceRefreshCurrentZoneAfterTeleport();
 
-        if (forceRefreshZoneAfterCheckpoint)
-        {
-            zoneTracker.ForceRefreshCurrentZoneAfterTeleport();
-        }
+        string actualZoneID =
+            playerZoneTracker.GetCurrentZoneID();
 
-        PlayerZoneTracker playerZoneTracker = player != null
-            ? player.GetComponent<PlayerZoneTracker>()
-            : null;
-
-        if (playerZoneTracker != null)
+        if (showDebugLogs)
         {
-            playerZoneTracker.SendMessage(
-                "ForceRefreshCurrentZoneAfterTeleport",
-                SendMessageOptions.DontRequireReceiver
+            Debug.Log(
+                $"[SaveManager] Zone refreshed after checkpoint. " +
+                $"Saved zone: {savedZoneID}, " +
+                $"Actual zone: {actualZoneID}"
             );
+        }
 
-            playerZoneTracker.SendMessage(
-                "ForceRefreshCurrentZone",
-                SendMessageOptions.DontRequireReceiver
+        if (!string.IsNullOrWhiteSpace(savedZoneID) &&
+            actualZoneID != savedZoneID)
+        {
+            Debug.LogWarning(
+                $"[SaveManager] Saved zone '{savedZoneID}' " +
+                $"does not match detected zone '{actualZoneID}'. " +
+                $"Using detected zone."
             );
         }
     }
-
     private void RespawnWithoutCheckpoint()
     {
         AutoFindReferences();
@@ -467,11 +475,11 @@ public class SaveManager : MonoBehaviour
             defaultRespawnPoint.rotation
         );
 
-        if (zoneTracker != null)
+        if (playerZoneTracker != null)
         {
-            zoneTracker.ForceRefreshCurrentZoneAfterTeleport();
+            playerZoneTracker
+                .ForceRefreshCurrentZoneAfterTeleport();
         }
-
         if (resetGuardsAfterCheckpoint)
         {
             ResetAllGuardsForCheckpoint();
