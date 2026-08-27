@@ -43,7 +43,21 @@ MonoBehaviour:
     showObjectiveMarker: 0
     stepStartMessage: 
     stepCompleteMessage: 
-    rewards: []
+    rewards:
+    - rewardType: 1
+      rewardID: Apple
+      amount: 2
+      itemReward: {fileID: 11400000, guid: ef530952853a04ab9a098e931e5bb4e7, type: 2}
+      showMessage: 1
+      rewardMessage: Apple
+      targetObject: {fileID: 0}
   completionMessage: 
-  completionRewards: []
+  completionRewards:
+  - rewardType: 1
+    rewardID: Apple
+    amount: 6
+    itemReward: {fileID: 11400000, guid: ef530952853a04ab9a098e931e5bb4e7, type: 2}
+    showMessage: 0
+    rewardMessage: 
+    targetObject: {fileID: 0}
   nextQuestToUnlock: {fileID: 0}

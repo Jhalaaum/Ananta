@@ -119,13 +119,20 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float climbTopSearchStep = 0.15f;
     [SerializeField] private float climbTopEdgeInset = 0.12f;
     [SerializeField] private float climbTopGroundCheckDistance = 0.6f;
-    [SerializeField] private float climbTopRequiredSupport = 0.75f;
+    [SerializeField] private float climbTopRequiredSupport = 0.6f;
     [Tooltip("Maximum vertical rise from the player's current feet position to the top landing point. Prevents huge early teleports on tall walls/cubes.")]
     [SerializeField] private float climbTopMaxExitRise = 2.85f;
     [Tooltip("Draws top-exit probe rays in the Scene view while climbing. Turn off after testing.")]
     [SerializeField] private bool debugClimbTopExit = true;
     private float climbExitGroundedGraceTimer;
+    [Header("Wall Climb Stability")]
+    [SerializeField]
+    private float climbSurfaceLostGraceTime = 0.12f;
 
+    [SerializeField]
+    private float climbSurfaceRotationSpeed = 14f;
+
+    private float climbSurfaceLostTimer;
     [Header("Camera Polish")]
     [SerializeField] private bool enableHeadBob = true;
     [SerializeField] private float walkBobAmount = 0.035f;
@@ -138,7 +145,15 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float normalFov = 70f;
     [SerializeField] private float sprintFov = 78f;
     [SerializeField] private float fovSmoothSpeed = 8f;
+    [Header("Climb Top Exit - Simple")]
+    [SerializeField] private float simpleTopProbeForward = 1.0f;
+    [SerializeField] private float simpleTopProbeUp = 2.2f;
+    [SerializeField] private float simpleTopProbeDownDistance = 3.5f;
+    [SerializeField] private float simpleTopLandingInset = 0.85f;
+    [SerializeField] private float simpleTopMaxRise = 2.2f;
+    [SerializeField] private float simpleTopMinRise = -0.45f;
 
+    [SerializeField] private bool debugSimpleTopExit = true;
     [Header("Lean Position")]
     [SerializeField] private float leanDistance = 0.7f;
     [SerializeField] private float leanSpeed = 10f;
@@ -237,7 +252,7 @@ public class PlayerMovement : MonoBehaviour
     private readonly RaycastHit[] leanHits = new RaycastHit[8];
 
     private bool IsGrounded => controller != null && controller.isGrounded;
-
+    public bool IsGroundedPublic => controller != null && controller.isGrounded;
     private void Reset()
     {
         controller = GetComponent<CharacterController>();
@@ -924,7 +939,31 @@ public class PlayerMovement : MonoBehaviour
         StartCoroutine(LadderTopExitRoutine(targetPosition));
         return true;
     }
+    private void SmoothAlignToClimbSurface(
+        Vector3 surfaceNormal)
+    {
+        Vector3 lookDirection =
+            -surfaceNormal;
 
+        lookDirection.y = 0f;
+
+        if (lookDirection.sqrMagnitude < 0.01f)
+            return;
+
+        Quaternion targetRotation =
+            Quaternion.LookRotation(
+                lookDirection.normalized,
+                Vector3.up
+            );
+
+        transform.rotation =
+            Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                Time.deltaTime *
+                    climbSurfaceRotationSpeed
+            );
+    }
     private IEnumerator LadderTopExitRoutine(Vector3 targetPosition)
     {
         isLadderClimbing = false;
@@ -1074,7 +1113,8 @@ public class PlayerMovement : MonoBehaviour
             return false;
 
         isWallClimbing = true;
-
+        climbSurfaceLostTimer =
+            climbSurfaceLostGraceTime;
         climbWallNormal = wallHit.normal;
         climbWallPoint = wallHit.point;
         climbStartY = transform.position.y;
@@ -1149,44 +1189,123 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        if (rawInput.y > 0.1f && TryExitClimbAtTop())
-            return;
-
-        bool foundWall = TryFindClimbableWall(-climbWallNormal, out RaycastHit wallHit);
-
-        if (!foundWall)
+        // Try to climb over the top BEFORE refreshing wall contact.
+        // This helps when the player reaches the lip and the wall cast
+        // starts missing because the vertical face is ending.
+        if (rawInput.y > 0.1f)
         {
-            if (rawInput.y > 0.1f && TryExitClimbAtTop())
+            if (TryExitClimbAtTop())
                 return;
+        }
+
+        bool foundWall =
+            TryFindClimbableWall(
+                -climbWallNormal,
+                out RaycastHit wallHit
+            );
+
+        if (foundWall)
+        {
+            // Refresh grace timer whenever we still have a valid wall.
+            climbSurfaceLostTimer =
+                climbSurfaceLostGraceTime;
+
+            climbWallNormal =
+                wallHit.normal;
+
+            climbWallPoint =
+                wallHit.point;
+        }
+        else
+        {
+            // Most likely case at the top edge:
+            // the vertical wall collider is no longer directly in front
+            // of the climbing probe.
+            if (rawInput.y > 0.1f)
+            {
+                // Try top transition one more time.
+                if (TryExitClimbAtTop())
+                    return;
+
+                // Give the top detector a short grace period instead
+                // of dropping the player immediately.
+                climbSurfaceLostTimer -=
+                    Time.deltaTime;
+
+                if (climbSurfaceLostTimer > 0f)
+                {
+                    verticalVelocity =
+                        Vector3.zero;
+
+                    horizontalVelocity =
+                        Vector3.zero;
+
+                    sprintBlend = 0f;
+
+                    return;
+                }
+            }
 
             StopWallClimb(false);
             return;
         }
 
-        climbWallNormal = wallHit.normal;
-        climbWallPoint = wallHit.point;
+        // Smoothly keep player facing the wall.
+        SmoothAlignToClimbSurface(
+            climbWallNormal
+        );
 
-        Vector3 wallRight = Vector3.Cross(Vector3.up, climbWallNormal).normalized;
+        Vector3 wallRight =
+            Vector3.Cross(
+                Vector3.up,
+                climbWallNormal
+            ).normalized;
 
-        float verticalInput = rawInput.y;
-        float sideInput = rawInput.x;
+        float verticalInput =
+            rawInput.y;
 
-        float verticalSpeed = verticalInput >= 0f ? climbUpSpeed : climbDownSpeed;
+        float sideInput =
+            rawInput.x;
+
+        float verticalSpeed =
+            verticalInput >= 0f
+                ? climbUpSpeed
+                : climbDownSpeed;
 
         Vector3 climbMovement =
-            Vector3.up * verticalInput * verticalSpeed +
-            wallRight * sideInput * climbSideSpeed +
-            -climbWallNormal * climbStickToWallForce;
+            Vector3.up *
+                verticalInput *
+                verticalSpeed
+            +
+            wallRight *
+                sideInput *
+                climbSideSpeed
+            +
+            -climbWallNormal *
+                climbStickToWallForce;
 
-        controller.Move(climbMovement * Time.deltaTime);
+        controller.Move(
+            climbMovement *
+            Time.deltaTime
+        );
 
-        if (rawInput.y > 0.1f && TryExitClimbAtTop())
-            return;
+        // Try again AFTER moving.
+        // This catches the exact frame where the player's feet/head
+        // enter the valid top-exit range.
+        if (rawInput.y > 0.1f)
+        {
+            if (TryExitClimbAtTop())
+                return;
+        }
 
         SnapToClimbWall();
 
-        verticalVelocity = Vector3.zero;
-        horizontalVelocity = Vector3.zero;
+        verticalVelocity =
+            Vector3.zero;
+
+        horizontalVelocity =
+            Vector3.zero;
+
         sprintBlend = 0f;
     }
     private void AlignToClimbSurface(Vector3 surfaceNormal)
@@ -1212,22 +1331,13 @@ public class PlayerMovement : MonoBehaviour
 
     private bool TryExitClimbAtTop()
     {
+        // Only climb over while the player is actually
+        // trying to climb upward.
         if (rawInput.y <= 0.1f)
             return false;
 
-        if (!TryFindReliableClimbTopPosition(out Vector3 targetPosition, out Collider groundCollider))
+        if (!isWallClimbing)
             return false;
-
-        if (!HasRoomAtPositionIgnoringCollider(targetPosition, standingHeight, groundCollider))
-            return false;
-
-        StartCoroutine(ClimbTopExitRoutine(targetPosition));
-        return true;
-    }
-    private bool TryFindReliableClimbTopPosition(out Vector3 targetPosition, out Collider groundCollider)
-    {
-        targetPosition = Vector3.zero;
-        groundCollider = null;
 
         Vector3 overWallDirection = -climbWallNormal;
         overWallDirection.y = 0f;
@@ -1237,91 +1347,292 @@ public class PlayerMovement : MonoBehaviour
 
         overWallDirection.Normalize();
 
-        Vector3 right = Vector3.Cross(Vector3.up, overWallDirection).normalized;
+        int detectionMask = GetClimbTopDetectionMask();
 
-        int topDetectionMask = GetClimbTopDetectionMask();
+        // --------------------------------------------------
+        // Probe from above and slightly BEYOND the wall.
+        //
+        // This directly asks:
+        // "Is there a floor on the other side of this wall?"
+        // --------------------------------------------------
+
+        Vector3 probeOrigin =
+            transform.position +
+            Vector3.up * simpleTopProbeUp +
+            overWallDirection * simpleTopProbeForward;
+
+    #if UNITY_EDITOR
+        if (debugSimpleTopExit)
+        {
+            Debug.DrawRay(
+                probeOrigin,
+                Vector3.down * simpleTopProbeDownDistance,
+                Color.magenta,
+                0.05f
+            );
+        }
+    #endif
+
+        bool foundTop = Physics.Raycast(
+            probeOrigin,
+            Vector3.down,
+            out RaycastHit topHit,
+            simpleTopProbeDownDistance,
+            detectionMask,
+            QueryTriggerInteraction.Ignore
+        );
+
+        if (!foundTop)
+            return false;
+
+        // Only accept reasonably flat surfaces.
+        float upDot = Vector3.Dot(
+            topHit.normal,
+            Vector3.up
+        );
+
+        if (upDot < 0.65f)
+            return false;
+
+        float rise =
+            topHit.point.y -
+            transform.position.y;
+
+        // Don't teleport onto something far above us.
+        // But DO allow tops approximately level with our feet.
+        if (rise > simpleTopMaxRise)
+            return false;
+
+        if (rise < simpleTopMinRise)
+            return false;
+
+        // --------------------------------------------------
+        // Put the player properly ONTO the cube.
+        // --------------------------------------------------
+
+        Vector3 targetPosition =
+            topHit.point +
+            overWallDirection *
+            Mathf.Max(
+                simpleTopLandingInset,
+                controller.radius + 0.2f
+            );
+
+        targetPosition.y += 0.06f;
+
+    #if UNITY_EDITOR
+        if (debugSimpleTopExit)
+        {
+            Debug.DrawLine(
+                targetPosition,
+                targetPosition + Vector3.up * 2f,
+                Color.green,
+                0.1f
+            );
+        }
+    #endif
+
+        // Make sure there isn't a ceiling/object where
+        // the player will stand.
+        if (!HasRoomAtPositionIgnoringCollider(
+                targetPosition,
+                standingHeight,
+                topHit.collider))
+        {
+            return false;
+        }
+
+        StartCoroutine(
+            ClimbTopExitRoutine(targetPosition)
+        );
+
+        return true;
+    }
+    private bool TryFindReliableClimbTopPosition(
+        out Vector3 targetPosition,
+        out Collider groundCollider)
+    {
+        targetPosition = Vector3.zero;
+        groundCollider = null;
+
+        Vector3 overWallDirection =
+            -climbWallNormal;
+
+        overWallDirection.y = 0f;
+
+        if (overWallDirection.sqrMagnitude < 0.01f)
+            return false;
+
+        overWallDirection.Normalize();
+
+        Vector3 right =
+            Vector3.Cross(
+                Vector3.up,
+                overWallDirection
+            ).normalized;
+
+        int topDetectionMask =
+            GetClimbTopDetectionMask();
 
         float bestSupport = 0f;
-        Vector3 bestPosition = Vector3.zero;
-        Collider bestCollider = null;
 
-        // Important: for a cube/wall, the top surface is usually on the same layer/collider as the climbable wall.
-        // Therefore we raycast against a combined mask, not obstructionMask only.
-        for (float forward = climbTopSearchStart; forward <= climbTopSearchEnd; forward += climbTopSearchStep)
+        Vector3 bestPosition =
+            Vector3.zero;
+
+        Collider bestCollider =
+            null;
+
+        // We now allow the top to be slightly BELOW
+        // the player's feet, because when the player
+        // reaches the lip their feet may already be
+        // almost level with the top.
+        const float minimumTopRise = -0.35f;
+
+        for (
+            float forward = climbTopSearchStart;
+            forward <= climbTopSearchEnd;
+            forward += climbTopSearchStep)
         {
             Vector3 probeStart =
                 transform.position +
-                Vector3.up * climbTopProbeHeight +
-                overWallDirection * forward;
+                Vector3.up *
+                    climbTopProbeHeight +
+                overWallDirection *
+                    forward;
 
-#if UNITY_EDITOR
+    #if UNITY_EDITOR
             if (debugClimbTopExit)
-                Debug.DrawRay(probeStart, Vector3.down * (climbTopProbeHeight + 3f), Color.yellow, 0.05f);
-#endif
+            {
+                Debug.DrawRay(
+                    probeStart,
+                    Vector3.down *
+                    (climbTopProbeHeight + 3f),
+                    Color.yellow,
+                    0.05f
+                );
+            }
+    #endif
 
-            bool foundTop = Physics.Raycast(
-                probeStart,
-                Vector3.down,
-                out RaycastHit topHit,
-                climbTopProbeHeight + 3f,
-                topDetectionMask,
-                QueryTriggerInteraction.Ignore
-            );
+            bool foundTop =
+                Physics.Raycast(
+                    probeStart,
+                    Vector3.down,
+                    out RaycastHit topHit,
+                    climbTopProbeHeight + 3f,
+                    topDetectionMask,
+                    QueryTriggerInteraction.Ignore
+                );
 
             if (!foundTop)
                 continue;
 
-            if (Vector3.Dot(topHit.normal, Vector3.up) < 0.7f)
+            // Require a walkable surface.
+            if (Vector3.Dot(
+                    topHit.normal,
+                    Vector3.up) < 0.7f)
+            {
                 continue;
+            }
 
-            float riseToTop = topHit.point.y - transform.position.y;
+            float riseToTop =
+                topHit.point.y -
+                transform.position.y;
 
-            // Do not exit if the player is still far below the top. This prevents a tall cube from teleporting
-            // the player to the roof too early just because a ray saw the top face.
-            if (riseToTop < 0.15f || riseToTop > climbTopMaxExitRise)
+            // Main fix:
+            // Don't reject a top that is nearly level
+            // with the player's feet.
+            if (riseToTop < minimumTopRise ||
+                riseToTop > climbTopMaxExitRise)
+            {
                 continue;
+            }
 
-            Vector3 candidate = topHit.point;
+            Vector3 candidate =
+                topHit.point;
 
-            // Move the feet position slightly onto the top surface so the capsule is not balanced on the vertical edge.
-            candidate += overWallDirection * (controller.radius + climbTopEdgeInset);
-            candidate += Vector3.up * climbTopStandUpOffset;
+            // Move well onto the platform, not merely
+            // balance the capsule on its edge.
+            float inwardDistance =
+                Mathf.Max(
+                    controller.radius +
+                    climbTopEdgeInset,
+                    controller.radius * 1.25f
+                );
 
-            float support = GetLandingSupportAmount(candidate, overWallDirection, right, topDetectionMask);
+            candidate +=
+                overWallDirection *
+                inwardDistance;
 
-#if UNITY_EDITOR
+            candidate +=
+                Vector3.up *
+                climbTopStandUpOffset;
+
+            float support =
+                GetLandingSupportAmount(
+                    candidate,
+                    overWallDirection,
+                    right,
+                    topDetectionMask
+                );
+
+    #if UNITY_EDITOR
             if (debugClimbTopExit)
             {
-                Color color = support >= climbTopRequiredSupport ? Color.green : Color.red;
-                Debug.DrawLine(candidate, candidate + Vector3.up * 1.25f, color, 0.05f);
+                Color color =
+                    support >=
+                    climbTopRequiredSupport
+                        ? Color.green
+                        : Color.red;
+
+                Debug.DrawLine(
+                    candidate,
+                    candidate +
+                    Vector3.up * 1.25f,
+                    color,
+                    0.05f
+                );
             }
-#endif
+    #endif
 
             if (support > bestSupport)
             {
-                bestSupport = support;
-                bestPosition = candidate;
-                bestCollider = topHit.collider;
+                bestSupport =
+                    support;
+
+                bestPosition =
+                    candidate;
+
+                bestCollider =
+                    topHit.collider;
             }
 
-            if (support >= climbTopRequiredSupport)
+            if (support >=
+                climbTopRequiredSupport)
             {
-                targetPosition = candidate;
-                groundCollider = topHit.collider;
+                targetPosition =
+                    candidate;
+
+                groundCollider =
+                    topHit.collider;
+
                 return true;
             }
         }
 
-        if (bestSupport >= climbTopRequiredSupport)
+        if (bestSupport >=
+            climbTopRequiredSupport)
         {
-            targetPosition = bestPosition;
-            groundCollider = bestCollider;
+            targetPosition =
+                bestPosition;
+
+            groundCollider =
+                bestCollider;
+
             return true;
         }
 
         return false;
     }
-
     private int GetClimbTopDetectionMask()
     {
         int mask = obstructionMask.value | climbableWallMask.value | mantleMask.value;
@@ -1481,18 +1792,42 @@ public class PlayerMovement : MonoBehaviour
 
         return true;
     }
-    private IEnumerator ClimbTopExitRoutine(Vector3 targetPosition)
+    private IEnumerator ClimbTopExitRoutine(
+        Vector3 targetPosition)
     {
         isWallClimbing = false;
         isMantling = true;
-        CurrentMovementState = MovementState.ClimbMantle;
+
+        CurrentMovementState =
+            MovementState.ClimbMantle;
 
         rawInput = Vector2.zero;
-        horizontalVelocity = Vector3.zero;
-        verticalVelocity = Vector3.zero;
+
+        horizontalVelocity =
+            Vector3.zero;
+
+        verticalVelocity =
+            Vector3.zero;
+
         sprintBlend = 0f;
 
-        Vector3 startPosition = transform.position;
+        Vector3 startPosition =
+            transform.position;
+
+        Vector3 midpoint =
+            Vector3.Lerp(
+                startPosition,
+                targetPosition,
+                0.5f
+            );
+
+        // Pull the player upward over the lip.
+        midpoint.y =
+            Mathf.Max(
+                startPosition.y,
+                targetPosition.y
+            ) + 0.35f;
+
         float timer = 0f;
 
         controller.enabled = false;
@@ -1501,35 +1836,78 @@ public class PlayerMovement : MonoBehaviour
         {
             timer += Time.deltaTime;
 
-            float t = Mathf.Clamp01(timer / climbTopExitDuration);
-            float smoothT = t * t * (3f - 2f * t);
+            float t =
+                Mathf.Clamp01(
+                    timer /
+                    climbTopExitDuration
+                );
 
-            transform.position = Vector3.Lerp(startPosition, targetPosition, smoothT);
+            float smoothT =
+                t * t *
+                (3f - 2f * t);
+
+            float inverse =
+                1f - smoothT;
+
+            Vector3 position =
+                inverse * inverse *
+                    startPosition +
+                2f * inverse *
+                    smoothT *
+                    midpoint +
+                smoothT * smoothT *
+                    targetPosition;
+
+            transform.position =
+                position;
 
             yield return null;
         }
 
-        transform.position = targetPosition;
+        transform.position =
+            targetPosition;
 
-        controller.height = standingHeight;
-        controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
-        controller.stepOffset = standingStepOffset;
+        controller.height =
+            standingHeight;
 
-        currentStance = Stance.Standing;
+        controller.center =
+            new Vector3(
+                0f,
+                controller.height * 0.5f,
+                0f
+            );
 
-        controller.enabled = true;
+        controller.stepOffset =
+            standingStepOffset;
 
-        controller.Move(Vector3.down * 0.05f);
+        currentStance =
+            Stance.Standing;
 
-        verticalVelocity = Vector3.zero;
-        verticalVelocity.y = groundedStickForce;
+        controller.enabled =
+            true;
 
-        horizontalVelocity = Vector3.zero;
+        controller.Move(
+            Vector3.down * 0.05f
+        );
+
+        verticalVelocity =
+            Vector3.zero;
+
+        verticalVelocity.y =
+            groundedStickForce;
+
+        horizontalVelocity =
+            Vector3.zero;
+
         sprintBlend = 0f;
 
-        coyoteTimer = coyoteTime;
+        coyoteTimer =
+            coyoteTime;
+
         jumpBufferTimer = 0f;
-        climbExitGroundedGraceTimer = climbExitGroundedGraceTime;
+
+        climbExitGroundedGraceTimer =
+            climbExitGroundedGraceTime;
 
         isWallClimbing = false;
         isMantling = false;
@@ -1560,76 +1938,176 @@ public class PlayerMovement : MonoBehaviour
         if (currentStance != Stance.Standing)
             return false;
 
-        if (isMantling || isInteracting || isHidden || isWallClimbing)
+        if (isMantling ||
+            isInteracting ||
+            isHidden ||
+            isWallClimbing ||
+            isLadderClimbing)
+        {
+            return false;
+        }
+
+        Vector3 flatForward = transform.forward;
+        flatForward.y = 0f;
+
+        if (flatForward.sqrMagnitude < 0.01f)
             return false;
 
-        Vector3 forward = transform.forward;
-        
-        Vector3 lowerOrigin = transform.position + Vector3.up * mantleMinHeight;
-        Vector3 upperOrigin = transform.position + Vector3.up * mantleMaxHeight;
+        flatForward.Normalize();
 
-        bool hasLowerHit = Physics.Raycast(
-            lowerOrigin,
-            forward,
-            out RaycastHit wallHit,
-            mantleCheckDistance,
-            mantleMask,
-            QueryTriggerInteraction.Ignore
-        );
+        float probeRadius =
+            Mathf.Max(
+                0.08f,
+                controller.radius * 0.45f
+            );
 
-        if (!hasLowerHit)
+
+        Vector3 wallProbeOrigin =
+            transform.position +
+            Vector3.up * mantleMinHeight;
+
+        bool foundWall =
+            Physics.SphereCast(
+                wallProbeOrigin,
+                probeRadius,
+                flatForward,
+                out RaycastHit wallHit,
+                mantleCheckDistance,
+                mantleMask,
+                QueryTriggerInteraction.Ignore
+            );
+
+        if (!foundWall)
             return false;
 
-        bool upperBlocked = Physics.Raycast(
-            upperOrigin,
-            forward,
-            mantleCheckDistance,
-            mantleMask,
-            QueryTriggerInteraction.Ignore
-        );
+        // Reject floor-like surfaces.
+        float wallUpDot =
+            Mathf.Abs(
+                Vector3.Dot(
+                    wallHit.normal,
+                    Vector3.up
+                )
+            );
+
+        if (wallUpDot > 0.55f)
+            return false;
+
+        Vector3 overWallDirection =
+            -wallHit.normal;
+
+        overWallDirection.y = 0f;
+
+        if (overWallDirection.sqrMagnitude < 0.01f)
+            return false;
+
+        overWallDirection.Normalize();
+
+
+        Vector3 upperProbeOrigin =
+            transform.position +
+            Vector3.up * mantleMaxHeight;
+
+        bool upperBlocked =
+            Physics.SphereCast(
+                upperProbeOrigin,
+                probeRadius,
+                overWallDirection,
+                out _,
+                mantleCheckDistance,
+                mantleMask,
+                QueryTriggerInteraction.Ignore
+            );
 
         if (upperBlocked)
             return false;
 
-        Vector3 ledgeProbeStart = wallHit.point + forward * 0.1f + Vector3.up * (mantleMaxHeight + 0.5f);
+        Vector3 ledgeProbeStart =
+            wallHit.point +
+            overWallDirection *
+                Mathf.Max(
+                    controller.radius + 0.15f,
+                    mantleForwardOffset
+                ) +
+            Vector3.up *
+                (mantleMaxHeight + 0.75f);
 
-        bool foundTop = Physics.Raycast(
-            ledgeProbeStart,
-            Vector3.down,
-            out RaycastHit topHit,
-            mantleMaxHeight + 1.0f,
-            mantleMask,
-            QueryTriggerInteraction.Ignore
-        );
+        bool foundTop =
+            Physics.SphereCast(
+                ledgeProbeStart,
+                probeRadius * 0.65f,
+                Vector3.down,
+                out RaycastHit topHit,
+                mantleMaxHeight + 1.5f,
+                mantleMask,
+                QueryTriggerInteraction.Ignore
+            );
 
         if (!foundTop)
             return false;
 
-        float mantleHeight = topHit.point.y - transform.position.y;
-
-        if (mantleHeight < mantleMinHeight || mantleHeight > mantleMaxHeight)
+        if (Vector3.Dot(topHit.normal, Vector3.up) < 0.7f)
             return false;
 
-        Vector3 targetPosition = topHit.point + forward * Mathf.Max(mantleForwardOffset, controller.radius + 0.05f);
-        targetPosition.y += 0.05f;
+        float mantleHeight =
+            topHit.point.y -
+            transform.position.y;
 
-        if (!HasRoomAtPosition(targetPosition, standingHeight))
+        if (mantleHeight < mantleMinHeight ||
+            mantleHeight > mantleMaxHeight)
+        {
             return false;
+        }
 
-        StartCoroutine(MantleRoutine(targetPosition));
+
+        Vector3 targetPosition =
+            topHit.point +
+            overWallDirection *
+                (controller.radius + 0.12f) +
+            Vector3.up * 0.04f;
+
+        if (!HasRoomAtPositionIgnoringCollider(
+                targetPosition,
+                standingHeight,
+                topHit.collider))
+        {
+            return false;
+        }
+
+        StartCoroutine(
+            MantleRoutine(targetPosition)
+        );
+
         return true;
     }
-    private IEnumerator MantleRoutine(Vector3 targetPosition)
+    private IEnumerator MantleRoutine(
+        Vector3 targetPosition)
     {
         isMantling = true;
-        CurrentMovementState = MovementState.ClimbMantle;
+
+        CurrentMovementState =
+            MovementState.ClimbMantle;
 
         sprintBlend = 0f;
         horizontalVelocity = Vector3.zero;
         verticalVelocity = Vector3.zero;
         rawInput = Vector2.zero;
 
-        Vector3 startPosition = transform.position;
+        Vector3 startPosition =
+            transform.position;
+
+        Vector3 midpoint =
+            Vector3.Lerp(
+                startPosition,
+                targetPosition,
+                0.5f
+            );
+
+        midpoint.y =
+            Mathf.Max(
+                startPosition.y,
+                targetPosition.y
+            ) + 0.18f;
+
         float timer = 0f;
 
         controller.enabled = false;
@@ -1638,37 +2116,76 @@ public class PlayerMovement : MonoBehaviour
         {
             timer += Time.deltaTime;
 
-            float t = Mathf.Clamp01(timer / mantleDuration);
-            float smoothT = t * t * (3f - 2f * t);
+            float t =
+                Mathf.Clamp01(
+                    timer / mantleDuration
+                );
 
-            transform.position = Vector3.Lerp(startPosition, targetPosition, smoothT);
+            float smoothT =
+                t * t * (3f - 2f * t);
+
+            float inverse =
+                1f - smoothT;
+
+            Vector3 position =
+                inverse * inverse *
+                    startPosition +
+                2f * inverse * smoothT *
+                    midpoint +
+                smoothT * smoothT *
+                    targetPosition;
+
+            transform.position = position;
 
             yield return null;
         }
 
-        transform.position = targetPosition;
+        transform.position =
+            targetPosition;
 
-        currentStance = Stance.Standing;
-        controller.height = standingHeight;
-        controller.center = new Vector3(0f, controller.height * 0.5f, 0f);
-        controller.stepOffset = standingStepOffset;
+        currentStance =
+            Stance.Standing;
+
+        controller.height =
+            standingHeight;
+
+        controller.center =
+            new Vector3(
+                0f,
+                controller.height * 0.5f,
+                0f
+            );
+
+        controller.stepOffset =
+            standingStepOffset;
 
         controller.enabled = true;
-        controller.Move(Vector3.down * 0.05f);
 
-        verticalVelocity = Vector3.zero;
-        verticalVelocity.y = groundedStickForce;
+        controller.Move(
+            Vector3.down * 0.05f
+        );
 
-        horizontalVelocity = Vector3.zero;
+        verticalVelocity =
+            Vector3.zero;
+
+        verticalVelocity.y =
+            groundedStickForce;
+
+        horizontalVelocity =
+            Vector3.zero;
+
         sprintBlend = 0f;
 
-        coyoteTimer = coyoteTime;
+        coyoteTimer =
+            coyoteTime;
+
         jumpBufferTimer = 0f;
-        climbExitGroundedGraceTimer = climbExitGroundedGraceTime;
+
+        climbExitGroundedGraceTimer =
+            climbExitGroundedGraceTime;
 
         isMantling = false;
     }
-
     private bool HasRoomAtPosition(Vector3 position, float desiredHeight)
     {
         float radius = Mathf.Max(0.05f, controller.radius - standCheckRadiusPadding);

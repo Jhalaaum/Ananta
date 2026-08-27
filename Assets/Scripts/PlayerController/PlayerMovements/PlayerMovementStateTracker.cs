@@ -1,37 +1,17 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(PlayerMovement))]
 public class PlayerMovementStateTracker : MonoBehaviour
 {
     public static PlayerMovementStateTracker Instance;
 
-    [Header("Movement References")]
-    public CharacterController characterController;
-    public Rigidbody playerRigidbody;
-
-    [Header("Input Mode")]
-    public bool crouchIsToggle = true;
-    public bool crawlIsToggle = true;
-
-    [Header("Input Keys")]
-    public Key sprintKey = Key.LeftShift;
-    public Key crouchKey = Key.C;
-    public Key crawlKey = Key.X;
-
-    [Header("Speed Thresholds")]
-    public float idleSpeedThreshold = 0.08f;
-    public float runningSpeedThreshold = 4.5f;
-
-    [Header("Ground Check")]
-    public bool useCharacterControllerGrounded = true;
-    public bool assumeGroundedIfNoController = true;
-
-    [Header("Runtime Toggle State")]
-    public bool crouchToggleActive;
-    public bool crawlToggleActive;
+    [Header("Authoritative Movement")]
+    public PlayerMovement playerMovement;
 
     [Header("Runtime State")]
-    public PlayerMovementVisualState currentState = PlayerMovementVisualState.Idle;
+    public PlayerMovementVisualState currentState =
+        PlayerMovementVisualState.Idle;
+
     public float currentHorizontalSpeed;
     public bool isGrounded;
     public bool isSprintingInput;
@@ -39,161 +19,122 @@ public class PlayerMovementStateTracker : MonoBehaviour
     public bool isCrawlingInput;
 
     [Header("Debug")]
-    public bool showDebugLogs = true;
+    public bool showDebugLogs = false;
 
     private PlayerMovementVisualState previousState;
 
     private void Awake()
     {
-        Instance = this;
-
-        if (characterController == null)
+        if (Instance != null && Instance != this)
         {
-            characterController = GetComponent<CharacterController>();
+            Destroy(this);
+            return;
         }
 
-        if (playerRigidbody == null)
+        Instance = this;
+
+        if (playerMovement == null)
         {
-            playerRigidbody = GetComponent<Rigidbody>();
+            playerMovement =
+                GetComponent<PlayerMovement>();
         }
     }
 
     private void Update()
     {
-        ReadInputs();
-        UpdateMovementValues();
-        ResolveState();
+        if (playerMovement == null)
+        {
+            return;
+        }
+
+        UpdateCompatibilityValues();
+        ResolveVisualState();
         DebugStateChange();
     }
 
-    private void ReadInputs()
+    private void UpdateCompatibilityValues()
     {
-        isSprintingInput = false;
-        isCrouchingInput = false;
-        isCrawlingInput = false;
+        Vector3 horizontalVelocity =
+            playerMovement.CurrentHorizontalVelocity;
 
-        if (Keyboard.current == null)
-        {
-            return;
-        }
+        horizontalVelocity.y = 0f;
 
-        isSprintingInput = Keyboard.current[sprintKey].isPressed;
+        currentHorizontalSpeed =
+            horizontalVelocity.magnitude;
 
-        if (crawlIsToggle)
-        {
-            if (Keyboard.current[crawlKey].wasPressedThisFrame)
-            {
-                crawlToggleActive = !crawlToggleActive;
+        isGrounded =
+            playerMovement.IsGroundedPublic;
 
-                if (crawlToggleActive)
-                {
-                    crouchToggleActive = false;
-                }
-            }
+        isSprintingInput =
+            playerMovement.IsSprinting;
 
-            isCrawlingInput = crawlToggleActive;
-        }
-        else
-        {
-            isCrawlingInput = Keyboard.current[crawlKey].isPressed;
-        }
+        isCrouchingInput =
+            playerMovement.IsCrouching;
 
-        if (crouchIsToggle)
-        {
-            if (Keyboard.current[crouchKey].wasPressedThisFrame)
-            {
-                crouchToggleActive = !crouchToggleActive;
-
-                if (crouchToggleActive)
-                {
-                    crawlToggleActive = false;
-                }
-            }
-
-            isCrouchingInput = crouchToggleActive;
-        }
-        else
-        {
-            isCrouchingInput = Keyboard.current[crouchKey].isPressed;
-        }
-
-        // Sprinting should usually cancel stealth posture.
-        if (isSprintingInput)
-        {
-            crouchToggleActive = false;
-            crawlToggleActive = false;
-            isCrouchingInput = false;
-            isCrawlingInput = false;
-        }
+        isCrawlingInput =
+            playerMovement.IsCrawling;
     }
 
-    private void UpdateMovementValues()
+    private void ResolveVisualState()
     {
-        Vector3 velocity = Vector3.zero;
-
-        if (characterController != null)
+        switch (playerMovement.CurrentMovementState)
         {
-            velocity = characterController.velocity;
+            case PlayerMovement.MovementState.Idle:
+                currentState =
+                    PlayerMovementVisualState.Idle;
+                break;
 
-            isGrounded = useCharacterControllerGrounded
-                ? characterController.isGrounded
-                : true;
+            case PlayerMovement.MovementState.Walk:
+            case PlayerMovement.MovementState.SlowWalk:
+                currentState =
+                    PlayerMovementVisualState.Walking;
+                break;
+
+            case PlayerMovement.MovementState.Sprint:
+                currentState =
+                    PlayerMovementVisualState.Running;
+                break;
+
+            case PlayerMovement.MovementState.Crouch:
+                currentState =
+                    PlayerMovementVisualState.Crouching;
+                break;
+
+            case PlayerMovement.MovementState.Crawl:
+                currentState =
+                    PlayerMovementVisualState.Crawling;
+                break;
+
+            case PlayerMovement.MovementState.Jump:
+                currentState =
+                    PlayerMovementVisualState.Jumping;
+                break;
+
+            case PlayerMovement.MovementState.Falling:
+                currentState =
+                    PlayerMovementVisualState.Falling;
+                break;
+
+            case PlayerMovement.MovementState.ClimbMantle:
+            case PlayerMovement.MovementState.WallClimb:
+            case PlayerMovement.MovementState.LadderClimb:
+                // Existing visual enum has no Climbing state.
+                // Jumping is the safest compatibility state for now.
+                currentState =
+                    PlayerMovementVisualState.Jumping;
+                break;
+
+            case PlayerMovement.MovementState.Interact:
+            case PlayerMovement.MovementState.Hide:
+                currentState =
+                    PlayerMovementVisualState.Idle;
+                break;
+
+            default:
+                currentState =
+                    PlayerMovementVisualState.Idle;
+                break;
         }
-        else if (playerRigidbody != null)
-        {
-            velocity = playerRigidbody.linearVelocity;
-            isGrounded = assumeGroundedIfNoController;
-        }
-        else
-        {
-            isGrounded = assumeGroundedIfNoController;
-        }
-
-        Vector3 horizontalVelocity = new Vector3(velocity.x, 0f, velocity.z);
-        currentHorizontalSpeed = horizontalVelocity.magnitude;
-    }
-
-    private void ResolveState()
-    {
-        if (!isGrounded)
-        {
-            if (characterController != null && characterController.velocity.y > 0.1f)
-            {
-                currentState = PlayerMovementVisualState.Jumping;
-            }
-            else
-            {
-                currentState = PlayerMovementVisualState.Falling;
-            }
-
-            return;
-        }
-
-        if (isCrawlingInput)
-        {
-            currentState = PlayerMovementVisualState.Crawling;
-            return;
-        }
-
-        if (isCrouchingInput)
-        {
-            currentState = PlayerMovementVisualState.Crouching;
-            return;
-        }
-
-        if (currentHorizontalSpeed <= idleSpeedThreshold)
-        {
-            currentState = PlayerMovementVisualState.Idle;
-            return;
-        }
-
-        if (isSprintingInput || currentHorizontalSpeed >= runningSpeedThreshold)
-        {
-            currentState = PlayerMovementVisualState.Running;
-            return;
-        }
-
-        currentState = PlayerMovementVisualState.Walking;
     }
 
     public PlayerMovementVisualState GetCurrentState()
@@ -201,27 +142,46 @@ public class PlayerMovementStateTracker : MonoBehaviour
         return currentState;
     }
 
-    public void ForceClearStealthToggles()
-    {
-        crouchToggleActive = false;
-        crawlToggleActive = false;
-        isCrouchingInput = false;
-        isCrawlingInput = false;
-    }
-
     public bool IsNormalPublicMovement()
     {
-        return currentState == PlayerMovementVisualState.Idle ||
-               currentState == PlayerMovementVisualState.Walking;
+        return currentState ==
+                   PlayerMovementVisualState.Idle ||
+               currentState ==
+                   PlayerMovementVisualState.Walking;
     }
 
     public bool IsVisuallySuspiciousInPublic()
     {
-        return currentState == PlayerMovementVisualState.Running ||
-               currentState == PlayerMovementVisualState.Crouching ||
-               currentState == PlayerMovementVisualState.Crawling ||
-               currentState == PlayerMovementVisualState.Jumping ||
-               currentState == PlayerMovementVisualState.Falling;
+        if (playerMovement != null &&
+            (playerMovement.IsMantling ||
+             playerMovement.IsWallClimbing ||
+             playerMovement.IsLadderClimbing))
+        {
+            return true;
+        }
+
+        return
+            currentState ==
+                PlayerMovementVisualState.Running ||
+            currentState ==
+                PlayerMovementVisualState.Crouching ||
+            currentState ==
+                PlayerMovementVisualState.Crawling ||
+            currentState ==
+                PlayerMovementVisualState.Jumping ||
+            currentState ==
+                PlayerMovementVisualState.Falling;
+    }
+
+    // Retained for old callers.
+    // PlayerMovement now owns crouch/crawl state,
+    // so this no longer manipulates keyboard toggles.
+    public void ForceClearStealthToggles()
+    {
+        if (playerMovement != null)
+        {
+            playerMovement.ForceStandIfPossible();
+        }
     }
 
     private void DebugStateChange()
@@ -231,16 +191,28 @@ public class PlayerMovementStateTracker : MonoBehaviour
             return;
         }
 
-        if (previousState != currentState)
+        if (previousState == currentState)
         {
-            Debug.Log(
-                $"[PlayerMovementStateTracker] State: {currentState}, " +
-                $"Speed: {currentHorizontalSpeed}, " +
-                $"CrouchToggle: {crouchToggleActive}, " +
-                $"CrawlToggle: {crawlToggleActive}"
-            );
+            return;
+        }
 
-            previousState = currentState;
+        Debug.Log(
+            "[PlayerMovementStateTracker] State: " +
+            currentState +
+            " | PlayerMovement: " +
+            playerMovement.CurrentMovementState +
+            " | Speed: " +
+            currentHorizontalSpeed.ToString("0.00")
+        );
+
+        previousState = currentState;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 }

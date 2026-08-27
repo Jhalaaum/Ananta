@@ -6,11 +6,22 @@ public class QuestRewardData
     [Header("Reward")]
     public QuestRewardType rewardType;
 
-    [Tooltip("Generic ID: item ID, area ID, skill ID, dialogue ID, quest ID, faction ID, journal ID, etc.")]
+    [Tooltip(
+        "Generic ID used for quests, areas, dialogue, etc. " +
+        "For item rewards, prefer assigning Item Reward below."
+    )]
     public string rewardID;
 
-    [Tooltip("Generic amount: coins, reputation amount, item count, suspicion change, etc.")]
+    [Tooltip(
+        "Generic amount: item count, coins, reputation, etc."
+    )]
     public int amount = 1;
+
+    [Header("Item Reward")]
+    [Tooltip(
+        "For GiveItem or GiveDisguise, drag the ItemData asset here."
+    )]
+    public ItemData itemReward;
 
     [Header("Optional Display")]
     public bool showMessage = true;

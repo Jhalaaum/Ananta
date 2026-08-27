@@ -26,7 +26,17 @@ MonoBehaviour:
     choices: []
     conditions: []
     onEnterEffects: []
-    onExitEffects: []
+    onExitEffects:
+    - effectType: 7
+      flagID: 
+      factionID: 
+      itemID: Apple
+      infoID: 
+      coverStoryID: 
+      questToStart: {fileID: 0}
+      questObjectiveType: 0
+      questTargetID: 
+      amount: 5
     autoContinue: 0
     autoContinueDelay: 0
   canRepeat: 1
