@@ -31,10 +31,22 @@ public class NPCConditionalDialogue
     [Header("Prompt")]
     public string prompt = "Press E to talk";
 
-    [Header("Conditions")]
+    [Header("Existing Conditions")]
+    [Tooltip(
+        "Your existing dialogue conditions. All must pass."
+    )]
     public DialogueCondition[] conditions;
 
+    [Header("Persistent Story Conditions")]
+    [Tooltip(
+        "Persistent story flags required for this conversation."
+    )]
+    public StoryFlagRequirement[] storyFlagRequirements;
+
     [Header("Priority")]
+    [Tooltip(
+        "If several conversations are available, highest priority wins."
+    )]
     public int priority = 0;
 
     public bool IsAvailable()
@@ -44,28 +56,53 @@ public class NPCConditionalDialogue
             return false;
         }
 
-        if (conditions == null || conditions.Length == 0)
+        // --------------------------------------
+        // EXISTING CONDITIONS
+        // --------------------------------------
+
+        if (conditions != null)
         {
-            return true;
+            foreach (
+                DialogueCondition condition
+                in conditions)
+            {
+                if (condition == null)
+                {
+                    continue;
+                }
+
+                if (!condition.IsMet())
+                {
+                    return false;
+                }
+            }
         }
 
-        foreach (DialogueCondition condition in conditions)
-        {
-            if (condition == null)
-            {
-                continue;
-            }
+        // --------------------------------------
+        // PERSISTENT STORY FLAGS
+        // --------------------------------------
 
-            if (!condition.IsMet())
+        if (storyFlagRequirements != null)
+        {
+            foreach (
+                StoryFlagRequirement requirement
+                in storyFlagRequirements)
             {
-                return false;
+                if (requirement == null)
+                {
+                    continue;
+                }
+
+                if (!requirement.IsMet())
+                {
+                    return false;
+                }
             }
         }
 
         return true;
     }
 }
-
 public class QuestAwareNPCDialogue : MonoBehaviour, IInteractable
 {
     [Header("NPC Identity")]

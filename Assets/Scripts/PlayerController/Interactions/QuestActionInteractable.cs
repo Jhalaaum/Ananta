@@ -24,17 +24,29 @@ public class QuestActionInteractable : MonoBehaviour, IInteractable
     [Header("Optional Object Changes")]
     public GameObject[] objectsToEnable;
     public GameObject[] objectsToDisable;
-
     private bool hasUsed;
+    [Header("Persistence")]
+    public bool saveUsedState = false;
+    public string usedFlagID;
 
     private void Awake()
     {
         if (questTarget == null)
         {
-            questTarget = GetComponentInParent<QuestTarget>();
+            questTarget =
+                GetComponentInParent<QuestTarget>();
+        }
+
+        if (saveUsedState &&
+            StoryFlagManager.Instance != null &&
+            !string.IsNullOrWhiteSpace(usedFlagID))
+        {
+            hasUsed =
+                StoryFlagManager.Instance.GetFlag(
+                    usedFlagID
+                );
         }
     }
-
     public string GetPromptText()
     {
         return promptText;
@@ -63,6 +75,15 @@ public class QuestActionInteractable : MonoBehaviour, IInteractable
         }
 
         hasUsed = true;
+        if (saveUsedState &&
+        StoryFlagManager.Instance != null &&
+        !string.IsNullOrWhiteSpace(usedFlagID))
+        {
+            StoryFlagManager.Instance.SetFlag(
+                usedFlagID,
+                true
+            );
+        }
 
         Debug.Log($"[QuestActionInteractable] {actionName}: {actionMessage}");
 

@@ -41,6 +41,7 @@ public class SaveManager : MonoBehaviour
     public bool restoreInventory = true;
     public bool restoreQuests = true;
     public bool restoreEquipment = true;
+    public bool restoreStoryFlags = true;
 
     [Header("Debug")]
     public bool showDebugLogs = true;
@@ -313,6 +314,11 @@ public class SaveManager : MonoBehaviour
                 WorldItemStateManager.Instance
                     .CaptureWorldItemStates();
         }
+        if (StoryFlagManager.Instance != null)
+        {
+            saveData.storyFlags =
+                StoryFlagManager.Instance.CaptureFlags();
+        }
 
         currentCheckpointData =
             saveData;
@@ -495,7 +501,14 @@ public class SaveManager : MonoBehaviour
                     saveData.worldItemStateSaveData
                 );
         }
-
+        if (restoreStoryFlags &&
+            StoryFlagManager.Instance != null)
+        {
+            StoryFlagManager.Instance.RestoreFlags(
+                saveData.storyFlags
+            );
+            RefreshPersistentFlagObjects();
+        }
         RestorePlayerTransformSafely(
             saveData.player.GetPosition(),
             saveData.player.GetRotation()
@@ -668,7 +681,28 @@ public class SaveManager : MonoBehaviour
             "Player respawned using fallback respawn point."
         );
     }
+    private void RefreshPersistentFlagObjects()
+    {
+        PersistentFlagObject[] objects =
+            FindObjectsOfType<PersistentFlagObject>(
+                true
+            );
 
+        foreach (
+            PersistentFlagObject obj
+            in objects)
+        {
+            if (obj != null)
+            {
+                obj.ApplyFlagState();
+            }
+        }
+
+        Log(
+            "Persistent flag objects refreshed: " +
+            objects.Length
+        );
+    }
     private void ResetRuntimeUI()
     {
         if (!resetDialogueAfterCheckpoint)
